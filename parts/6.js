@@ -16,7 +16,7 @@ const jobMult=id=>1+.25*(jobLevel(id)-1);
 let shift=null,lastResult=null;
 function startShift(job){sfx('start');shift={job:job,earned:0,count:0,end:Date.now()+SHIFT_MS,last:Date.now(),game:null};render()}
 function endShift(){
-  if(!shift)return;clearInterval(jobTick);jobTick=null;const s=shift;shift=null;const js=jobState(s.job.id),before=jobLevel(s.job.id);
+  if(!shift)return;clearInterval(jobTick);jobTick=null;const s=shift;shift=null;if(s.job.cs){csEnd(s);return}const js=jobState(s.job.id),before=jobLevel(s.job.id);
   js.xp+=s.count*10+5;js.shifts++;js.best=Math.max(js.best,s.earned);S.shifts++;S.cash+=s.earned;S.earned+=s.earned;
   const lvl=jobLevel(s.job.id);lastResult={job:s.job,earned:s.earned,count:s.count,levelUp:lvl>before?lvl:0};
   save();sfx(lastResult.levelUp?'level':'coin');bumpCash();
@@ -24,11 +24,11 @@ function endShift(){
 function renderWork(v){
   if(shift)return runShift(v);
   if(lastResult){const r=lastResult;v.insertAdjacentHTML('beforeend','<div class="card center" style="border:3px solid #2bb34a"><div style="font-size:40px">'+r.job.emoji+'</div><b>Shift over!</b><div>'+r.count+' done · paid <b class="pr">'+money(r.earned)+'</b></div>'+(r.levelUp?'<div>⬆️ <b>'+r.job.name+' level '+r.levelUp+'!</b> Pay ×'+jobMult(r.job.id).toFixed(2)+'</div>':'')+'</div>')}
-  v.insertAdjacentHTML('beforeend','<div class="small" style="margin:0 4px 8px">Shifts are 45s. Pay = base × level bonus (+25% per job level). Total shifts: '+S.shifts+'</div>');
-  JOBS.forEach(j=>{const st=jobState(j.id),lv=jobLevel(j.id),locked=S.shifts<j.unlock,need=60*lv*lv,prev=60*(lv-1)*(lv-1);
+  csCard(v);v.insertAdjacentHTML('beforeend','<div class="small" style="margin:0 4px 8px">Shifts are 45s. Pay = base × level bonus (+25% per job level). Total shifts: '+S.shifts+'</div>');
+  JOBS.forEach(j=>{const st=jobState(j.id),lv=jobLevel(j.id),locked=S.shifts<j.unlock||S.rap.cs>0,need=60*lv*lv,prev=60*(lv-1)*(lv-1);
     const d=document.createElement('div');d.className='card'+(locked?' lock':'');
     d.innerHTML='<div class="row"><span style="font-size:40px">'+j.emoji+'</span><div style="flex:1"><b>'+j.name+'</b> '+(locked?'🔒':'<span class="small">Lv '+lv+' · pay ×'+jobMult(j.id).toFixed(2)+' · best '+money(st.best)+'</span>')+'<div class="small">'+j.desc+'</div>'+
-      (locked?'<div class="small"><b>Unlocks after '+j.unlock+' total shifts</b></div>':'<div class="bar"><div style="width:'+Math.min(100,(st.xp-prev)/(need-prev)*100)+'%;background:#ff4f9a"></div></div>')+'</div>'+
+      (locked?'<div class="small"><b>'+(S.rap.cs>0?'🚫 Finish community service first':'Unlocks after '+j.unlock+' total shifts')+'</b></div>':'<div class="bar"><div style="width:'+Math.min(100,(st.xp-prev)/(need-prev)*100)+'%;background:#ff4f9a"></div></div>')+'</div>'+
       '<button class="btn green" data-job="'+j.id+'" '+(locked?'disabled':'')+'>Clock in</button></div>';
     v.appendChild(d)});
   onAll(v,'[data-job]',b=>{lastResult=null;startShift(JOBS.filter(j=>j.id===b.dataset.job)[0])});
@@ -37,7 +37,7 @@ function runShift(v){
   const j=shift.job;
   v.innerHTML='<div class="card row sp" style="padding:8px 12px"><b>'+j.emoji+' '+j.name+'</b><b>⏱ <span id="stime"></span></b><b>💰 <span id="searn"></span></b></div><div id="jarea"></div><button class="btn alt" id="quit" style="margin-top:10px;width:100%">Clock out early</button>';
   const api={
-    pay:base=>{if(!shift)return;const amt=Math.max(1,Math.round(base*jobMult(j.id)));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
+    pay:base=>{if(!shift)return;if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*jobMult(j.id)));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
     miss:msg=>{toast(msg);sfx('bad');const a=$('#jarea');if(a){a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash')}}
   };
   function upd(){if(!shift)return;const now=Date.now(),dt=Math.min(.1,(now-shift.last)/1000);shift.last=now;
@@ -181,7 +181,7 @@ window.addEventListener('error',ev=>showError(ev.error||ev.message));
 function boot(){
   try{
     if(!storageOK){const b=$('#banner');b.hidden=false;b.innerHTML='⚠️ This viewer blocks saving. Progress lasts only while it\'s open. Go to <b>⭐ Me → Export code</b> to keep it!'}
-    $('#mute').onclick=()=>{S.muted=!S.muted;save();sfx('click')};
+    $('#more').onclick=()=>{sfx('click');openMore()};
     $('#mail').onclick=()=>{sfx('click');openMail()};
     setInterval(()=>{if(!S.char)return;onlineTick();if(checkDay()){toast('☀️ Day '+S.day+'! Stores rotated & new deals');sfx('level');if(screen==='mall'&&!shift)rerender()}
       Array.prototype.forEach.call(document.querySelectorAll('.cd'),e=>{e.textContent=timeLeft()})},1000);
@@ -190,4 +190,4 @@ function boot(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 /* test hook (harmless in play) */
-window.__game={get S(){return S},ITEMS:ITEMS,ITEM:ITEM,STORES:STORES,JOBS:JOBS,go:go,get shift(){return shift},endShift:endShift,render:render,openStores:openStores,deals:deals,thumb:thumb,buy:id=>buy(ITEM[id]),onlineTick:onlineTick,nextDay:nextDay,CLAM:CLAM,KO_OF:KO_OF};
+window.__game={get S(){return S},ITEMS:ITEMS,ITEM:ITEM,STORES:STORES,JOBS:JOBS,go:go,get shift(){return shift},endShift:endShift,render:render,openStores:openStores,deals:deals,thumb:thumb,buy:id=>buy(ITEM[id]),onlineTick:onlineTick,nextDay:nextDay,CLAM:CLAM,KO_OF:KO_OF,courtCase:courtCase,crimeNewDay:crimeNewDay,startShift:startShift,CS_JOB:CS_JOB,alleyStock:alleyStock};

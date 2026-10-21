@@ -79,6 +79,9 @@ textarea{width:100%;height:80px;border-radius:10px;border:2px solid #ddd;padding
 .slot .btn{padding:6px 10px;font-size:13px}
 .flash{animation:flash .3s}@keyframes flash{50%{background:#ffcdd2}}
 .lock{opacity:.55}
+header{gap:6px;flex-wrap:nowrap}.logo{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.hr{flex-shrink:0}
+@media (max-width:400px){.logo span{display:none}.pill{padding:3px 7px;font-size:12px}.pill.cash{font-size:13px}.icon{width:30px;height:30px;font-size:15px}nav button{font-size:10px}nav button span{font-size:20px}}
+.heat{display:inline-block;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:800;color:#fff}
 nav button,.icon{position:relative}
 .nb{position:absolute;top:1px;right:12%;background:#ff1744;color:#fff;border-radius:10px;font-size:10px;font-style:normal;padding:1px 5px;font-weight:800;line-height:14px}
 .nb:empty{display:none}
@@ -99,7 +102,7 @@ nav button,.icon{position:relative}
 input[type=search],input[type=number]{width:100%;padding:10px;border-radius:10px;border:2px solid #ddd;font-size:16px}
 </style></head><body>
 <div id="app">
-<header><div>🛍️ Mall Rat</div><div class="hr"><span id="day" class="pill">Day 1</span><button id="mute" class="icon" aria-label="sound">🔊</button><button id="mail" class="icon" aria-label="mailbox">📬<i class="nb" id="mailb"></i></button><span id="cash" class="pill cash">$0</span></div></header>
+<header><div class="logo">🛍️<span> Mall Rat</span></div><div class="hr"><span id="day" class="pill">Day 1</span><button id="mail" class="icon" aria-label="mailbox">📬<i class="nb" id="mailb"></i></button><span id="cash" class="pill cash">$0</span><button id="more" class="icon" aria-label="menu">⋯</button></div></header>
 <div id="banner" hidden></div>
 <main id="view"></main>
 </div>

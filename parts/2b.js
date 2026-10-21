@@ -1,6 +1,6 @@
 /* ============ v3 ONLINE CATALOGS (generated after mall items so v2 save ids stay stable) ============ */
 const MALL_STORE={};STORES.forEach(s=>{MALL_STORE[s.id]=1});
-const KO_NAMES={frauda:'Fraudah',goochie:'Gucchi',balence:'BalanceNotta',vuitno:'Louie Vootin',shanel:'Chanell',versnatchy:'Versnatchie',hermeez:'Hermeze'};
+const KO_NAMES={frauda:'Fraudah',goochie:'Gucchi',balence:'BalenciNOPE',vuitno:'Louie Vootin',shanel:'Chanell',versnatchy:'Versnatchie',hermeez:'Hermeze'};
 const KO_OF={};
 (function genOnline(){
   const r=rng(777),names={};
@@ -14,6 +14,6 @@ const KO_OF={};
   }));
   // knockoffs: what Facenook scammers actually ship you. Same look, sadder name, ~3% value.
   ITEMS.filter(i=>KO_NAMES[i.store]&&!i.rare).forEach(i=>{const s=STORES.filter(q=>q.id===i.store)[0];
-    const ko=Object.assign({},i,{id:'ko-'+i.id,store:'knockoff',name:KO_NAMES[i.store]+i.name.slice(s.name.length)+' (knockoff)',price:Math.max(3,nicePrice(i.price*.03))});
+    const ko=Object.assign({},i,{id:'ko-'+i.id,store:'knockoff',name:KO_NAMES[i.store]+i.name.slice(s.name.length)+' (knockoff)',price:Math.max(3,nicePrice(i.price*.03)),fake:true,real:i.id});
     ITEMS.push(ko);ITEM[ko.id]=ko;KO_OF[i.id]=ko.id});
 })();

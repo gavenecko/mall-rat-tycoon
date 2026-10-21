@@ -13,19 +13,20 @@ function rerender(){const y=window.scrollY;render();window.scrollTo(0,y)}
 
 function itemCard(it,mode){
   const owned=S.owned[it.id]||0,eq=S.equipped[it.slot]===it.id,off=offOf(it),p=priceOf(it),left=stockLeft(it);
-  const d=document.createElement('div');d.className='item'+(eq&&mode!=='shop'?' eq':'');
+  const shopM=mode==='shop'||mode==='store';const d=document.createElement('div');d.className='item'+(eq&&!shopM?' eq':'');
   let h='<img alt="" src="'+thumb(it)+'">'+(it.rare?'<span class="badge r">LIMITED · '+left+' left</span>':off?'<span class="badge">-'+off+'%</span>':'')+'<button class="heart" data-a="wish" aria-label="wishlist">'+(S.wish[it.id]?'❤️':'🤍')+'</button><div class="nm">'+esc(it.name)+'</div>';
-  if(mode==='shop'){h+='<div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(p)+'</span></div><div class="small">'+(owned?'Owned ×'+owned:'&nbsp;')+'</div><button class="btn" data-a="buy">'+(left<=0?'Sold out':'Buy')+'</button>'}
+  if(shopM){h+='<div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(p)+'</span></div><div class="small">'+(owned?'Owned ×'+owned:'&nbsp;')+'</div><button class="btn" data-a="buy">'+(left<=0?'Sold out':'Buy')+'</button>'+(mode==='store'&&left>0?'<button class="btn" data-a="steal" style="padding:6px;font-size:12px;background:#7b1fa2;box-shadow:0 2px 0 #4a148c">🤏 Five-finger discount</button>':'')}
   else{const placed=S.room.filter(q=>q.id===it.id).length;
     h+='<div class="small">×'+owned+(it.slot?'':' · '+placed+' placed')+' · worth '+money(it.price)+'</div><div class="row"><button class="btn '+(eq?'alt':'green')+'" style="flex:1" data-a="use">'+(it.slot?(eq?'Take off':'Wear'):'Place')+'</button><button class="btn alt" style="flex:0 0 46px" data-a="sell" title="Sell for half">💲</button></div>'}
   d.innerHTML=h;
   onAll(d,'[data-a]',b=>{const a=b.dataset.a;
     if(a==='wish'){toggleWish(it);b.textContent=S.wish[it.id]?'❤️':'🤍'}
     else if(a==='buy')buy(it);
+    else if(a==='steal')stealAttempt(it);
     else if(a==='sell')sell(it);
     else if(it.slot){if(eq)delete S.equipped[it.slot];else S.equipped[it.slot]=it.id;sfx('click');save();rerender()}
     else{room.placing=it.id;room.sel=-1;go('room')}});
-  if(mode==='shop')d.querySelector('[data-a=buy]').disabled=left<=0;
+  if(shopM)d.querySelector('[data-a=buy]').disabled=left<=0;
   return d;
 }
 function buy(it){
@@ -51,14 +52,16 @@ function tabsBar(cats,onPick){const t=document.createElement('div');t.className=
 /* ---------- MALL ---------- */
 function renderMall(v){
   checkDay();const open=openStores();
+  if(sub==='alley')return renderAlley(v);
+  if(sub&&isBanned(sub)){sub=null;toast('🚫 You\'re banned from that store');return renderMall(v)}
   if(sub){const s=STORES.filter(q=>q.id===sub)[0];
     if(!s||open.indexOf(s)<0){sub=null;toast('That store just closed!');return renderMall(v)}
     v.innerHTML='<div class="store" style="background:'+s.color+'"><span style="font-size:34px">'+s.emoji+'</span><div>'+esc(s.name)+'<small>'+esc(s.tag)+'</small></div></div>'+
-      '<div class="row sp" style="margin-bottom:8px"><button class="btn alt" id="back">← Mall</button><span class="small">Closes in <b class="cd">'+timeLeft()+'</b></span></div>';
+      '<div class="row sp" style="margin-bottom:8px"><button class="btn alt" id="back">← Mall</button>'+heatPill()+'<span class="small">Closes in <b class="cd">'+timeLeft()+'</b></span></div>';
     v.querySelector('#back').onclick=()=>{sfx('click');go('mall')};
     v.appendChild(tabsBar(['all'].concat(s.cats),rerender));
     const g=document.createElement('div');g.className='grid';v.appendChild(g);
-    ITEMS.filter(i=>i.store===s.id&&(filter==='all'||i.cat===filter)).sort((a,b)=>(b.rare-a.rare)||(a.price-b.price)).forEach(i=>g.appendChild(itemCard(i,'shop')));
+    ITEMS.filter(i=>i.store===s.id&&(filter==='all'||i.cat===filter)).sort((a,b)=>(b.rare-a.rare)||(a.price-b.price)).forEach(i=>g.appendChild(itemCard(i,'store')));
     return;
   }
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
@@ -67,9 +70,9 @@ function renderMall(v){
   v.insertAdjacentHTML('afterbegin',eventBanner());
   open.forEach(s=>{const d=document.createElement('div');d.className='store';d.style.background=s.color;
     const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length;
-    d.innerHTML='<span style="font-size:34px">'+s.emoji+'</span><div style="flex:1">'+esc(s.name)+'<small>'+esc(s.tag)+' · '+money(s.tier[0])+'–'+money(s.tier[1])+'+</small></div>'+(rare?'<span class="badge r" style="position:static">✨ LIMITED</span>':'');
-    d.onclick=()=>{sfx('click');go('mall',s.id)};v.querySelector('#stores').appendChild(d)});
-  v.insertAdjacentHTML('beforeend','<div class="card small">🔒 Closed today: '+STORES.filter(s=>open.indexOf(s)<0).map(s=>esc(s.name)).join(', ')+'</div>');
+    d.innerHTML='<span style="font-size:34px">'+s.emoji+'</span><div style="flex:1">'+esc(s.name)+'<small>'+esc(s.tag)+' · '+money(s.tier[0])+'–'+money(s.tier[1])+'+</small></div>'+(isBanned(s.id)?'<span class="badge" style="position:static">🚫 BANNED</span>':rare?'<span class="badge r" style="position:static">✨ LIMITED</span>':'');
+    d.onclick=()=>{if(isBanned(s.id)){sfx('bad');toast('🚫 Security remembers your face. Banned until Day '+S.rap.bans[s.id]);return}sfx('click');go('mall',s.id)};v.querySelector('#stores').appendChild(d)});
+  v.insertAdjacentHTML('beforeend','<div class="card small">🔒 Closed today: '+STORES.filter(s=>open.indexOf(s)<0).map(s=>esc(s.name)).join(', ')+'</div>');v.appendChild(alleyCard());
 }
 
 /* ---------- CLOSET ---------- */
@@ -146,6 +149,7 @@ function renderMe(v){
   v.appendChild(top);
   const st=[['📅 Day',S.day],['💵 Cash',money(S.cash)],['🏦 Net worth',money(netWorth(S))],['👗 Closet value',money(closetValue(S))],['📦 Items owned',itemCount(S)],['💼 Shifts worked',S.shifts],['💰 Earned at jobs',money(S.earned)],['🛍️ Total spent',money(S.spent)]];
   v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">📊 Stats</div>'+st.map(s=>'<div class="slot"><span>'+s[0]+'</span><b>'+s[1]+'</b></div>').join('')+'</div>');
+  v.insertAdjacentHTML('beforeend',recordCard());
   v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">🏆 Achievements ('+Object.keys(S.ach).length+'/'+ACH.length+'), +'+money(ACH_REWARD)+' each</div><div class="ach">'+ACH.map(a=>'<div class="'+(S.ach[a[0]]?'got':'')+'"><b>'+a[1]+'</b><br>'+a[2]+'</div>').join('')+'</div></div>');
   let sl='<div class="card" id="saves"><div class="lbl" style="margin-top:0">💾 Saves</div><div class="small">'+(storageOK?'✅ Autosave is ON (saves after every action).':'⚠️ This viewer blocks storage: autosave & slots last only until you close it. Use <b>Export</b> to keep progress!')+'</div>';
   for(let n=1;n<=3;n++){const m=slotMeta(n);sl+='<div class="slot"><span><b>Slot '+n+'</b><br><span class="small">'+(m?esc(m.char?m.char.name:'?')+' · Day '+m.day+' · '+money(m.cash)+' · '+new Date(m.savedAt).toLocaleString():'Empty')+'</span></span><span><button class="btn" data-save="'+n+'">Save</button> <button class="btn alt" data-load="'+n+'" '+(m?'':'disabled')+'>Load</button></span></div>'}
@@ -197,7 +201,10 @@ const TUT=[['mall','👋 Welcome to the mall! Stores rotate every in-game day (3
  ['work','💼 Broke? Clock in! Each job is a 45-second tap minigame. Level up a job to earn more, and new jobs unlock as you work.'],
  ['closet','👗 Your closet: tap Wear to dress your avatar. 💲 sells an item for half price.'],
  ['room','🏠 Your room: furniture goes on the floor, art on the wall. Tap an item to move or remove it. Tap the floor to walk.'],
+ ['online','📱 Online never closes: 📦 Clamazon (search, reviews, Crime membership = instant delivery), 🔨 Fleabay (bid on auctions or sell your stuff) and 🏷️ Facenook (haggle with sketchy sellers… beware knockoffs).',()=>{onTab='clam'}],
+ ['online','📬 Packages land on your doorstep. Tap the mailbox up top (or the 📦 in your room) to bring them in. 🚚 Orders tracks every delivery.',()=>{onTab='orders'}],
+ ['online','💳 Wallet: short on cash? The Mall Rat Card and Pay-in-4 let you buy now and pay 3% a day later. Future-you is watching.',()=>{onTab='wallet'}],
  ['me','⭐ Stats, achievements and SAVES live here. Use save slots, and Export a code as a backup.']];
 function showTut(i){const o=$('#overlay');if(i>=TUT.length){o.hidden=true;S.tutDone=true;save();go('mall');return}
-  go(TUT[i][0]);o.hidden=false;o.innerHTML='<div class="card"><div style="font-size:15px">'+TUT[i][1]+'</div><div class="row sp" style="margin-top:8px"><span class="small">'+(i+1)+'/'+TUT.length+'</span><span><button class="btn alt" id="tskip">Skip</button> <button class="btn" id="tnext">'+(i===TUT.length-1?'Done':'Next ›')+'</button></span></div></div>';
+  if(TUT[i][2])TUT[i][2]();go(TUT[i][0]);o.hidden=false;o.innerHTML='<div class="card"><div style="font-size:15px">'+TUT[i][1]+'</div><div class="row sp" style="margin-top:8px"><span class="small">'+(i+1)+'/'+TUT.length+'</span><span><button class="btn alt" id="tskip">Skip</button> <button class="btn" id="tnext">'+(i===TUT.length-1?'Done':'Next ›')+'</button></span></div></div>';
   $('#tnext').onclick=()=>{sfx('click');showTut(i+1)};$('#tskip').onclick=()=>showTut(TUT.length)}

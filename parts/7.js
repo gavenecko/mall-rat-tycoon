@@ -29,7 +29,7 @@ function reviewsFor(it){const r=rng(hash(it.id)+9);const out=[];for(let i=0;i<3;
 
 /* ---------- sheet (bottom modal) ---------- */
 function sheet(html){const s=$('#sheet');s.hidden=false;s.innerHTML='<div class="sheetbox"><button class="icon x" id="shx" aria-label="close">✕</button>'+html+'</div>';$('#shx').onclick=closeSheet;s.onclick=e=>{if(e.target===s)closeSheet()}}
-function closeSheet(){const s=$('#sheet');s.hidden=true;s.innerHTML=''}
+function closeSheet(){clearInterval(stealIv);const s=$('#sheet');s.hidden=true;s.innerHTML=''}
 const sheetOpen=()=>!$('#sheet').hidden;
 
 /* ---------- mailbox / notifications / packages ---------- */
@@ -76,7 +76,7 @@ function onNewDay(){
   S.orders.forEach(o=>{if(o.status==='shipping'&&S.day>=o.arrive){o.status='delivered';notify('📦 Delivered: '+ITEM[o.id].name+' is on your doorstep!')}});
   fbRefresh();
   Object.keys(S.wish).forEach(id=>{const it=ITEM[id];if(it&&offOf(it))notify('💖 Wishlist alert: '+it.name+' is '+offOf(it)+'% off today!')});
-  const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
+  crimeNewDay();const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
 }
 
 /* ---------- Fleabay ---------- */
@@ -92,14 +92,14 @@ function playerBid(a){if(a.done||a.high==='you'||a.seller==='you')return;const a
 function npcBid(a){const amt=nextBid(a);if(amt>a.npcMax)return false;
   if(a.high==='you'){S.cash+=a.escrow;a.escrow=0;notify('😤 Outbid on '+ITEM[a.id].name+' (now '+money(amt)+')');toast('😤 Outbid on '+ITEM[a.id].name+'!');sfx('bad')}
   a.bid=amt;a.high=pick(NPC.filter(n=>n!==a.seller&&n!==a.high));a.bids++;return true}
-function endAuction(a){a.done=true;const it=ITEM[a.id];
-  if(a.seller==='you'){if(a.high){const pay=Math.round(a.bid*.9);S.cash+=pay;S.stats3.flipped++;notify('💸 Sold '+it.name+' on Fleabay for '+money(a.bid)+' (you get '+money(pay)+' after the 10% fee)');toast('💸 Fleabay sale: +'+money(pay));sfx('coin')}
+function endAuction(a){a.done=true;const it=ITEM[a.claim||a.id];
+  if(a.seller==='you'){if(a.high&&ITEM[a.id].fake&&fakeBust(ITEM[a.id],a.bid,'Fleabay')){notify('🚨 Fleabay flagged your "'+it.name+'" as counterfeit. Sale reversed, item seized.')}else if(a.high){if(ITEM[a.id].fake)S.rap.fakesSold++;const pay=Math.round(a.bid*.9);S.cash+=pay;S.stats3.flipped++;notify('💸 Sold '+it.name+' on Fleabay for '+money(a.bid)+' (you get '+money(pay)+' after the 10% fee)');toast('💸 Fleabay sale: +'+money(pay));sfx('coin')}
     else{S.owned[a.id]=(S.owned[a.id]||0)+1;notify('🦗 No bids on '+it.name+'. It came back home.')}}
   else if(a.high==='you'){S.orders.unshift({oid:S.oid++,id:a.id,src:'Fleabay',price:a.bid,day:S.day,arrive:S.day,status:'delivered'});S.stats3.won++;
     notify('🏆 You won '+it.name+' for '+money(a.bid)+'! It\'s on your doorstep.');toast('🏆 Won '+it.name+'!');sfx('level')}}
 function removeOne(id){S.owned[id]--;if(!S.owned[id]){delete S.owned[id];Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==id)}
   else{const pl=S.room.filter(q=>q.id===id);if(pl.length>S.owned[id])S.room.splice(S.room.indexOf(pl[0]),1)}}
-function listItem(it,start){removeOne(it.id);S.flea.push({aid:S.oid++,id:it.id,seller:'you',bid:start,high:null,end:Date.now()+120000,npcMax:Math.round(it.price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
+function listItem(it,start){removeOne(it.id);S.flea.push({aid:S.oid++,id:it.id,seller:'you',bid:start,high:null,end:Date.now()+120000,claim:it.fake?it.real:null,npcMax:Math.round((it.fake?ITEM[it.real]:it).price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
   sfx('click');toast('🔨 Listed! Auction ends in 2:00');save();closeSheet();rerender()}
 function onlineTick(){
   const now=Date.now();let ch=false;
@@ -135,7 +135,7 @@ function openFb(l){const it=ITEM[l.id];
     else if(Math.random()<.35||l.tries>=5){say('them',pick(['lol','Seen ✓','🙄','Blocked.']));ghost()}
     else{l.counter=l.ask;say('them','lol no. '+money(l.ask)+' firm')}
     save();openFb(l)};
-  const buyAt=p=>openPay('Facenook: '+it.name,p,()=>{l.status='sold';S.stats3.haggled++;
+  const buyAt=p=>openPay('Facenook: '+it.name,p,()=>{l.status='sold';S.stats3.haggled++;maybeContact();
     if(l.scam){const ko=ITEM[KO_OF[l.id]];S.owned[ko.id]=(S.owned[ko.id]||0)+1;S.stats3.scammed++;notify('🤡 Facenook: your "'+it.name+'" is actually a '+ko.name+'. Worth '+money(ko.price)+'.');toast('🤡 Plot twist: it\'s a '+ko.name+' (worth '+money(ko.price)+')');sfx('bad')}
     else{S.owned[it.id]=(S.owned[it.id]||0)+1;toast('🎉 Got it for '+money(p)+'! (retail '+money(it.price)+')');sfx('buy')}save();rerender()});
   if($('#acc'))$('#acc').onclick=()=>buyAt(l.counter);if($('#full'))$('#full').onclick=()=>buyAt(l.ask);
@@ -182,7 +182,7 @@ function renderFlea(v){
   const now=Date.now(),mine=S.flea.filter(a=>a.seller==='you'),theirs=S.flea.filter(a=>a.seller!=='you');
   v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:linear-gradient(90deg,#e53238,#0064d2,#f5af02,#86b817)">Fleabay 🔨 <span class="small" style="color:#fff">Bid. Win. Regret.</span></div>'+
     '<div class="card row sp"><div><b>Sell your stuff</b><div class="small">2-min auction · NPCs bid · 10% fee</div></div><button class="btn" id="list">+ List an item</button></div>');
-  const row=a=>{const it=ITEM[a.id],live=!a.done;const you=a.high==='you';
+  const row=a=>{const it=ITEM[a.claim||a.id],live=!a.done;const you=a.high==='you';
     return'<div class="card row" style="align-items:flex-start"><img src="'+thumb(it)+'" style="width:70px;border-radius:10px"><div style="flex:1"><b>'+esc(it.name)+'</b><div class="small">'+(a.seller==='you'?'Your listing':'Seller: '+esc(a.seller))+' · retail '+money(it.price)+'</div>'+
       '<div>'+(a.high?'Bid':'Starting')+' <b class="pr">'+money(a.bid)+'</b> · '+a.bids+' bid'+(a.bids===1?'':'s')+(a.high?' · <b>'+(you?'You\'re winning 🎉':esc(a.high))+'</b>':'')+'</div>'+
       '<div class="small">'+(live?'⏱ <b data-end="'+a.end+'">'+fmtLeft(a.end-now)+'</b> left':(a.seller==='you'?(a.high?'💸 Sold':'🦗 Unsold'):you?'🏆 You won!':'Ended'))+'</div></div>'+
@@ -198,7 +198,7 @@ function renderFlea(v){
 }
 function renderFb(v){
   if(S.fb.day!==S.day)fbRefresh();
-  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#1877f2">Facenook Marketplace 🏷️ <span class="small" style="color:#dbe7ff">New listings every day</span></div><div class="small" style="margin:0 4px 8px">Used goods, wild prices. Haggle! Some deals are too good to be true…</div><div class="grid" id="fbg"></div>');
+  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#1877f2">Facenook Marketplace 🏷️ <span class="small" style="color:#dbe7ff">New listings every day</span></div><div class="small" style="margin:0 4px 8px">Used goods, wild prices. Haggle! Some deals are too good to be true…</div><button class="btn" id="fbsell" style="width:100%;margin-bottom:8px;background:#42b72a;box-shadow:0 2px 0 #2d8a1c">📣 Sell something on Facenook</button><div class="grid" id="fbg"></div>');$('#fbsell').onclick=fbSell;
   S.fb.list.forEach(l=>{const it=ITEM[l.id],d=document.createElement('div');d.className='item';
     d.innerHTML='<img alt="" src="'+thumb(it)+'">'+(l.status!=='open'?'<span class="badge" style="background:#555">'+(l.status==='sold'?'SOLD':'👻 GHOSTED')+'</span>':'')+'<div class="nm">'+esc(it.name)+'</div><div><span class="was">'+money(it.price)+'</span><span class="pr">'+money(l.ask)+'</span></div><div class="small">'+l.face+' '+esc(l.seller)+'</div><button class="btn" style="background:#1877f2;box-shadow:0 2px 0 #0d5bc4">'+(l.status==='open'?'💬 Message':'View')+'</button>';
     d.querySelector('button').onclick=()=>openFb(l);$('#fbg').appendChild(d)})}

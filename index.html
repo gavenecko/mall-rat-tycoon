@@ -79,6 +79,9 @@ textarea{width:100%;height:80px;border-radius:10px;border:2px solid #ddd;padding
 .slot .btn{padding:6px 10px;font-size:13px}
 .flash{animation:flash .3s}@keyframes flash{50%{background:#ffcdd2}}
 .lock{opacity:.55}
+header{gap:6px;flex-wrap:nowrap}.logo{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.hr{flex-shrink:0}
+@media (max-width:400px){.logo span{display:none}.pill{padding:3px 7px;font-size:12px}.pill.cash{font-size:13px}.icon{width:30px;height:30px;font-size:15px}nav button{font-size:10px}nav button span{font-size:20px}}
+.heat{display:inline-block;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:800;color:#fff}
 nav button,.icon{position:relative}
 .nb{position:absolute;top:1px;right:12%;background:#ff1744;color:#fff;border-radius:10px;font-size:10px;font-style:normal;padding:1px 5px;font-weight:800;line-height:14px}
 .nb:empty{display:none}
@@ -99,7 +102,7 @@ nav button,.icon{position:relative}
 input[type=search],input[type=number]{width:100%;padding:10px;border-radius:10px;border:2px solid #ddd;font-size:16px}
 </style></head><body>
 <div id="app">
-<header><div>🛍️ Mall Rat</div><div class="hr"><span id="day" class="pill">Day 1</span><button id="mute" class="icon" aria-label="sound">🔊</button><button id="mail" class="icon" aria-label="mailbox">📬<i class="nb" id="mailb"></i></button><span id="cash" class="pill cash">$0</span></div></header>
+<header><div class="logo">🛍️<span> Mall Rat</span></div><div class="hr"><span id="day" class="pill">Day 1</span><button id="mail" class="icon" aria-label="mailbox">📬<i class="nb" id="mailb"></i></button><span id="cash" class="pill cash">$0</span><button id="more" class="icon" aria-label="menu">⋯</button></div></header>
 <div id="banner" hidden></div>
 <main id="view"></main>
 </div>
@@ -191,7 +194,7 @@ const ITEMS=[], ITEM={};
 
 /* ============ v3 ONLINE CATALOGS (generated after mall items so v2 save ids stay stable) ============ */
 const MALL_STORE={};STORES.forEach(s=>{MALL_STORE[s.id]=1});
-const KO_NAMES={frauda:'Fraudah',goochie:'Gucchi',balence:'BalanceNotta',vuitno:'Louie Vootin',shanel:'Chanell',versnatchy:'Versnatchie',hermeez:'Hermeze'};
+const KO_NAMES={frauda:'Fraudah',goochie:'Gucchi',balence:'BalenciNOPE',vuitno:'Louie Vootin',shanel:'Chanell',versnatchy:'Versnatchie',hermeez:'Hermeze'};
 const KO_OF={};
 (function genOnline(){
   const r=rng(777),names={};
@@ -205,7 +208,7 @@ const KO_OF={};
   }));
   // knockoffs: what Facenook scammers actually ship you. Same look, sadder name, ~3% value.
   ITEMS.filter(i=>KO_NAMES[i.store]&&!i.rare).forEach(i=>{const s=STORES.filter(q=>q.id===i.store)[0];
-    const ko=Object.assign({},i,{id:'ko-'+i.id,store:'knockoff',name:KO_NAMES[i.store]+i.name.slice(s.name.length)+' (knockoff)',price:Math.max(3,nicePrice(i.price*.03))});
+    const ko=Object.assign({},i,{id:'ko-'+i.id,store:'knockoff',name:KO_NAMES[i.store]+i.name.slice(s.name.length)+' (knockoff)',price:Math.max(3,nicePrice(i.price*.03)),fake:true,real:i.id});
     ITEMS.push(ko);ITEM[ko.id]=ko;KO_OF[i.id]=ko.id});
 })();
 /* ========================= STATE / SAVES ========================= */
@@ -220,7 +223,7 @@ const store={
   get(k){if(storageOK){try{return window.localStorage.getItem(k)}catch(e){}}return Object.prototype.hasOwnProperty.call(MEM,k)?MEM[k]:null},
   set(k,v){MEM[k]=v;if(storageOK){try{window.localStorage.setItem(k,v)}catch(e){}}}
 };
-function fresh(){return{v:3,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
+function fresh(){return{v:3,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},rap:{heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
   shifts:0,earned:0,spent:0,dealsBought:0,ach:{},tutDone:false,muted:false,savedAt:0}}
 function normalize(o){
   if(!o||typeof o!=='object'||typeof o.cash!=='number'||isNaN(o.cash))throw new Error('Not a valid save');
@@ -228,7 +231,7 @@ function normalize(o){
   Object.keys(s.owned).forEach(id=>{if(!ITEM[id]||!(s.owned[id]>0))delete s.owned[id]});
   Object.keys(s.equipped).forEach(k=>{if(!s.owned[s.equipped[k]])delete s.equipped[k]});
   s.room=(s.room||[]).filter(p=>ITEM[p.id]&&s.owned[p.id]);
-  const f=fresh();['crime','card','fb','stats3'].forEach(k=>{s[k]=Object.assign({},f[k],s[k]||{})});
+  const f=fresh();['crime','card','fb','stats3','rap'].forEach(k=>{s[k]=Object.assign({},f[k],s[k]||{})});
   s.orders=(s.orders||[]).filter(o=>ITEM[o.id]);s.flea=(s.flea||[]).filter(a=>ITEM[a.id]);s.fb.list=(s.fb.list||[]).filter(l=>ITEM[l.id]);
   Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});s.v=3;
   return s;
@@ -289,7 +292,7 @@ function sfx(n){if(S.muted)return;try{if(!AC){const C=window.AudioContext||windo
 /* ============================ UI HELPERS ============================ */
 function toast(t){const e=$('#toast');e.textContent=t;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>{e.style.opacity=0},1800)}
 function floatText(t,color){const e=document.createElement('div');e.className='float';e.textContent=t;e.style.color=color||'#1a8f3a';document.body.appendChild(e);setTimeout(()=>e.remove(),1050)}
-function hud(){$('#cash').textContent=money(S.cash);$('#day').textContent='Day '+S.day;$('#mute').textContent=S.muted?'🔇':'🔊';mailHud()}
+function hud(){$('#cash').textContent=money(S.cash);$('#day').textContent='Day '+S.day;mailHud()}
 function bumpCash(){const c=$('#cash');c.classList.add('bump');setTimeout(()=>c.classList.remove('bump'),200)}
 function onAll(root,sel,fn){Array.prototype.forEach.call(root.querySelectorAll(sel),el=>el.addEventListener('click',e=>fn(el,e)))}
 function setupCanvas(cv,w,h){const d=window.devicePixelRatio||1;cv.width=Math.round(w*d);cv.height=Math.round(h*d);cv.style.width=w+'px';cv.style.height=h+'px';const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);return x}
@@ -514,19 +517,20 @@ function rerender(){const y=window.scrollY;render();window.scrollTo(0,y)}
 
 function itemCard(it,mode){
   const owned=S.owned[it.id]||0,eq=S.equipped[it.slot]===it.id,off=offOf(it),p=priceOf(it),left=stockLeft(it);
-  const d=document.createElement('div');d.className='item'+(eq&&mode!=='shop'?' eq':'');
+  const shopM=mode==='shop'||mode==='store';const d=document.createElement('div');d.className='item'+(eq&&!shopM?' eq':'');
   let h='<img alt="" src="'+thumb(it)+'">'+(it.rare?'<span class="badge r">LIMITED · '+left+' left</span>':off?'<span class="badge">-'+off+'%</span>':'')+'<button class="heart" data-a="wish" aria-label="wishlist">'+(S.wish[it.id]?'❤️':'🤍')+'</button><div class="nm">'+esc(it.name)+'</div>';
-  if(mode==='shop'){h+='<div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(p)+'</span></div><div class="small">'+(owned?'Owned ×'+owned:'&nbsp;')+'</div><button class="btn" data-a="buy">'+(left<=0?'Sold out':'Buy')+'</button>'}
+  if(shopM){h+='<div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(p)+'</span></div><div class="small">'+(owned?'Owned ×'+owned:'&nbsp;')+'</div><button class="btn" data-a="buy">'+(left<=0?'Sold out':'Buy')+'</button>'+(mode==='store'&&left>0?'<button class="btn" data-a="steal" style="padding:6px;font-size:12px;background:#7b1fa2;box-shadow:0 2px 0 #4a148c">🤏 Five-finger discount</button>':'')}
   else{const placed=S.room.filter(q=>q.id===it.id).length;
     h+='<div class="small">×'+owned+(it.slot?'':' · '+placed+' placed')+' · worth '+money(it.price)+'</div><div class="row"><button class="btn '+(eq?'alt':'green')+'" style="flex:1" data-a="use">'+(it.slot?(eq?'Take off':'Wear'):'Place')+'</button><button class="btn alt" style="flex:0 0 46px" data-a="sell" title="Sell for half">💲</button></div>'}
   d.innerHTML=h;
   onAll(d,'[data-a]',b=>{const a=b.dataset.a;
     if(a==='wish'){toggleWish(it);b.textContent=S.wish[it.id]?'❤️':'🤍'}
     else if(a==='buy')buy(it);
+    else if(a==='steal')stealAttempt(it);
     else if(a==='sell')sell(it);
     else if(it.slot){if(eq)delete S.equipped[it.slot];else S.equipped[it.slot]=it.id;sfx('click');save();rerender()}
     else{room.placing=it.id;room.sel=-1;go('room')}});
-  if(mode==='shop')d.querySelector('[data-a=buy]').disabled=left<=0;
+  if(shopM)d.querySelector('[data-a=buy]').disabled=left<=0;
   return d;
 }
 function buy(it){
@@ -552,14 +556,16 @@ function tabsBar(cats,onPick){const t=document.createElement('div');t.className=
 /* ---------- MALL ---------- */
 function renderMall(v){
   checkDay();const open=openStores();
+  if(sub==='alley')return renderAlley(v);
+  if(sub&&isBanned(sub)){sub=null;toast('🚫 You\'re banned from that store');return renderMall(v)}
   if(sub){const s=STORES.filter(q=>q.id===sub)[0];
     if(!s||open.indexOf(s)<0){sub=null;toast('That store just closed!');return renderMall(v)}
     v.innerHTML='<div class="store" style="background:'+s.color+'"><span style="font-size:34px">'+s.emoji+'</span><div>'+esc(s.name)+'<small>'+esc(s.tag)+'</small></div></div>'+
-      '<div class="row sp" style="margin-bottom:8px"><button class="btn alt" id="back">← Mall</button><span class="small">Closes in <b class="cd">'+timeLeft()+'</b></span></div>';
+      '<div class="row sp" style="margin-bottom:8px"><button class="btn alt" id="back">← Mall</button>'+heatPill()+'<span class="small">Closes in <b class="cd">'+timeLeft()+'</b></span></div>';
     v.querySelector('#back').onclick=()=>{sfx('click');go('mall')};
     v.appendChild(tabsBar(['all'].concat(s.cats),rerender));
     const g=document.createElement('div');g.className='grid';v.appendChild(g);
-    ITEMS.filter(i=>i.store===s.id&&(filter==='all'||i.cat===filter)).sort((a,b)=>(b.rare-a.rare)||(a.price-b.price)).forEach(i=>g.appendChild(itemCard(i,'shop')));
+    ITEMS.filter(i=>i.store===s.id&&(filter==='all'||i.cat===filter)).sort((a,b)=>(b.rare-a.rare)||(a.price-b.price)).forEach(i=>g.appendChild(itemCard(i,'store')));
     return;
   }
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
@@ -568,9 +574,9 @@ function renderMall(v){
   v.insertAdjacentHTML('afterbegin',eventBanner());
   open.forEach(s=>{const d=document.createElement('div');d.className='store';d.style.background=s.color;
     const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length;
-    d.innerHTML='<span style="font-size:34px">'+s.emoji+'</span><div style="flex:1">'+esc(s.name)+'<small>'+esc(s.tag)+' · '+money(s.tier[0])+'–'+money(s.tier[1])+'+</small></div>'+(rare?'<span class="badge r" style="position:static">✨ LIMITED</span>':'');
-    d.onclick=()=>{sfx('click');go('mall',s.id)};v.querySelector('#stores').appendChild(d)});
-  v.insertAdjacentHTML('beforeend','<div class="card small">🔒 Closed today: '+STORES.filter(s=>open.indexOf(s)<0).map(s=>esc(s.name)).join(', ')+'</div>');
+    d.innerHTML='<span style="font-size:34px">'+s.emoji+'</span><div style="flex:1">'+esc(s.name)+'<small>'+esc(s.tag)+' · '+money(s.tier[0])+'–'+money(s.tier[1])+'+</small></div>'+(isBanned(s.id)?'<span class="badge" style="position:static">🚫 BANNED</span>':rare?'<span class="badge r" style="position:static">✨ LIMITED</span>':'');
+    d.onclick=()=>{if(isBanned(s.id)){sfx('bad');toast('🚫 Security remembers your face. Banned until Day '+S.rap.bans[s.id]);return}sfx('click');go('mall',s.id)};v.querySelector('#stores').appendChild(d)});
+  v.insertAdjacentHTML('beforeend','<div class="card small">🔒 Closed today: '+STORES.filter(s=>open.indexOf(s)<0).map(s=>esc(s.name)).join(', ')+'</div>');v.appendChild(alleyCard());
 }
 
 /* ---------- CLOSET ---------- */
@@ -647,6 +653,7 @@ function renderMe(v){
   v.appendChild(top);
   const st=[['📅 Day',S.day],['💵 Cash',money(S.cash)],['🏦 Net worth',money(netWorth(S))],['👗 Closet value',money(closetValue(S))],['📦 Items owned',itemCount(S)],['💼 Shifts worked',S.shifts],['💰 Earned at jobs',money(S.earned)],['🛍️ Total spent',money(S.spent)]];
   v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">📊 Stats</div>'+st.map(s=>'<div class="slot"><span>'+s[0]+'</span><b>'+s[1]+'</b></div>').join('')+'</div>');
+  v.insertAdjacentHTML('beforeend',recordCard());
   v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">🏆 Achievements ('+Object.keys(S.ach).length+'/'+ACH.length+'), +'+money(ACH_REWARD)+' each</div><div class="ach">'+ACH.map(a=>'<div class="'+(S.ach[a[0]]?'got':'')+'"><b>'+a[1]+'</b><br>'+a[2]+'</div>').join('')+'</div></div>');
   let sl='<div class="card" id="saves"><div class="lbl" style="margin-top:0">💾 Saves</div><div class="small">'+(storageOK?'✅ Autosave is ON (saves after every action).':'⚠️ This viewer blocks storage: autosave & slots last only until you close it. Use <b>Export</b> to keep progress!')+'</div>';
   for(let n=1;n<=3;n++){const m=slotMeta(n);sl+='<div class="slot"><span><b>Slot '+n+'</b><br><span class="small">'+(m?esc(m.char?m.char.name:'?')+' · Day '+m.day+' · '+money(m.cash)+' · '+new Date(m.savedAt).toLocaleString():'Empty')+'</span></span><span><button class="btn" data-save="'+n+'">Save</button> <button class="btn alt" data-load="'+n+'" '+(m?'':'disabled')+'>Load</button></span></div>'}
@@ -698,9 +705,12 @@ const TUT=[['mall','👋 Welcome to the mall! Stores rotate every in-game day (3
  ['work','💼 Broke? Clock in! Each job is a 45-second tap minigame. Level up a job to earn more, and new jobs unlock as you work.'],
  ['closet','👗 Your closet: tap Wear to dress your avatar. 💲 sells an item for half price.'],
  ['room','🏠 Your room: furniture goes on the floor, art on the wall. Tap an item to move or remove it. Tap the floor to walk.'],
+ ['online','📱 Online never closes: 📦 Clamazon (search, reviews, Crime membership = instant delivery), 🔨 Fleabay (bid on auctions or sell your stuff) and 🏷️ Facenook (haggle with sketchy sellers… beware knockoffs).',()=>{onTab='clam'}],
+ ['online','📬 Packages land on your doorstep. Tap the mailbox up top (or the 📦 in your room) to bring them in. 🚚 Orders tracks every delivery.',()=>{onTab='orders'}],
+ ['online','💳 Wallet: short on cash? The Mall Rat Card and Pay-in-4 let you buy now and pay 3% a day later. Future-you is watching.',()=>{onTab='wallet'}],
  ['me','⭐ Stats, achievements and SAVES live here. Use save slots, and Export a code as a backup.']];
 function showTut(i){const o=$('#overlay');if(i>=TUT.length){o.hidden=true;S.tutDone=true;save();go('mall');return}
-  go(TUT[i][0]);o.hidden=false;o.innerHTML='<div class="card"><div style="font-size:15px">'+TUT[i][1]+'</div><div class="row sp" style="margin-top:8px"><span class="small">'+(i+1)+'/'+TUT.length+'</span><span><button class="btn alt" id="tskip">Skip</button> <button class="btn" id="tnext">'+(i===TUT.length-1?'Done':'Next ›')+'</button></span></div></div>';
+  if(TUT[i][2])TUT[i][2]();go(TUT[i][0]);o.hidden=false;o.innerHTML='<div class="card"><div style="font-size:15px">'+TUT[i][1]+'</div><div class="row sp" style="margin-top:8px"><span class="small">'+(i+1)+'/'+TUT.length+'</span><span><button class="btn alt" id="tskip">Skip</button> <button class="btn" id="tnext">'+(i===TUT.length-1?'Done':'Next ›')+'</button></span></div></div>';
   $('#tnext').onclick=()=>{sfx('click');showTut(i+1)};$('#tskip').onclick=()=>showTut(TUT.length)}
 /* ============================== ONLINE (v3) ==============================
    Clamazon (catalog + Crime membership + shipping), Fleabay (auctions), Facenook (haggling),
@@ -733,7 +743,7 @@ function reviewsFor(it){const r=rng(hash(it.id)+9);const out=[];for(let i=0;i<3;
 
 /* ---------- sheet (bottom modal) ---------- */
 function sheet(html){const s=$('#sheet');s.hidden=false;s.innerHTML='<div class="sheetbox"><button class="icon x" id="shx" aria-label="close">✕</button>'+html+'</div>';$('#shx').onclick=closeSheet;s.onclick=e=>{if(e.target===s)closeSheet()}}
-function closeSheet(){const s=$('#sheet');s.hidden=true;s.innerHTML=''}
+function closeSheet(){clearInterval(stealIv);const s=$('#sheet');s.hidden=true;s.innerHTML=''}
 const sheetOpen=()=>!$('#sheet').hidden;
 
 /* ---------- mailbox / notifications / packages ---------- */
@@ -780,7 +790,7 @@ function onNewDay(){
   S.orders.forEach(o=>{if(o.status==='shipping'&&S.day>=o.arrive){o.status='delivered';notify('📦 Delivered: '+ITEM[o.id].name+' is on your doorstep!')}});
   fbRefresh();
   Object.keys(S.wish).forEach(id=>{const it=ITEM[id];if(it&&offOf(it))notify('💖 Wishlist alert: '+it.name+' is '+offOf(it)+'% off today!')});
-  const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
+  crimeNewDay();const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
 }
 
 /* ---------- Fleabay ---------- */
@@ -796,14 +806,14 @@ function playerBid(a){if(a.done||a.high==='you'||a.seller==='you')return;const a
 function npcBid(a){const amt=nextBid(a);if(amt>a.npcMax)return false;
   if(a.high==='you'){S.cash+=a.escrow;a.escrow=0;notify('😤 Outbid on '+ITEM[a.id].name+' (now '+money(amt)+')');toast('😤 Outbid on '+ITEM[a.id].name+'!');sfx('bad')}
   a.bid=amt;a.high=pick(NPC.filter(n=>n!==a.seller&&n!==a.high));a.bids++;return true}
-function endAuction(a){a.done=true;const it=ITEM[a.id];
-  if(a.seller==='you'){if(a.high){const pay=Math.round(a.bid*.9);S.cash+=pay;S.stats3.flipped++;notify('💸 Sold '+it.name+' on Fleabay for '+money(a.bid)+' (you get '+money(pay)+' after the 10% fee)');toast('💸 Fleabay sale: +'+money(pay));sfx('coin')}
+function endAuction(a){a.done=true;const it=ITEM[a.claim||a.id];
+  if(a.seller==='you'){if(a.high&&ITEM[a.id].fake&&fakeBust(ITEM[a.id],a.bid,'Fleabay')){notify('🚨 Fleabay flagged your "'+it.name+'" as counterfeit. Sale reversed, item seized.')}else if(a.high){if(ITEM[a.id].fake)S.rap.fakesSold++;const pay=Math.round(a.bid*.9);S.cash+=pay;S.stats3.flipped++;notify('💸 Sold '+it.name+' on Fleabay for '+money(a.bid)+' (you get '+money(pay)+' after the 10% fee)');toast('💸 Fleabay sale: +'+money(pay));sfx('coin')}
     else{S.owned[a.id]=(S.owned[a.id]||0)+1;notify('🦗 No bids on '+it.name+'. It came back home.')}}
   else if(a.high==='you'){S.orders.unshift({oid:S.oid++,id:a.id,src:'Fleabay',price:a.bid,day:S.day,arrive:S.day,status:'delivered'});S.stats3.won++;
     notify('🏆 You won '+it.name+' for '+money(a.bid)+'! It\'s on your doorstep.');toast('🏆 Won '+it.name+'!');sfx('level')}}
 function removeOne(id){S.owned[id]--;if(!S.owned[id]){delete S.owned[id];Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==id)}
   else{const pl=S.room.filter(q=>q.id===id);if(pl.length>S.owned[id])S.room.splice(S.room.indexOf(pl[0]),1)}}
-function listItem(it,start){removeOne(it.id);S.flea.push({aid:S.oid++,id:it.id,seller:'you',bid:start,high:null,end:Date.now()+120000,npcMax:Math.round(it.price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
+function listItem(it,start){removeOne(it.id);S.flea.push({aid:S.oid++,id:it.id,seller:'you',bid:start,high:null,end:Date.now()+120000,claim:it.fake?it.real:null,npcMax:Math.round((it.fake?ITEM[it.real]:it).price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
   sfx('click');toast('🔨 Listed! Auction ends in 2:00');save();closeSheet();rerender()}
 function onlineTick(){
   const now=Date.now();let ch=false;
@@ -839,7 +849,7 @@ function openFb(l){const it=ITEM[l.id];
     else if(Math.random()<.35||l.tries>=5){say('them',pick(['lol','Seen ✓','🙄','Blocked.']));ghost()}
     else{l.counter=l.ask;say('them','lol no. '+money(l.ask)+' firm')}
     save();openFb(l)};
-  const buyAt=p=>openPay('Facenook: '+it.name,p,()=>{l.status='sold';S.stats3.haggled++;
+  const buyAt=p=>openPay('Facenook: '+it.name,p,()=>{l.status='sold';S.stats3.haggled++;maybeContact();
     if(l.scam){const ko=ITEM[KO_OF[l.id]];S.owned[ko.id]=(S.owned[ko.id]||0)+1;S.stats3.scammed++;notify('🤡 Facenook: your "'+it.name+'" is actually a '+ko.name+'. Worth '+money(ko.price)+'.');toast('🤡 Plot twist: it\'s a '+ko.name+' (worth '+money(ko.price)+')');sfx('bad')}
     else{S.owned[it.id]=(S.owned[it.id]||0)+1;toast('🎉 Got it for '+money(p)+'! (retail '+money(it.price)+')');sfx('buy')}save();rerender()});
   if($('#acc'))$('#acc').onclick=()=>buyAt(l.counter);if($('#full'))$('#full').onclick=()=>buyAt(l.ask);
@@ -886,7 +896,7 @@ function renderFlea(v){
   const now=Date.now(),mine=S.flea.filter(a=>a.seller==='you'),theirs=S.flea.filter(a=>a.seller!=='you');
   v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:linear-gradient(90deg,#e53238,#0064d2,#f5af02,#86b817)">Fleabay 🔨 <span class="small" style="color:#fff">Bid. Win. Regret.</span></div>'+
     '<div class="card row sp"><div><b>Sell your stuff</b><div class="small">2-min auction · NPCs bid · 10% fee</div></div><button class="btn" id="list">+ List an item</button></div>');
-  const row=a=>{const it=ITEM[a.id],live=!a.done;const you=a.high==='you';
+  const row=a=>{const it=ITEM[a.claim||a.id],live=!a.done;const you=a.high==='you';
     return'<div class="card row" style="align-items:flex-start"><img src="'+thumb(it)+'" style="width:70px;border-radius:10px"><div style="flex:1"><b>'+esc(it.name)+'</b><div class="small">'+(a.seller==='you'?'Your listing':'Seller: '+esc(a.seller))+' · retail '+money(it.price)+'</div>'+
       '<div>'+(a.high?'Bid':'Starting')+' <b class="pr">'+money(a.bid)+'</b> · '+a.bids+' bid'+(a.bids===1?'':'s')+(a.high?' · <b>'+(you?'You\'re winning 🎉':esc(a.high))+'</b>':'')+'</div>'+
       '<div class="small">'+(live?'⏱ <b data-end="'+a.end+'">'+fmtLeft(a.end-now)+'</b> left':(a.seller==='you'?(a.high?'💸 Sold':'🦗 Unsold'):you?'🏆 You won!':'Ended'))+'</div></div>'+
@@ -902,7 +912,7 @@ function renderFlea(v){
 }
 function renderFb(v){
   if(S.fb.day!==S.day)fbRefresh();
-  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#1877f2">Facenook Marketplace 🏷️ <span class="small" style="color:#dbe7ff">New listings every day</span></div><div class="small" style="margin:0 4px 8px">Used goods, wild prices. Haggle! Some deals are too good to be true…</div><div class="grid" id="fbg"></div>');
+  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#1877f2">Facenook Marketplace 🏷️ <span class="small" style="color:#dbe7ff">New listings every day</span></div><div class="small" style="margin:0 4px 8px">Used goods, wild prices. Haggle! Some deals are too good to be true…</div><button class="btn" id="fbsell" style="width:100%;margin-bottom:8px;background:#42b72a;box-shadow:0 2px 0 #2d8a1c">📣 Sell something on Facenook</button><div class="grid" id="fbg"></div>');$('#fbsell').onclick=fbSell;
   S.fb.list.forEach(l=>{const it=ITEM[l.id],d=document.createElement('div');d.className='item';
     d.innerHTML='<img alt="" src="'+thumb(it)+'">'+(l.status!=='open'?'<span class="badge" style="background:#555">'+(l.status==='sold'?'SOLD':'👻 GHOSTED')+'</span>':'')+'<div class="nm">'+esc(it.name)+'</div><div><span class="was">'+money(it.price)+'</span><span class="pr">'+money(l.ask)+'</span></div><div class="small">'+l.face+' '+esc(l.seller)+'</div><button class="btn" style="background:#1877f2;box-shadow:0 2px 0 #0d5bc4">'+(l.status==='open'?'💬 Message':'View')+'</button>';
     d.querySelector('button').onclick=()=>openFb(l);$('#fbg').appendChild(d)})}
@@ -942,6 +952,139 @@ ACH.push(['crime','Crime Pays 📦','Join Clamazon Crime',s=>s.crime.active],['w
  ['flip','Flipper 💸','Sell an item on Fleabay',s=>s.stats3.flipped>0],['haggle','Haggle Hero 🤝','Buy something on Facenook',s=>s.stats3.haggled>0],
  ['scam','Lesson Learned 🤡','Get scammed on Facenook',s=>s.stats3.scammed>0],['debt','In Debt We Trust 💳','Carry a $500+ card balance',s=>s.card.bal>=500],
  ['gadget','Gadget Goblin 🎮','Own 3 electronics',s=>Object.keys(s.owned).filter(id=>ITEM[id].cat==='electronics').length>=3]);
+/* ============================== CRIME & CONSEQUENCES (v4) ==============================
+   Shoplifting stealth minigame, Heat, court (fine or community service), store bans,
+   Back Alley counterfeits, counterfeit-selling busts, police raids. Satire: crime should
+   never beat a burger shift on average. Test hooks: window.__stealForce / __bustForce / __raidForce. */
+let stealIv=null;
+const R=()=>S.rap;
+const isBanned=id=>!!(S.rap.bans[id]&&S.day<=S.rap.bans[id]);
+function heatColor(h){return h>=60?'#d32f2f':h>=30?'#f57c00':h>0?'#fbc02d':'#43a047'}
+function heatPill(){const h=Math.round(R().heat);return'<span class="heat" style="background:'+heatColor(h)+'">🔥 Heat '+h+'</span> '}
+function addHeat(n){R().heat=Math.min(100,R().heat+n)}
+function storeOf(it){return STORES.filter(s=>s.id===it.store)[0]}
+function security(it){const s=storeOf(it),hi=s?s.tier[1]:100;const a=Math.min(1,Math.log(hi)/Math.log(30000)),b=Math.min(1,Math.log(Math.max(1,priceOf(it)))/Math.log(50000));return Math.max(.05,Math.min(1,a*.6+b*.4))}
+
+/* ---------- court ---------- */
+function courtCase(c){
+  const r=R(),prior=r.offenses;r.offenses++;r.caught++;addHeat(c.heat||15);
+  const fine=Math.max(10,Math.round(c.base*(1.5+.25*Math.min(2,prior)))),cs=Math.min(6,2+prior),forced=prior>=2;
+  let ban='';if(c.store){r.storeOff[c.store]=(r.storeOff[c.store]||0)+1;const n=r.storeOff[c.store];if(n>=2){r.bans[c.store]=S.day+2*(n-1);ban='<p>🚫 <b>Banned from '+esc(storeOf({store:c.store}).name)+' until Day '+r.bans[c.store]+'.</b> Your photo is now on the wall behind the register.</p>'}}
+  const entry={day:S.day,what:c.what,pen:cs+' shifts community service'};r.record.unshift(entry);if(r.record.length>30)r.record.length=30;
+  r.cs+=cs;notify('🚨 '+c.what+': '+(forced?cs+' shifts community service (assigned)':'court date pending'));sfx('bad');save();
+  sheet('<h3>🚨 Busted!</h3><div style="font-size:44px;text-align:center">👮‍♀️'+(c.emoji||'🛍️')+'</div><p>'+esc(c.what)+'.'+(c.confiscated?' The item has been confiscated.':'')+'</p>'+
+    '<div class="small">Offense #'+r.offenses+' · Heat '+Math.round(r.heat)+'/100</div>'+ban+
+    (forced?'<p>⚖️ Judge Judgy has seen enough of you. <b>'+cs+' shifts of community service</b>, no fine option. Paid jobs are blocked until it\'s done.</p><button class="btn alt big" id="docs">🧹 Yes, Your Honor</button>':
+     '<p>⚖️ Choose your penalty:</p><button class="btn big" id="payfine">💸 Pay a '+money(fine)+' fine</button><button class="btn alt big" id="docs">🧹 '+cs+' shifts of community service (unpaid, blocks paid jobs)</button>'));
+  $('#docs').onclick=()=>{closeSheet();toast('🧹 Report to 💼 Work for community service');rerender()};
+  if($('#payfine'))$('#payfine').onclick=()=>openPay('Court fine',fine,()=>{r.cs=Math.max(0,r.cs-cs);r.finesPaid+=fine;entry.pen='Fine '+money(fine);toast('⚖️ Fine paid. Try to stay boring.');save();rerender()});
+}
+
+/* ---------- shoplifting stealth minigame ---------- */
+function stealAttempt(it){
+  if(isBanned(it.store)){toast('🚫 You\'re banned here');return}
+  const sec=security(it),half=.22+.5*sec,speed=1.3+2.4*sec,lvl=sec<.3?'low 😴':sec<.6?'medium 👀':'HIGH 🚨';
+  sheet('<h3>🤏 Five-finger discount?</h3><div class="small">'+esc(it.name)+' · security <b>'+lvl+'</b>. Tap GRAB while the camera looks away. Getting caught means a fine or community service. '+heatPill()+'</div><canvas id="stc"></canvas><div class="bar"><div id="stt"></div></div>'+
+    '<button class="btn big" id="grab" style="background:#7b1fa2;box-shadow:0 2px 0 #4a148c">🤏 GRAB</button><button class="btn alt big" id="walk">😇 Never mind (buy it like a normal person)</button>');
+  const W=Math.min(window.innerWidth-40,420),H=170,x=setupCanvas($('#stc'),W,H),img=new Image();img.src=thumb(it);
+  const t0=Date.now(),LIMIT=7000;let ang=0,done=false;
+  function draw(){const t=(Date.now()-t0)/1000;ang=Math.sin(t*speed)*1.15;const seen=Math.abs(ang)<half;
+    x.fillStyle='#fff3e0';x.fillRect(0,0,W,H);x.fillStyle='#bcaaa4';x.fillRect(0,H-40,W,40);x.fillStyle='#8d6e63';x.fillRect(W/2-60,H-58,120,10);
+    const cx=W/2,cy=14,len=H*1.4;x.fillStyle=seen?'rgba(244,67,54,.35)':'rgba(255,235,59,.3)';x.beginPath();x.moveTo(cx,cy);
+    x.arc(cx,cy,len,Math.PI/2+ang-half,Math.PI/2+ang+half);x.closePath();x.fill();
+    x.font='26px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('📹',cx,cy);
+    if(img.complete)x.drawImage(img,cx-30,H-110,60,60);x.font='bold 13px sans-serif';x.fillStyle=seen?'#d32f2f':'#2e7d32';x.fillText(seen?'👁️ WATCHING':'✅ looking away',cx,H-18);
+    const p=1-(Date.now()-t0)/LIMIT;setBar($('#stt'),p);
+    if(p<=0&&!done){done=true;clearInterval(stealIv);closeSheet();toast('😅 You lost your nerve. Probably for the best.')}}
+  clearInterval(stealIv);stealIv=setInterval(draw,30);draw();
+  $('#walk').onclick=()=>{closeSheet();buy(it)};
+  $('#grab').onclick=()=>{if(done)return;done=true;clearInterval(stealIv);const seen=Math.abs(ang)<half;
+    let caught=seen?Math.random()<.9:Math.random()<(.04+.22*sec+R().heat/400);
+    if(window.__stealForce)caught=window.__stealForce==='caught';
+    closeSheet();
+    if(!caught){S.owned[it.id]=(S.owned[it.id]||0)+1;if(it.rare)S.stock[it.id]=(S.stock[it.id]||0)+1;R().stolen++;const h=Math.round(3+8*sec);addHeat(h);
+      sfx('buy');toast('😈 Got away with it… for now. Heat +'+h);save();rerender()}
+    else courtCase({what:'Caught shoplifting '+it.name+' from '+storeOf(it).name,base:priceOf(it),store:it.store,heat:Math.round(15+20*sec),confiscated:true,emoji:'🤏'})};
+}
+
+/* ---------- community service ---------- */
+function makeLitter(el,api){
+  el.innerHTML='<div class="card small center">Pick up <b>10+</b> pieces of litter this shift for it to count. Unpaid. Character-building.</div><canvas id="cv"></canvas>';
+  const W=Math.min(window.innerWidth-24,420),H=330,cv=el.querySelector('#cv'),x=setupCanvas(cv,W,H);let L=[],sp=0;
+  const grab=o=>{L.splice(L.indexOf(o),1);api.pay(0)};
+  cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;const o=L.filter(o=>Math.hypot(o.x-px,o.y-py)<30)[0];if(o)grab(o)});
+  function draw(){x.fillStyle='#a5d6a7';x.fillRect(0,0,W,H);x.fillStyle='#81c784';for(let i=0;i<8;i++){circ(x,(i*97)%W,(i*61)%H,30);x.fill()}x.fillStyle='#d7ccc8';x.fillRect(0,H/2-14,W,28);
+    x.font='30px serif';x.textAlign='center';x.textBaseline='middle';L.forEach(o=>{x.globalAlpha=Math.min(1,o.life);x.fillText(o.e,o.x,o.y)});x.globalAlpha=1;x.fillText('🧹',W-24,H-24)}
+  draw();
+  return{tick(dt){sp-=dt;if(sp<=0){sp=.6;L.push({x:30+Math.random()*(W-60),y:30+Math.random()*(H-60),e:pick(['🥤','🍟','📰','🧃','🍌','🥫','🧻']),life:3})}L.forEach(o=>{o.life-=dt});L=L.filter(o=>o.life>0);draw()},
+    bot(){if(!L.length)L.push({x:50,y:50,e:'🥤',life:3});grab(L[0])}};
+}
+const CS_JOB={id:'cs',name:'Community Service',emoji:'🧹',cs:true,make:makeLitter};
+function csCard(v){const r=R();if(r.cs<=0)return;
+  v.insertAdjacentHTML('beforeend','<div class="card" style="border:3px solid #f57c00"><div class="row"><span style="font-size:40px">🧹</span><div style="flex:1"><b>Community Service</b><div class="small">'+r.cs+' shift'+(r.cs>1?'s':'')+' left · unpaid · paid jobs blocked until done</div></div><button class="btn" id="csgo" style="background:#f57c00;box-shadow:0 2px 0 #bf5f00">Start</button></div></div>');
+  $('#csgo').onclick=()=>{lastResult=null;startShift(CS_JOB)}}
+function csEnd(s){const r=R(),okk=s.count>=10;if(okk){r.cs=Math.max(0,r.cs-1);r.csDone++;addHeat(-5);if(!r.cs){notify('⚖️ Community service complete. Society (cautiously) welcomes you back.');R().heat=Math.max(0,R().heat-10)}}
+  lastResult={job:CS_JOB,earned:0,count:s.count,levelUp:0};save();toast(okk?'🧹 Shift counted! '+r.cs+' left':'🧹 Only '+s.count+' pieces. That shift didn\'t count.');sfx(okk?'coin':'bad')}
+
+/* ---------- Back Alley (counterfeits) ---------- */
+const FAKES=ITEMS.filter(i=>i.fake);
+const alleyOpen=()=>S.day>=3||R().alley;
+const alleyPrice=it=>Math.max(5,nicePrice(ITEM[it.real].price*.08));
+function alleyStock(){return shuffle(FAKES,rng(S.day*31+7)).slice(0,8)}
+function maybeContact(){if(!R().alley&&Math.random()<.35){R().alley=true;notify('🕶️ "Shady Steve" slid into your DMs: "u like designer? cheap. back alley behind the food court. tell no one."');setTimeout(()=>toast('🕶️ New contact unlocked the Back Alley…'),2000)}}
+function alleyCard(){const d=document.createElement('div');d.className='store';d.style.background='#263238';
+  d.innerHTML='<span style="font-size:34px">🚪</span><div style="flex:1">Back Alley<small>'+(alleyOpen()?'"Designer" goods. No receipts. No questions.':'🔒 Locked: come back Day 3, or know a guy on Facenook')+'</small></div>';
+  d.onclick=()=>{if(!alleyOpen()){sfx('bad');toast('🔒 The door is locked. A sign says "Day 3".');return}sfx('click');go('mall','alley')};return d}
+function renderAlley(v){
+  v.innerHTML='<div class="store" style="background:#263238"><span style="font-size:34px">🕶️</span><div>Back Alley<small>Stock changes daily. Everything is 100% authentic*</small></div></div>'+
+    '<div class="row sp" style="margin-bottom:8px"><button class="btn alt" id="back">← Mall</button>'+heatPill()+'</div>'+
+    '<div class="card small">*Counterfeit. Fine to wear. Resale value is trash, and passing fakes off as real on Fleabay/Facenook can get you busted. Buying here adds a little Heat.</div><div class="grid" id="ag"></div>';
+  $('#back').onclick=()=>go('mall');
+  alleyStock().forEach(it=>{const p=alleyPrice(it),real=ITEM[it.real],d=document.createElement('div');d.className='item';
+    d.innerHTML='<img alt="" src="'+thumb(it)+'"><span class="badge" style="background:#455a64">COUNTERFEIT</span><div class="nm">'+esc(it.name)+'</div><div class="small">"Basically a '+esc(real.name)+'" ('+money(real.price)+')</div><div class="pr">'+money(p)+'</div><div class="small">Owned ×'+(S.owned[it.id]||0)+'</div><button class="btn" style="background:#455a64;box-shadow:0 2px 0 #263238">Buy (cash/card)</button>';
+    d.querySelector('button').onclick=()=>openPay('Back Alley: '+it.name,p,()=>{S.owned[it.id]=(S.owned[it.id]||0)+1;R().alleyBought++;addHeat(2);
+      if(it.slot&&!S.equipped[it.slot])S.equipped[it.slot]=it.id;sfx('buy');toast('🕶️ Pleasure doing business. Heat +2');save();rerender()});
+    $('#ag').appendChild(d)});
+}
+/* selling fakes as real: pays like real, may get busted */
+function fakeBust(it,claimed,where){let bust=Math.random()<(.25+R().heat/250);if(window.__bustForce!==undefined)bust=window.__bustForce;
+  if(!bust){addHeat(4);return false}R().busted++;
+  setTimeout(()=>courtCase({what:'Selling a counterfeit "'+ITEM[it.real].name+'" on '+where,base:claimed,heat:20,confiscated:true,emoji:'🕶️'}),50);return true}
+function fbSell(){const own=Object.keys(S.owned).map(id=>ITEM[id]);
+  sheet('<h3>📣 Sell on Facenook</h3><div class="small">A buyer messages you with an offer. Counterfeits get offers like the real thing… if nobody looks too closely.</div>'+(own.length?own.map(it=>'<div class="slot"><span class="row" style="flex-wrap:nowrap"><img src="'+thumb(it)+'" style="width:44px;border-radius:8px"><span>'+esc(it.fake?ITEM[it.real].name+' (wink)':it.name)+'<br><span class="small">'+(it.fake?'🕶️ counterfeit · real value '+money(it.price):'worth '+money(it.price))+'</span></span></span><button class="btn" data-s="'+it.id+'">Post</button></div>').join(''):'<p>You don\'t own anything.</p>'));
+  onAll($('#sheet'),'[data-s]',b=>{const it=ITEM[b.dataset.s],claim=it.fake?ITEM[it.real]:it,offer=Math.max(1,Math.round(claim.price*(.4+Math.random()*.3))),buyer=pick(FB_SELLERS);
+    sheet('<h3>📣 '+esc(claim.name)+'</h3><div class="chat"><div class="bub">'+buyer[1]+' '+esc(buyer[0])+': is this still available?? I\'ll give you '+money(offer)+' rn</div></div>'+(it.fake?'<div class="small">🕶️ It\'s a fake. If they notice, that\'s a fraud charge.</div>':'')+
+      '<button class="btn green big" id="sok">🤝 Sell for '+money(offer)+'</button><button class="btn alt big" id="sno">Nah</button>');
+    $('#sno').onclick=closeSheet;
+    $('#sok').onclick=()=>{closeSheet();removeOne(it.id);
+      if(it.fake&&fakeBust(it,claim.price,'Facenook')){save();rerender();return}
+      if(it.fake)R().fakesSold++;S.cash+=offer;bumpCash();sfx('coin');toast('💸 Sold for '+money(offer)+'!');save();rerender()}})}
+
+/* ---------- daily: heat decay, bans, raids ---------- */
+function crimeNewDay(){const r=R();r.heat=Math.max(0,Math.round(r.heat*.85-4));
+  Object.keys(r.bans).forEach(k=>{if(S.day>r.bans[k]){delete r.bans[k];notify('🚪 Your ban from '+storeOf({store:k}).name+' has expired. Behave.')}});
+  let raid=r.heat>=50&&Math.random()<(r.heat-40)/120;if(window.__raidForce!==undefined)raid=window.__raidForce;
+  if(raid){let n=0;Object.keys(S.owned).forEach(id=>{if(ITEM[id].fake){n+=S.owned[id];while(S.owned[id])removeOne(id)}});
+    const fine=Math.round(75+4*r.heat);if(S.cash>=fine)S.cash-=fine;else S.card.bal+=fine;r.raids++;r.finesPaid+=fine;r.heat=Math.max(0,r.heat-25);
+    r.record.unshift({day:S.day,what:'Police raid on your apartment',pen:'Fine '+money(fine)+(n?', '+n+' counterfeit'+(n>1?'s':'')+' seized':'')});
+    notify('🚔 POLICE RAID! They seized '+n+' counterfeit item'+(n===1?'':'s')+' and fined you '+money(fine)+'. Your neighbors are now very interested in you.')}}
+
+/* ---------- Me: criminal record ---------- */
+function recordCard(){const r=R(),bans=Object.keys(r.bans).filter(isBanned);
+  return'<div class="card"><div class="lbl" style="margin-top:0">🚔 Criminal record</div>'+heatPill()+'<div class="bar"><div style="width:'+r.heat+'%;background:'+heatColor(r.heat)+'"></div></div>'+
+    [['Offenses',r.offenses],['Items shoplifted (got away)',r.stolen],['Times caught',r.caught],['Counterfeits sold',r.fakesSold],['Fines paid',money(r.finesPaid)],['Community service done / owed',r.csDone+' / '+r.cs],['Police raids',r.raids],['Store bans',bans.length?bans.map(b=>storeOf({store:b}).name+' (→Day '+r.bans[b]+')').join(', '):'none']]
+      .map(a=>'<div class="slot"><span>'+a[0]+'</span><b>'+a[1]+'</b></div>').join('')+
+    (r.record.length?'<div class="lbl">Rap sheet</div>'+r.record.slice(0,8).map(e=>'<div class="slot"><span>Day '+e.day+': '+esc(e.what)+'</span><span class="small">'+esc(e.pen)+'</span></div>').join(''):'<div class="small">Squeaky clean. Suspiciously so.</div>')+
+    '<div class="small" style="margin-top:6px">Heat cools off a bit every day. High Heat = more security attention and police raids.</div></div>'}
+
+/* ---------- header overflow menu ---------- */
+function openMore(){sheet('<h3>Menu</h3>'+heatPill()+'<button class="btn alt big" id="mSnd">'+(S.muted?'🔇 Sound: off':'🔊 Sound: on')+'</button><button class="btn alt big" id="mTut">❓ Tutorial</button><button class="btn alt big" id="mMe">⭐ Stats, record & saves</button><button class="btn alt big" id="mMail">📬 Mailbox</button>');
+  $('#mSnd').onclick=()=>{S.muted=!S.muted;save();sfx('click');openMore()};$('#mTut').onclick=()=>{closeSheet();showTut(0)};$('#mMe').onclick=()=>{closeSheet();go('me')};$('#mMail').onclick=()=>openMail()}
+
+ACH.push(['steal','Five-Finger Discount 🤏','Get away with shoplifting',s=>s.rap.stolen>0],['caught','Caught Red-Handed 🚨','Get caught shoplifting',s=>s.rap.caught>0],
+ ['banned','Persona Non Grata 🚫','Get banned from a store',s=>Object.keys(s.rap.storeOff).some(k=>s.rap.storeOff[k]>=2)],['reformed','Reformed 😇','Finish all your community service',s=>s.rap.csDone>0&&s.rap.cs===0],
+ ['alley','Alley Cat 🕶️','Buy something in the Back Alley',s=>s.rap.alleyBought>0],['kingpin','Counterfeit Kingpin 👑','Sell 3 fakes without getting busted',s=>s.rap.fakesSold>=3],
+ ['raided','Knock Knock 🚔','Survive a police raid',s=>s.rap.raids>0]);
 /* ============================== JOBS ==============================
    Each job: make(el, api) -> {tick(dt), bot()}. api.pay(base) / api.miss(msg).
    bot() performs one correct action (used by automated tests). */
@@ -960,7 +1103,7 @@ const jobMult=id=>1+.25*(jobLevel(id)-1);
 let shift=null,lastResult=null;
 function startShift(job){sfx('start');shift={job:job,earned:0,count:0,end:Date.now()+SHIFT_MS,last:Date.now(),game:null};render()}
 function endShift(){
-  if(!shift)return;clearInterval(jobTick);jobTick=null;const s=shift;shift=null;const js=jobState(s.job.id),before=jobLevel(s.job.id);
+  if(!shift)return;clearInterval(jobTick);jobTick=null;const s=shift;shift=null;if(s.job.cs){csEnd(s);return}const js=jobState(s.job.id),before=jobLevel(s.job.id);
   js.xp+=s.count*10+5;js.shifts++;js.best=Math.max(js.best,s.earned);S.shifts++;S.cash+=s.earned;S.earned+=s.earned;
   const lvl=jobLevel(s.job.id);lastResult={job:s.job,earned:s.earned,count:s.count,levelUp:lvl>before?lvl:0};
   save();sfx(lastResult.levelUp?'level':'coin');bumpCash();
@@ -968,11 +1111,11 @@ function endShift(){
 function renderWork(v){
   if(shift)return runShift(v);
   if(lastResult){const r=lastResult;v.insertAdjacentHTML('beforeend','<div class="card center" style="border:3px solid #2bb34a"><div style="font-size:40px">'+r.job.emoji+'</div><b>Shift over!</b><div>'+r.count+' done · paid <b class="pr">'+money(r.earned)+'</b></div>'+(r.levelUp?'<div>⬆️ <b>'+r.job.name+' level '+r.levelUp+'!</b> Pay ×'+jobMult(r.job.id).toFixed(2)+'</div>':'')+'</div>')}
-  v.insertAdjacentHTML('beforeend','<div class="small" style="margin:0 4px 8px">Shifts are 45s. Pay = base × level bonus (+25% per job level). Total shifts: '+S.shifts+'</div>');
-  JOBS.forEach(j=>{const st=jobState(j.id),lv=jobLevel(j.id),locked=S.shifts<j.unlock,need=60*lv*lv,prev=60*(lv-1)*(lv-1);
+  csCard(v);v.insertAdjacentHTML('beforeend','<div class="small" style="margin:0 4px 8px">Shifts are 45s. Pay = base × level bonus (+25% per job level). Total shifts: '+S.shifts+'</div>');
+  JOBS.forEach(j=>{const st=jobState(j.id),lv=jobLevel(j.id),locked=S.shifts<j.unlock||S.rap.cs>0,need=60*lv*lv,prev=60*(lv-1)*(lv-1);
     const d=document.createElement('div');d.className='card'+(locked?' lock':'');
     d.innerHTML='<div class="row"><span style="font-size:40px">'+j.emoji+'</span><div style="flex:1"><b>'+j.name+'</b> '+(locked?'🔒':'<span class="small">Lv '+lv+' · pay ×'+jobMult(j.id).toFixed(2)+' · best '+money(st.best)+'</span>')+'<div class="small">'+j.desc+'</div>'+
-      (locked?'<div class="small"><b>Unlocks after '+j.unlock+' total shifts</b></div>':'<div class="bar"><div style="width:'+Math.min(100,(st.xp-prev)/(need-prev)*100)+'%;background:#ff4f9a"></div></div>')+'</div>'+
+      (locked?'<div class="small"><b>'+(S.rap.cs>0?'🚫 Finish community service first':'Unlocks after '+j.unlock+' total shifts')+'</b></div>':'<div class="bar"><div style="width:'+Math.min(100,(st.xp-prev)/(need-prev)*100)+'%;background:#ff4f9a"></div></div>')+'</div>'+
       '<button class="btn green" data-job="'+j.id+'" '+(locked?'disabled':'')+'>Clock in</button></div>';
     v.appendChild(d)});
   onAll(v,'[data-job]',b=>{lastResult=null;startShift(JOBS.filter(j=>j.id===b.dataset.job)[0])});
@@ -981,7 +1124,7 @@ function runShift(v){
   const j=shift.job;
   v.innerHTML='<div class="card row sp" style="padding:8px 12px"><b>'+j.emoji+' '+j.name+'</b><b>⏱ <span id="stime"></span></b><b>💰 <span id="searn"></span></b></div><div id="jarea"></div><button class="btn alt" id="quit" style="margin-top:10px;width:100%">Clock out early</button>';
   const api={
-    pay:base=>{if(!shift)return;const amt=Math.max(1,Math.round(base*jobMult(j.id)));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
+    pay:base=>{if(!shift)return;if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*jobMult(j.id)));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
     miss:msg=>{toast(msg);sfx('bad');const a=$('#jarea');if(a){a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash')}}
   };
   function upd(){if(!shift)return;const now=Date.now(),dt=Math.min(.1,(now-shift.last)/1000);shift.last=now;
@@ -1125,7 +1268,7 @@ window.addEventListener('error',ev=>showError(ev.error||ev.message));
 function boot(){
   try{
     if(!storageOK){const b=$('#banner');b.hidden=false;b.innerHTML='⚠️ This viewer blocks saving. Progress lasts only while it\'s open. Go to <b>⭐ Me → Export code</b> to keep it!'}
-    $('#mute').onclick=()=>{S.muted=!S.muted;save();sfx('click')};
+    $('#more').onclick=()=>{sfx('click');openMore()};
     $('#mail').onclick=()=>{sfx('click');openMail()};
     setInterval(()=>{if(!S.char)return;onlineTick();if(checkDay()){toast('☀️ Day '+S.day+'! Stores rotated & new deals');sfx('level');if(screen==='mall'&&!shift)rerender()}
       Array.prototype.forEach.call(document.querySelectorAll('.cd'),e=>{e.textContent=timeLeft()})},1000);
@@ -1134,5 +1277,5 @@ function boot(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 /* test hook (harmless in play) */
-window.__game={get S(){return S},ITEMS:ITEMS,ITEM:ITEM,STORES:STORES,JOBS:JOBS,go:go,get shift(){return shift},endShift:endShift,render:render,openStores:openStores,deals:deals,thumb:thumb,buy:id=>buy(ITEM[id]),onlineTick:onlineTick,nextDay:nextDay,CLAM:CLAM,KO_OF:KO_OF};
+window.__game={get S(){return S},ITEMS:ITEMS,ITEM:ITEM,STORES:STORES,JOBS:JOBS,go:go,get shift(){return shift},endShift:endShift,render:render,openStores:openStores,deals:deals,thumb:thumb,buy:id=>buy(ITEM[id]),onlineTick:onlineTick,nextDay:nextDay,CLAM:CLAM,KO_OF:KO_OF,courtCase:courtCase,crimeNewDay:crimeNewDay,startShift:startShift,CS_JOB:CS_JOB,alleyStock:alleyStock};
 </script></body></html>
