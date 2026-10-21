@@ -182,11 +182,12 @@ function boot(){
   try{
     if(!storageOK){const b=$('#banner');b.hidden=false;b.innerHTML='⚠️ This viewer blocks saving. Progress lasts only while it\'s open. Go to <b>⭐ Me → Export code</b> to keep it!'}
     $('#mute').onclick=()=>{S.muted=!S.muted;save();sfx('click')};
-    setInterval(()=>{if(!S.char)return;if(checkDay()){toast('☀️ Day '+S.day+'! Stores rotated & new deals');sfx('level');if(screen==='mall'&&!shift)rerender()}
+    $('#mail').onclick=()=>{sfx('click');openMail()};
+    setInterval(()=>{if(!S.char)return;onlineTick();if(checkDay()){toast('☀️ Day '+S.day+'! Stores rotated & new deals');sfx('level');if(screen==='mall'&&!shift)rerender()}
       Array.prototype.forEach.call(document.querySelectorAll('.cd'),e=>{e.textContent=timeLeft()})},1000);
     screen=S.char?'mall':'create';nav();render();
   }catch(e){showError(e)}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 /* test hook (harmless in play) */
-window.__game={get S(){return S},ITEMS:ITEMS,ITEM:ITEM,STORES:STORES,JOBS:JOBS,go:go,get shift(){return shift},endShift:endShift,render:render,openStores:openStores,deals:deals,thumb:thumb,buy:id=>buy(ITEM[id])};
+window.__game={get S(){return S},ITEMS:ITEMS,ITEM:ITEM,STORES:STORES,JOBS:JOBS,go:go,get shift(){return shift},endShift:endShift,render:render,openStores:openStores,deals:deals,thumb:thumb,buy:id=>buy(ITEM[id]),onlineTick:onlineTick,nextDay:nextDay,CLAM:CLAM,KO_OF:KO_OF};

@@ -1,37 +1,41 @@
 /* ============================== SCREENS ============================== */
-const TABS=[['mall','🏬','Mall'],['closet','👗','Closet'],['room','🏠','Room'],['work','💼','Work'],['me','⭐','Me']];
+const TABS=[['mall','🏬','Mall'],['closet','👗','Closet'],['room','🏠','Room'],['work','💼','Work'],['online','📱','Online'],['me','⭐','Me']];
 let screen='mall',sub=null,filter='all',jobTick=null;
 function nav(){const n=$('#nav');n.style.display=screen==='create'?'none':'flex';
-  n.innerHTML=TABS.map(t=>'<button data-s="'+t[0]+'" class="'+(t[0]===screen?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('');
-  onAll(n,'button',b=>{sfx('click');go(b.dataset.s)})}
+  n.innerHTML=TABS.map(t=>'<button data-s="'+t[0]+'" class="'+(t[0]===screen?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'<i class="nb" data-nb="'+t[0]+'"></i></button>').join('');
+  onAll(n,'button',b=>{sfx('click');go(b.dataset.s)});mailHud()}
 function go(s,sb){if(shift&&s!=='work')endShift();screen=s;sub=sb||null;filter='all';nav();render();window.scrollTo(0,0)}
 function render(){
   clearInterval(jobTick);jobTick=null;hud();const v=$('#view');v.innerHTML='';
-  try{({mall:renderMall,closet:renderCloset,room:renderRoom,work:renderWork,me:renderMe,create:renderCreate})[screen](v)}catch(e){showError(e)}
+  try{({mall:renderMall,closet:renderCloset,room:renderRoom,work:renderWork,me:renderMe,create:renderCreate,online:renderOnline})[screen](v)}catch(e){showError(e)}
 }
 function rerender(){const y=window.scrollY;render();window.scrollTo(0,y)}
 
 function itemCard(it,mode){
-  const owned=S.owned[it.id]||0,eq=S.equipped[it.slot]===it.id,off=dealOf(it.id),p=priceOf(it),left=stockLeft(it);
+  const owned=S.owned[it.id]||0,eq=S.equipped[it.slot]===it.id,off=offOf(it),p=priceOf(it),left=stockLeft(it);
   const d=document.createElement('div');d.className='item'+(eq&&mode!=='shop'?' eq':'');
-  let h='<img alt="" src="'+thumb(it)+'">'+(it.rare?'<span class="badge r">LIMITED · '+left+' left</span>':off?'<span class="badge">-'+off+'%</span>':'')+'<div class="nm">'+esc(it.name)+'</div>';
+  let h='<img alt="" src="'+thumb(it)+'">'+(it.rare?'<span class="badge r">LIMITED · '+left+' left</span>':off?'<span class="badge">-'+off+'%</span>':'')+'<button class="heart" data-a="wish" aria-label="wishlist">'+(S.wish[it.id]?'❤️':'🤍')+'</button><div class="nm">'+esc(it.name)+'</div>';
   if(mode==='shop'){h+='<div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(p)+'</span></div><div class="small">'+(owned?'Owned ×'+owned:'&nbsp;')+'</div><button class="btn" data-a="buy">'+(left<=0?'Sold out':'Buy')+'</button>'}
   else{const placed=S.room.filter(q=>q.id===it.id).length;
     h+='<div class="small">×'+owned+(it.slot?'':' · '+placed+' placed')+' · worth '+money(it.price)+'</div><div class="row"><button class="btn '+(eq?'alt':'green')+'" style="flex:1" data-a="use">'+(it.slot?(eq?'Take off':'Wear'):'Place')+'</button><button class="btn alt" style="flex:0 0 46px" data-a="sell" title="Sell for half">💲</button></div>'}
   d.innerHTML=h;
   onAll(d,'[data-a]',b=>{const a=b.dataset.a;
-    if(a==='buy')buy(it);
+    if(a==='wish'){toggleWish(it);b.textContent=S.wish[it.id]?'❤️':'🤍'}
+    else if(a==='buy')buy(it);
     else if(a==='sell')sell(it);
     else if(it.slot){if(eq)delete S.equipped[it.slot];else S.equipped[it.slot]=it.id;sfx('click');save();rerender()}
     else{room.placing=it.id;room.sel=-1;go('room')}});
-  if(mode==='shop')d.querySelector('[data-a=buy]').disabled=left<=0||S.cash<p;
+  if(mode==='shop')d.querySelector('[data-a=buy]').disabled=left<=0;
   return d;
 }
 function buy(it){
   const p=priceOf(it);
   if(stockLeft(it)<=0){toast('Sold out!');sfx('bad');return}
-  if(S.cash<p){toast('Too broke! Go earn some at 💼 Work');sfx('bad');return}
-  S.cash-=p;S.spent+=p;S.owned[it.id]=(S.owned[it.id]||0)+1;if(it.rare)S.stock[it.id]=(S.stock[it.id]||0)+1;if(dealOf(it.id))S.dealsBought++;
+  if(S.cash<p){openPay(it.name,p,()=>grant(it,p));return}
+  S.cash-=p;S.spent+=p;grant(it,p);
+}
+function grant(it,p){
+  S.owned[it.id]=(S.owned[it.id]||0)+1;if(it.rare)S.stock[it.id]=(S.stock[it.id]||0)+1;if(offOf(it))S.dealsBought++;
   if(it.slot&&!S.equipped[it.slot])S.equipped[it.slot]=it.id;
   sfx('buy');floatText('-'+money(p),'#d32f2f');bumpCash();toast('Bought '+it.name+' ✨');save();rerender();
 }
@@ -60,6 +64,7 @@ function renderMall(v){
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
     '<div class="lbl">🔥 Daily Deals</div><div class="hs" id="deals"></div><div class="lbl">🏬 Open today</div><div id="stores"></div>';
   deals().forEach(d=>v.querySelector('#deals').appendChild(itemCard(ITEM[d.id],'shop')));
+  v.insertAdjacentHTML('afterbegin',eventBanner());
   open.forEach(s=>{const d=document.createElement('div');d.className='store';d.style.background=s.color;
     const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length;
     d.innerHTML='<span style="font-size:34px">'+s.emoji+'</span><div style="flex:1">'+esc(s.name)+'<small>'+esc(s.tag)+' · '+money(s.tier[0])+'–'+money(s.tier[1])+'+</small></div>'+(rare?'<span class="badge r" style="position:static">✨ LIMITED</span>':'');
@@ -103,11 +108,13 @@ function renderRoom(v){
     const objs=lay('floor').map(o=>({z:o.p.y+o.it.h,f:()=>drawFurn(x,o.it,o.p.x*c,o.p.y*c,o.it.w*c,o.it.h*c)}));
     objs.push({z:S.avatar.y+1.01,f:()=>{const sc=c*2.2/170;x.save();x.translate((S.avatar.x+.5)*c,(S.avatar.y+.92)*c-162*sc);x.scale(sc,sc);drawAvatar(x,S.char,S.equipped);x.restore()}});
     objs.sort((a,b)=>a.z-b.z).forEach(o=>o.f());
+    drawDoorstep(x,c);
     if(room.sel>=0){const p=S.room[room.sel],it=ITEM[p.id];x.strokeStyle='#ff1493';x.lineWidth=3;x.setLineDash([6,4]);x.strokeRect(p.x*c+2,p.y*c+2,it.w*c-4,it.h*c-4);x.setLineDash([])}
     const P=room.placing&&ITEM[room.placing];
     $('#hint').innerHTML=P?'Tap a spot to place <b>'+esc(P.name)+'</b> ('+P.w+'×'+P.h+(P.layer==='wall'?', goes on the wall':P.layer==='rug'?', rug: furniture can sit on it':'')+')':
       room.sel>=0?'Tap a new spot to move <b>'+esc(ITEM[S.room[room.sel].id].name)+'</b>, or remove it.':'Tap furniture to move it · tap the floor to walk · 💤 Sleep starts a new day';
-    const ctl=$('#ctl');ctl.innerHTML=(room.sel>=0?'<button class="btn" id="rm">Remove</button>':'')+(room.placing||room.sel>=0?'<button class="btn alt" id="cx">Cancel</button>':'')+'<button class="btn alt" id="sleep" style="margin-left:auto">💤 Sleep (next day)</button>';
+    const ctl=$('#ctl');const pk=packagesReady().length;ctl.innerHTML=(pk?'<button class="btn green" id="collect">📦 Bring in '+pk+' package'+(pk>1?'s':'')+'</button>':'')+(room.sel>=0?'<button class="btn" id="rm">Remove</button>':'')+(room.placing||room.sel>=0?'<button class="btn alt" id="cx">Cancel</button>':'')+'<button class="btn alt" id="sleep" style="margin-left:auto">💤 Sleep (next day)</button>';
+    if($('#collect'))$('#collect').onclick=()=>{collect()};
     if($('#rm'))$('#rm').onclick=()=>{S.room.splice(room.sel,1);room.sel=-1;sfx('click');save();draw();list()};
     if($('#cx'))$('#cx').onclick=()=>{room.sel=-1;room.placing=null;draw();list()};
     $('#sleep').onclick=()=>{nextDay();sfx('level');toast('☀️ Good morning! Day '+S.day+': new stores & deals');draw()};

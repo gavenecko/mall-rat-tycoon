@@ -79,15 +79,34 @@ textarea{width:100%;height:80px;border-radius:10px;border:2px solid #ddd;padding
 .slot .btn{padding:6px 10px;font-size:13px}
 .flash{animation:flash .3s}@keyframes flash{50%{background:#ffcdd2}}
 .lock{opacity:.55}
+nav button,.icon{position:relative}
+.nb{position:absolute;top:1px;right:12%;background:#ff1744;color:#fff;border-radius:10px;font-size:10px;font-style:normal;padding:1px 5px;font-weight:800;line-height:14px}
+.nb:empty{display:none}
+#sheet{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+#sheet[hidden]{display:none}
+.sheetbox{background:#fff;width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 14px 24px;position:relative;animation:fade .2s}
+.sheetbox h3{margin:0 36px 8px 0}
+.sheetbox .x{position:absolute;top:10px;right:10px;background:#eee;color:#333}
+.sheetbox .btn.big{margin-top:8px;font-size:15px}
+.item .heart{position:absolute;top:4px;right:4px;border:0;background:#fff;border-radius:50%;width:30px;height:30px;font-size:15px;box-shadow:0 1px 3px #0003;padding:0;margin:0}
+.stars{color:#f5a623;font-size:13px;letter-spacing:-1px}
+.chat{background:#f0f2f5;border-radius:12px;padding:8px;margin:8px 0;max-height:230px;overflow:auto;display:flex;flex-direction:column;gap:4px}
+.bub{background:#fff;border-radius:14px;padding:6px 10px;max-width:80%;font-size:14px;align-self:flex-start}
+.bub.me{background:#0084ff;color:#fff;align-self:flex-end}
+.evt{background:linear-gradient(90deg,#ffe082,#ffab91);border-radius:14px;padding:10px 12px;margin-bottom:10px;font-weight:700}
+.ohead{border-radius:14px;padding:10px 12px;margin-bottom:8px;color:#fff;font-weight:800;font-size:20px}
+.steps{display:flex;gap:3px;margin-top:4px}.steps i{flex:1;height:6px;border-radius:3px;background:#ddd}.steps i.on{background:#2bb34a}
+input[type=search],input[type=number]{width:100%;padding:10px;border-radius:10px;border:2px solid #ddd;font-size:16px}
 </style></head><body>
 <div id="app">
-<header><div>🛍️ Mall Rat</div><div class="hr"><span id="day" class="pill">Day 1</span><button id="mute" class="icon" aria-label="sound">🔊</button><span id="cash" class="pill cash">$0</span></div></header>
+<header><div>🛍️ Mall Rat</div><div class="hr"><span id="day" class="pill">Day 1</span><button id="mute" class="icon" aria-label="sound">🔊</button><button id="mail" class="icon" aria-label="mailbox">📬<i class="nb" id="mailb"></i></button><span id="cash" class="pill cash">$0</span></div></header>
 <div id="banner" hidden></div>
 <main id="view"></main>
 </div>
 <nav id="nav"></nav>
 <div id="toast"></div>
 <div id="overlay" hidden></div>
+<div id="sheet" hidden></div>
 <script>
 "use strict";
 /* =====================================================================
@@ -105,8 +124,8 @@ const COLORS=[['Red','#d32f2f'],['Pink','#f48fb1'],['Hot Pink','#ff1493'],['Oran
 const PATTERNS=[{name:'Plain',key:''},{name:'Plain',key:''},{name:'Striped',key:'stripes'},{name:'Polka-Dot',key:'dots'},{name:'Checkered',key:'checks'}];
 const SPARKLE={name:'Sparkle',key:'sparkle'};
 const SLOTS=['hats','tops','bottoms','shoes','accessories'];
-const ROOM_CATS=['furniture','decor'];
-const CAT_LABEL={hats:'🧢 Hats',tops:'👕 Tops',bottoms:'👖 Bottoms',shoes:'👟 Shoes',accessories:'🕶️ Accessories',furniture:'🛋️ Furniture',decor:'🪴 Decor'};
+const ROOM_CATS=['furniture','decor','electronics'];
+const CAT_LABEL={hats:'🧢 Hats',tops:'👕 Tops',bottoms:'👖 Bottoms',shoes:'👟 Shoes',accessories:'🕶️ Accessories',furniture:'🛋️ Furniture',decor:'🪴 Decor',electronics:'🎮 Electronics'};
 // key = drawing shape; name = display noun. plain:1 => no fabric pattern. w/h = room footprint; layer: floor|rug|wall
 const B=(key,name,mul,o)=>Object.assign({key:key,name:name,mul:mul},o||{});
 const BASES={
@@ -117,7 +136,8 @@ const BASES={
  accessories:[B('sunglasses','Sunglasses',1,{plain:1}),B('chain','Chain Necklace',1.5,{plain:1}),B('handbag','Handbag',2.5),B('watch','Watch',2,{plain:1}),B('scarf','Scarf',.8)],
  furniture:[B('sofa','Sofa',3,{w:2,h:1}),B('bed','Bed',4,{w:2,h:2}),B('chair','Chair',1,{w:1,h:1}),B('table','Table',1.5,{w:2,h:1}),B('bookshelf','Bookshelf',2,{w:1,h:2}),B('bathtub','Bathtub',3,{w:2,h:1})],
  decor:[B('plant','Potted Plant',.5,{w:1,h:1}),B('lamp','Floor Lamp',.8,{w:1,h:1,plain:1}),B('rug','Rug',1,{w:2,h:2,layer:'rug'}),B('tv','TV',3,{w:2,h:1,plain:1}),B('fishtank','Fish Tank',2,{w:1,h:1,plain:1}),
-  B('painting','Painting',1.5,{w:1,h:1,layer:'wall'}),B('clock','Wall Clock',.7,{w:1,h:1,layer:'wall',plain:1}),B('curtains','Curtained Window',1.2,{w:2,h:1,layer:'wall'}),B('poster','Poster',.4,{w:1,h:1,layer:'wall'}),B('wallshelf','Wall Shelf',.8,{w:2,h:1,layer:'wall'})]
+  B('painting','Painting',1.5,{w:1,h:1,layer:'wall'}),B('clock','Wall Clock',.7,{w:1,h:1,layer:'wall',plain:1}),B('curtains','Curtained Window',1.2,{w:2,h:1,layer:'wall'}),B('poster','Poster',.4,{w:1,h:1,layer:'wall'}),B('wallshelf','Wall Shelf',.8,{w:2,h:1,layer:'wall'})],
+ electronics:[B('console','Game Console',4,{w:1,h:1,plain:1}),B('phone','Smartphone',5,{w:1,h:1,plain:1}),B('speaker','Smart Speaker',1.5,{w:1,h:1,plain:1}),B('arcade','Arcade Cabinet',6,{w:1,h:2,plain:1}),B('laptop','Laptop',5,{w:1,h:1,plain:1}),B('vr','VR Headset',4,{w:1,h:1,plain:1}),B('gamingpc','Gaming PC',7,{w:1,h:1,plain:1})]
 };
 const STORES=[
  {id:'frauda',name:'Frauda',tag:'Milano-ish luxury',color:'#111',emoji:'👜',cats:['tops','bottoms','shoes','accessories'],tier:[400,9000]},
@@ -131,7 +151,8 @@ const STORES=[
  {id:'wally',name:"Wally's Mart",tag:'Save money. Live... ok.',color:'#1f6fd1',emoji:'🛒',cats:['tops','bottoms','shoes','furniture','decor'],tier:[4,60]},
  {id:'ikeya',name:'Ikeya',tag:'Some assembly required',color:'#0051ba',emoji:'🪑',cats:['furniture','decor'],tier:[15,400]},
  {id:'thrift',name:'Thrift Shift',tag:'Pre-loved, pre-smelled',color:'#9b59b6',emoji:'♻️',cats:['hats','tops','bottoms','shoes','furniture'],tier:[1,25]},
- {id:'targit',name:'Targit',tag:'Came for soap, left with a lamp',color:'#cc0000',emoji:'🎯',cats:['decor','furniture','tops','bottoms'],tier:[8,150]}
+ {id:'targit',name:'Targit',tag:'Came for soap, left with a lamp',color:'#cc0000',emoji:'🎯',cats:['decor','furniture','tops','bottoms'],tier:[8,150]},
+ {id:'worstbuy',name:'Worst Buy',tag:'Extended warranty? Extended regret.',color:'#0a2f8f',emoji:'🎮',cats:['electronics','decor'],tier:[40,2500]}
 ];
 const BODIES={slim:{label:'Slim',sh:15,hip:12},average:{label:'Average',sh:17,hip:14},curvy:{label:'Curvy',sh:16,hip:18},broad:{label:'Broad',sh:21,hip:15},round:{label:'Round',sh:20,hip:19}};
 const SKINS=['#ffe0c4','#f6c89f','#e0ac69','#c68642','#8d5524','#5c3a21'];
@@ -168,6 +189,25 @@ const ITEMS=[], ITEM={};
   });
 })();
 
+/* ============ v3 ONLINE CATALOGS (generated after mall items so v2 save ids stay stable) ============ */
+const MALL_STORE={};STORES.forEach(s=>{MALL_STORE[s.id]=1});
+const KO_NAMES={frauda:'Fraudah',goochie:'Gucchi',balence:'BalanceNotta',vuitno:'Louie Vootin',shanel:'Chanell',versnatchy:'Versnatchie',hermeez:'Hermeze'};
+const KO_OF={};
+(function genOnline(){
+  const r=rng(777),names={};
+  Object.keys(BASES).forEach(cat=>BASES[cat].forEach(base=>{
+    for(let k=0;k<4;k++){let it=null;
+      for(let t=0;t<20&&!it;t++){const c=COLORS[Math.floor(r()*COLORS.length)],pat=base.plain?PATTERNS[0]:PATTERNS[Math.floor(r()*PATTERNS.length)];
+        const name='Clamazon Basics '+c[0]+(pat.key?' '+pat.name:'')+' '+base.name;if(names[name])continue;names[name]=1;
+        const p=(4+r()*55)*base.mul*(cat==='electronics'?5:1);
+        it={id:'clam-'+cat+'-'+base.key+'-'+k,store:'clamazon',name:name,cat:cat,slot:SLOTS.indexOf(cat)>=0?cat:null,shape:base.key,price:nicePrice(p),color:c[1],colorName:c[0],pattern:pat.key,rare:false,stock:0,w:base.w||1,h:base.h||1,layer:base.layer||'floor'}}
+      if(it){ITEMS.push(it);ITEM[it.id]=it}}
+  }));
+  // knockoffs: what Facenook scammers actually ship you. Same look, sadder name, ~3% value.
+  ITEMS.filter(i=>KO_NAMES[i.store]&&!i.rare).forEach(i=>{const s=STORES.filter(q=>q.id===i.store)[0];
+    const ko=Object.assign({},i,{id:'ko-'+i.id,store:'knockoff',name:KO_NAMES[i.store]+i.name.slice(s.name.length)+' (knockoff)',price:Math.max(3,nicePrice(i.price*.03))});
+    ITEMS.push(ko);ITEM[ko.id]=ko;KO_OF[i.id]=ko.id});
+})();
 /* ========================= STATE / SAVES ========================= */
 const $=q=>document.querySelector(q);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
@@ -180,7 +220,7 @@ const store={
   get(k){if(storageOK){try{return window.localStorage.getItem(k)}catch(e){}}return Object.prototype.hasOwnProperty.call(MEM,k)?MEM[k]:null},
   set(k,v){MEM[k]=v;if(storageOK){try{window.localStorage.setItem(k,v)}catch(e){}}}
 };
-function fresh(){return{v:2,char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
+function fresh(){return{v:3,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
   shifts:0,earned:0,spent:0,dealsBought:0,ach:{},tutDone:false,muted:false,savedAt:0}}
 function normalize(o){
   if(!o||typeof o!=='object'||typeof o.cash!=='number'||isNaN(o.cash))throw new Error('Not a valid save');
@@ -188,6 +228,9 @@ function normalize(o){
   Object.keys(s.owned).forEach(id=>{if(!ITEM[id]||!(s.owned[id]>0))delete s.owned[id]});
   Object.keys(s.equipped).forEach(k=>{if(!s.owned[s.equipped[k]])delete s.equipped[k]});
   s.room=(s.room||[]).filter(p=>ITEM[p.id]&&s.owned[p.id]);
+  const f=fresh();['crime','card','fb','stats3'].forEach(k=>{s[k]=Object.assign({},f[k],s[k]||{})});
+  s.orders=(s.orders||[]).filter(o=>ITEM[o.id]);s.flea=(s.flea||[]).filter(a=>ITEM[a.id]);s.fb.list=(s.fb.list||[]).filter(l=>ITEM[l.id]);
+  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});s.v=3;
   return s;
 }
 function load(){try{const raw=store.get(KEY_AUTO);return raw?normalize(JSON.parse(raw)):fresh()}catch(e){return fresh()}}
@@ -195,16 +238,16 @@ let S=load();
 function save(){S.savedAt=Date.now();checkAch();store.set(KEY_AUTO,JSON.stringify(S));hud()}
 const b64e=s=>btoa(unescape(encodeURIComponent(s)));
 const b64d=s=>decodeURIComponent(escape(atob(s)));
-function exportCode(){return 'MRT2:'+b64e(JSON.stringify(S))}
-function importCode(code){code=String(code||'').trim().replace(/^MRT2:/,'').replace(/\s+/g,'');S=normalize(JSON.parse(b64d(code)));save()}
+function exportCode(){return 'MRT3:'+b64e(JSON.stringify(S))}
+function importCode(code){code=String(code||'').trim().replace(/^MRT\d:/,'').replace(/\s+/g,'');S=normalize(JSON.parse(b64d(code)));save()}
 function slotMeta(n){try{const raw=store.get(slotKey(n));return raw?JSON.parse(raw):null}catch(e){return null}}
 const itemCount=s=>Object.keys(s.owned).reduce((t,id)=>t+s.owned[id],0);
 const closetValue=s=>Object.keys(s.owned).reduce((t,id)=>t+(ITEM[id]?ITEM[id].price*s.owned[id]:0),0);
 const netWorth=s=>s.cash+closetValue(s);
 
 /* ======================= DAYS / ROTATION / DEALS ======================= */
-function checkDay(){const n=Math.floor((Date.now()-S.dayAt)/DAY_MS);if(n>0){S.day+=n;S.dayAt+=n*DAY_MS;save();return true}return false}
-function nextDay(){S.day++;S.dayAt=Date.now();save()}
+function checkDay(){const n=Math.floor((Date.now()-S.dayAt)/DAY_MS);if(n>0){S.dayAt+=n*DAY_MS;for(let i=0;i<Math.min(n,60);i++){S.day++;onNewDay()}if(n>60)S.day+=n-60;save();return true}return false}
+function nextDay(){S.day++;S.dayAt=Date.now();onNewDay();save()}
 function timeLeft(){const s=Math.max(0,Math.ceil((DAY_MS-(Date.now()-S.dayAt))/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function openStores(){
   const open=shuffle(STORES,rng(S.day*7919+3)).slice(0,OPEN_COUNT);
@@ -212,9 +255,10 @@ function openStores(){
   return open;
 }
 let DEAL_CACHE={day:-1,list:[]};
-function deals(){if(DEAL_CACHE.day!==S.day){const r=rng(S.day*104729+17);DEAL_CACHE={day:S.day,list:shuffle(ITEMS.filter(i=>!i.rare),r).slice(0,6).map(i=>({id:i.id,off:[20,30,40,50,60][Math.floor(r()*5)]}))}}return DEAL_CACHE.list}
+function deals(){if(DEAL_CACHE.day!==S.day){const r=rng(S.day*104729+17);DEAL_CACHE={day:S.day,list:shuffle(ITEMS.filter(i=>!i.rare&&MALL_STORE[i.store]),r).slice(0,6).map(i=>({id:i.id,off:[20,30,40,50,60][Math.floor(r()*5)]}))}}return DEAL_CACHE.list}
 function dealOf(id){const d=deals().filter(x=>x.id===id)[0];return d?d.off:0}
-function priceOf(it){const off=dealOf(it.id);return off?Math.max(1,Math.round(it.price*(100-off)/100)):it.price}
+function offOf(it){return Math.max(dealOf(it.id),eventOff(it))}
+function priceOf(it){const off=offOf(it);return off?Math.max(1,Math.round(it.price*(100-off)/100)):it.price}
 function stockLeft(it){return it.rare?Math.max(0,it.stock-(S.stock[it.id]||0)):Infinity}
 
 /* ============================ ACHIEVEMENTS ============================ */
@@ -245,7 +289,7 @@ function sfx(n){if(S.muted)return;try{if(!AC){const C=window.AudioContext||windo
 /* ============================ UI HELPERS ============================ */
 function toast(t){const e=$('#toast');e.textContent=t;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>{e.style.opacity=0},1800)}
 function floatText(t,color){const e=document.createElement('div');e.className='float';e.textContent=t;e.style.color=color||'#1a8f3a';document.body.appendChild(e);setTimeout(()=>e.remove(),1050)}
-function hud(){$('#cash').textContent=money(S.cash);$('#day').textContent='Day '+S.day;$('#mute').textContent=S.muted?'🔇':'🔊'}
+function hud(){$('#cash').textContent=money(S.cash);$('#day').textContent='Day '+S.day;$('#mute').textContent=S.muted?'🔇':'🔊';mailHud()}
 function bumpCash(){const c=$('#cash');c.classList.add('bump');setTimeout(()=>c.classList.remove('bump'),200)}
 function onAll(root,sel,fn){Array.prototype.forEach.call(root.querySelectorAll(sel),el=>el.addEventListener('click',e=>fn(el,e)))}
 function setupCanvas(cv,w,h){const d=window.devicePixelRatio||1;cv.width=Math.round(w*d);cv.height=Math.round(h*d);cv.style.width=w+'px';cv.style.height=h+'px';const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);return x}
@@ -423,6 +467,21 @@ function drawFurn(x,it,X,Y,W,H){
     x.fillStyle='#555';x.fillRect(X+.02*W,Y+.04*H,.96*W,.05*H);
     poly(x,[X+.04*W,Y+.08*H,X+.24*W,Y+.08*H,X+.16*W,Y+.95*H,X+.04*W,Y+.95*H]);pb(x,it,lw);poly(x,[X+.96*W,Y+.08*H,X+.76*W,Y+.08*H,X+.84*W,Y+.95*H,X+.96*W,Y+.95*H]);pb(x,it,lw);break;
   case 'poster':rr(x,X+.18*W,Y+.08*H,.64*W,.8*H,u*.02);pb(x,it,lw);x.fillStyle=lum(it.color)>.6?'#222':'#fff';x.font='bold '+(u*.34)+'px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('★',X+.5*W,Y+.45*H);break;
+  case 'console':x.fillStyle='#6d4c41';rr(x,X+.05*W,Y+.55*H,.9*W,.4*H,u*.04);x.fill();rr(x,X+.2*W,Y+.62*H,.6*W,.14*H,u*.03);pb(x,it,lw);x.fillStyle='#00e5ff';x.fillRect(X+.25*W,Y+.68*H,.2*W,.02*H);
+    rr(x,X+.22*W,Y+.22*H,.56*W,.22*H,u*.1);pb(x,it,lw);x.fillStyle='#222';circ(x,X+.35*W,Y+.33*H,u*.045);x.fill();x.fillStyle='#e53935';circ(x,X+.62*W,Y+.3*H,u*.03);x.fill();x.fillStyle='#43a047';circ(x,X+.69*W,Y+.36*H,u*.03);x.fill();break;
+  case 'phone':x.fillStyle='#bdbdbd';rr(x,X+.28*W,Y+.78*H,.44*W,.17*H,u*.03);x.fill();rr(x,X+.33*W,Y+.1*H,.34*W,.66*H,u*.08);pb(x,it,lw);x.fillStyle='#1a237e';rr(x,X+.37*W,Y+.16*H,.26*W,.52*H,u*.04);x.fill();
+    ['#ff5252','#ffd740','#69f0ae','#40c4ff'].forEach((c,i)=>{x.fillStyle=c;x.fillRect(X+(.4+(i%2)*.11)*W,Y+(.22+Math.floor(i/2)*.12)*H,.08*W,.08*H)});break;
+  case 'speaker':rr(x,X+.28*W,Y+.08*H,.44*W,.87*H,u*.08);pb(x,it,lw);x.fillStyle='#222';circ(x,X+.5*W,Y+.32*H,u*.11);x.fill();circ(x,X+.5*W,Y+.7*H,u*.16);x.fill();x.fillStyle='#666';circ(x,X+.5*W,Y+.7*H,u*.06);x.fill();x.fillStyle='#40c4ff';x.fillRect(X+.4*W,Y+.12*H,.2*W,.02*H);break;
+  case 'arcade':rr(x,X+.1*W,Y+.04*H,.8*W,.92*H,u*.06);pb(x,it,lw);x.fillStyle='#111';rr(x,X+.18*W,Y+.12*H,.64*W,.3*H,u*.04);x.fill();x.fillStyle='#76ff03';
+    [[1,0],[4,0],[0,1],[1,1],[2,1],[3,1],[4,1],[0,2],[2,2],[4,2]].forEach(p=>x.fillRect(X+(.32+p[0]*.07)*W,Y+(.2+p[1]*.04)*H,.06*W,.035*H));
+    x.fillStyle='#333';x.fillRect(X+.06*W,Y+.47*H,.88*W,.1*H);x.fillStyle='#e53935';circ(x,X+.3*W,Y+.5*H,u*.07);x.fill();x.fillStyle='#ffeb3b';circ(x,X+.6*W,Y+.52*H,u*.05);x.fill();x.fillStyle='#2196f3';circ(x,X+.75*W,Y+.52*H,u*.05);x.fill();break;
+  case 'laptop':x.fillStyle='#8d6e63';x.fillRect(X+.08*W,Y+.62*H,.84*W,.08*H);x.fillRect(X+.12*W,Y+.7*H,.06*W,.26*H);x.fillRect(X+.82*W,Y+.7*H,.06*W,.26*H);
+    poly(x,[X+.24*W,Y+.18*H,X+.76*W,Y+.18*H,X+.73*W,Y+.55*H,X+.27*W,Y+.55*H]);pb(x,it,lw);x.fillStyle='#4fc3f7';poly(x,[X+.29*W,Y+.23*H,X+.71*W,Y+.23*H,X+.69*W,Y+.5*H,X+.31*W,Y+.5*H]);x.fill();rr(x,X+.18*W,Y+.55*H,.64*W,.07*H,u*.02);pb(x,it,lw);break;
+  case 'vr':x.strokeStyle='#555';x.lineWidth=u*.05;line(x,X+.5*W,Y+.5*H,X+.5*W,Y+.92*H);x.fillStyle='#555';ell(x,X+.5*W,Y+.93*H,u*.2,u*.05);x.fill();
+    x.strokeStyle='#333';x.lineWidth=u*.05;x.beginPath();x.arc(X+.5*W,Y+.38*H,u*.3,Math.PI,0);x.stroke();rr(x,X+.2*W,Y+.25*H,.6*W,.28*H,u*.1);pb(x,it,lw);x.fillStyle='#111';rr(x,X+.26*W,Y+.31*H,.48*W,.14*H,u*.06);x.fill();x.fillStyle='rgba(120,200,255,.6)';x.fillRect(X+.3*W,Y+.33*H,.15*W,.03*H);break;
+  case 'gamingpc':rr(x,X+.28*W,Y+.08*H,.44*W,.86*H,u*.05);pb(x,it,lw);x.fillStyle='#111';rr(x,X+.33*W,Y+.14*H,.34*W,.72*H,u*.03);x.fill();
+    {const g=x.createLinearGradient(X+.33*W,0,X+.67*W,0);['#ff1744','#ffea00','#00e676','#2979ff','#d500f9'].forEach((c,i)=>g.addColorStop(i/4,c));x.strokeStyle=g;x.lineWidth=u*.03;x.strokeRect(X+.35*W,Y+.16*H,.3*W,.68*H);
+    x.strokeStyle='#888';x.lineWidth=u*.015;[.35,.6].forEach(f=>{circ(x,X+.5*W,Y+f*H,u*.09);x.stroke()})}break;
   case 'wallshelf':rr(x,X+.05*W,Y+.62*H,.9*W,.12*H,u*.03);pb(x,it,lw);x.fillStyle='#795548';poly(x,[X+.15*W,Y+.74*H,X+.22*W,Y+.74*H,X+.15*W,Y+.9*H]);x.fill();poly(x,[X+.85*W,Y+.74*H,X+.78*W,Y+.74*H,X+.85*W,Y+.9*H]);x.fill();
     ['#e53935','#1e88e5','#fdd835'].forEach((c,i)=>{x.fillStyle=c;x.fillRect(X+(.15+i*.07)*W,Y+.3*H,.06*W,.32*H)});x.fillStyle='#8d6e63';x.fillRect(X+.62*W,Y+.45*H,.14*W,.17*H);x.fillStyle='#43a047';circ(x,X+.69*W,Y+.4*H,u*.12);x.fill();break;
   }
@@ -441,39 +500,43 @@ function thumb(it){
   return THUMB[it.id]=c.toDataURL();
 }
 /* ============================== SCREENS ============================== */
-const TABS=[['mall','🏬','Mall'],['closet','👗','Closet'],['room','🏠','Room'],['work','💼','Work'],['me','⭐','Me']];
+const TABS=[['mall','🏬','Mall'],['closet','👗','Closet'],['room','🏠','Room'],['work','💼','Work'],['online','📱','Online'],['me','⭐','Me']];
 let screen='mall',sub=null,filter='all',jobTick=null;
 function nav(){const n=$('#nav');n.style.display=screen==='create'?'none':'flex';
-  n.innerHTML=TABS.map(t=>'<button data-s="'+t[0]+'" class="'+(t[0]===screen?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'</button>').join('');
-  onAll(n,'button',b=>{sfx('click');go(b.dataset.s)})}
+  n.innerHTML=TABS.map(t=>'<button data-s="'+t[0]+'" class="'+(t[0]===screen?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'<i class="nb" data-nb="'+t[0]+'"></i></button>').join('');
+  onAll(n,'button',b=>{sfx('click');go(b.dataset.s)});mailHud()}
 function go(s,sb){if(shift&&s!=='work')endShift();screen=s;sub=sb||null;filter='all';nav();render();window.scrollTo(0,0)}
 function render(){
   clearInterval(jobTick);jobTick=null;hud();const v=$('#view');v.innerHTML='';
-  try{({mall:renderMall,closet:renderCloset,room:renderRoom,work:renderWork,me:renderMe,create:renderCreate})[screen](v)}catch(e){showError(e)}
+  try{({mall:renderMall,closet:renderCloset,room:renderRoom,work:renderWork,me:renderMe,create:renderCreate,online:renderOnline})[screen](v)}catch(e){showError(e)}
 }
 function rerender(){const y=window.scrollY;render();window.scrollTo(0,y)}
 
 function itemCard(it,mode){
-  const owned=S.owned[it.id]||0,eq=S.equipped[it.slot]===it.id,off=dealOf(it.id),p=priceOf(it),left=stockLeft(it);
+  const owned=S.owned[it.id]||0,eq=S.equipped[it.slot]===it.id,off=offOf(it),p=priceOf(it),left=stockLeft(it);
   const d=document.createElement('div');d.className='item'+(eq&&mode!=='shop'?' eq':'');
-  let h='<img alt="" src="'+thumb(it)+'">'+(it.rare?'<span class="badge r">LIMITED · '+left+' left</span>':off?'<span class="badge">-'+off+'%</span>':'')+'<div class="nm">'+esc(it.name)+'</div>';
+  let h='<img alt="" src="'+thumb(it)+'">'+(it.rare?'<span class="badge r">LIMITED · '+left+' left</span>':off?'<span class="badge">-'+off+'%</span>':'')+'<button class="heart" data-a="wish" aria-label="wishlist">'+(S.wish[it.id]?'❤️':'🤍')+'</button><div class="nm">'+esc(it.name)+'</div>';
   if(mode==='shop'){h+='<div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(p)+'</span></div><div class="small">'+(owned?'Owned ×'+owned:'&nbsp;')+'</div><button class="btn" data-a="buy">'+(left<=0?'Sold out':'Buy')+'</button>'}
   else{const placed=S.room.filter(q=>q.id===it.id).length;
     h+='<div class="small">×'+owned+(it.slot?'':' · '+placed+' placed')+' · worth '+money(it.price)+'</div><div class="row"><button class="btn '+(eq?'alt':'green')+'" style="flex:1" data-a="use">'+(it.slot?(eq?'Take off':'Wear'):'Place')+'</button><button class="btn alt" style="flex:0 0 46px" data-a="sell" title="Sell for half">💲</button></div>'}
   d.innerHTML=h;
   onAll(d,'[data-a]',b=>{const a=b.dataset.a;
-    if(a==='buy')buy(it);
+    if(a==='wish'){toggleWish(it);b.textContent=S.wish[it.id]?'❤️':'🤍'}
+    else if(a==='buy')buy(it);
     else if(a==='sell')sell(it);
     else if(it.slot){if(eq)delete S.equipped[it.slot];else S.equipped[it.slot]=it.id;sfx('click');save();rerender()}
     else{room.placing=it.id;room.sel=-1;go('room')}});
-  if(mode==='shop')d.querySelector('[data-a=buy]').disabled=left<=0||S.cash<p;
+  if(mode==='shop')d.querySelector('[data-a=buy]').disabled=left<=0;
   return d;
 }
 function buy(it){
   const p=priceOf(it);
   if(stockLeft(it)<=0){toast('Sold out!');sfx('bad');return}
-  if(S.cash<p){toast('Too broke! Go earn some at 💼 Work');sfx('bad');return}
-  S.cash-=p;S.spent+=p;S.owned[it.id]=(S.owned[it.id]||0)+1;if(it.rare)S.stock[it.id]=(S.stock[it.id]||0)+1;if(dealOf(it.id))S.dealsBought++;
+  if(S.cash<p){openPay(it.name,p,()=>grant(it,p));return}
+  S.cash-=p;S.spent+=p;grant(it,p);
+}
+function grant(it,p){
+  S.owned[it.id]=(S.owned[it.id]||0)+1;if(it.rare)S.stock[it.id]=(S.stock[it.id]||0)+1;if(offOf(it))S.dealsBought++;
   if(it.slot&&!S.equipped[it.slot])S.equipped[it.slot]=it.id;
   sfx('buy');floatText('-'+money(p),'#d32f2f');bumpCash();toast('Bought '+it.name+' ✨');save();rerender();
 }
@@ -502,6 +565,7 @@ function renderMall(v){
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
     '<div class="lbl">🔥 Daily Deals</div><div class="hs" id="deals"></div><div class="lbl">🏬 Open today</div><div id="stores"></div>';
   deals().forEach(d=>v.querySelector('#deals').appendChild(itemCard(ITEM[d.id],'shop')));
+  v.insertAdjacentHTML('afterbegin',eventBanner());
   open.forEach(s=>{const d=document.createElement('div');d.className='store';d.style.background=s.color;
     const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length;
     d.innerHTML='<span style="font-size:34px">'+s.emoji+'</span><div style="flex:1">'+esc(s.name)+'<small>'+esc(s.tag)+' · '+money(s.tier[0])+'–'+money(s.tier[1])+'+</small></div>'+(rare?'<span class="badge r" style="position:static">✨ LIMITED</span>':'');
@@ -545,11 +609,13 @@ function renderRoom(v){
     const objs=lay('floor').map(o=>({z:o.p.y+o.it.h,f:()=>drawFurn(x,o.it,o.p.x*c,o.p.y*c,o.it.w*c,o.it.h*c)}));
     objs.push({z:S.avatar.y+1.01,f:()=>{const sc=c*2.2/170;x.save();x.translate((S.avatar.x+.5)*c,(S.avatar.y+.92)*c-162*sc);x.scale(sc,sc);drawAvatar(x,S.char,S.equipped);x.restore()}});
     objs.sort((a,b)=>a.z-b.z).forEach(o=>o.f());
+    drawDoorstep(x,c);
     if(room.sel>=0){const p=S.room[room.sel],it=ITEM[p.id];x.strokeStyle='#ff1493';x.lineWidth=3;x.setLineDash([6,4]);x.strokeRect(p.x*c+2,p.y*c+2,it.w*c-4,it.h*c-4);x.setLineDash([])}
     const P=room.placing&&ITEM[room.placing];
     $('#hint').innerHTML=P?'Tap a spot to place <b>'+esc(P.name)+'</b> ('+P.w+'×'+P.h+(P.layer==='wall'?', goes on the wall':P.layer==='rug'?', rug: furniture can sit on it':'')+')':
       room.sel>=0?'Tap a new spot to move <b>'+esc(ITEM[S.room[room.sel].id].name)+'</b>, or remove it.':'Tap furniture to move it · tap the floor to walk · 💤 Sleep starts a new day';
-    const ctl=$('#ctl');ctl.innerHTML=(room.sel>=0?'<button class="btn" id="rm">Remove</button>':'')+(room.placing||room.sel>=0?'<button class="btn alt" id="cx">Cancel</button>':'')+'<button class="btn alt" id="sleep" style="margin-left:auto">💤 Sleep (next day)</button>';
+    const ctl=$('#ctl');const pk=packagesReady().length;ctl.innerHTML=(pk?'<button class="btn green" id="collect">📦 Bring in '+pk+' package'+(pk>1?'s':'')+'</button>':'')+(room.sel>=0?'<button class="btn" id="rm">Remove</button>':'')+(room.placing||room.sel>=0?'<button class="btn alt" id="cx">Cancel</button>':'')+'<button class="btn alt" id="sleep" style="margin-left:auto">💤 Sleep (next day)</button>';
+    if($('#collect'))$('#collect').onclick=()=>{collect()};
     if($('#rm'))$('#rm').onclick=()=>{S.room.splice(room.sel,1);room.sel=-1;sfx('click');save();draw();list()};
     if($('#cx'))$('#cx').onclick=()=>{room.sel=-1;room.placing=null;draw();list()};
     $('#sleep').onclick=()=>{nextDay();sfx('level');toast('☀️ Good morning! Day '+S.day+': new stores & deals');draw()};
@@ -636,6 +702,246 @@ const TUT=[['mall','👋 Welcome to the mall! Stores rotate every in-game day (3
 function showTut(i){const o=$('#overlay');if(i>=TUT.length){o.hidden=true;S.tutDone=true;save();go('mall');return}
   go(TUT[i][0]);o.hidden=false;o.innerHTML='<div class="card"><div style="font-size:15px">'+TUT[i][1]+'</div><div class="row sp" style="margin-top:8px"><span class="small">'+(i+1)+'/'+TUT.length+'</span><span><button class="btn alt" id="tskip">Skip</button> <button class="btn" id="tnext">'+(i===TUT.length-1?'Done':'Next ›')+'</button></span></div></div>';
   $('#tnext').onclick=()=>{sfx('click');showTut(i+1)};$('#tskip').onclick=()=>showTut(TUT.length)}
+/* ============================== ONLINE (v3) ==============================
+   Clamazon (catalog + Crime membership + shipping), Fleabay (auctions), Facenook (haggling),
+   orders/mailbox, wishlist, events, Mall Rat Card + Pay-in-4. */
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+const CLAM=ITEMS.filter(i=>i.store==='clamazon');
+const CRIME_FEE=15,SHIP_FEE=5,CARD_RATE=.03,LATE_FEE=10;
+const NPC=['xX_BidLord_Xx','GrandmaGretchen','CryptoChad','ThriftQueen99','Kevin','DealGoblin','auntie_m','SirBidsALot','FrugalFrank','LilSpendy'];
+const FB_SELLERS=[['Brenda (moving tmrw!!)','👩‍🦰'],['Dave\'s Garage','🧔'],['Crystal Vibes','🔮'],['Uncle Ron','👴'],['Tiffani w/ an i','💅'],['Totally Real Person','🕵️'],['Moms Basement LLC','🧑‍💻'],['Karen K.','👱‍♀️'],['Farmer Joe','👨‍🌾'],['Mystery Van Guy','🚐']];
+const REVIEWERS=['🦝 TrashPanda','👵 Nana B.','🤓 Verified Nerd','🐸 frogman','💅 Slayyy','🧔 Big Mike','🤖 NotABot123','🧙 Wizard Gary'];
+const REVIEWS=['Bought this {n} for my cat. The cat now refuses to speak to me.','Arrived in 3 minutes. The delivery guy was crying. 10/10.','The {c} is more of a "{c2}" but I am emotionally attached now.',
+ 'Wore it to a wedding. I am no longer invited to weddings.','Fell apart in 2 days, just like my last situationship.','Exactly as described. Suspiciously so.','Came with a free spider. Bonus!',
+ 'Would give 6 stars but the app won\'t let me. I checked.','My therapist asked where I got it. Now she has one too.','It\'s fine. I\'m fine. Everything is fine.','Five stars. My landlord hates it. Even better.',
+ 'Smells faintly of money. Or regret. Hard to tell.','Bought 3. Do not know why. Do not regret it.','Instructions were in Klingon. Assembled it anyway.'];
+const EVENTS=[
+ {day:7,name:'Black Fryday',emoji:'🖤',desc:'25% off everything at the mall!',off:it=>MALL_STORE[it.store]?25:0},
+ {day:10,name:'Crime Day',emoji:'📦',desc:'Clamazon is 35% off for Crime members.',off:it=>it.store==='clamazon'&&S.crime.active?35:0},
+ {day:14,name:'Valentime\'s Day',emoji:'💘',desc:'Pink, Hot Pink & Red items 30% off.',off:it=>/^(Pink|Red|Hot Pink)$/.test(it.colorName)?30:0},
+ {day:21,name:'Spooky Szn',emoji:'🎃',desc:'Black & Orange items 40% off.',off:it=>/^(Black|Orange)$/.test(it.colorName)?40:0},
+ {day:28,name:'Hollydaze',emoji:'🎁',desc:'A $50 gift from the mall + decor 30% off.',off:it=>it.cat==='decor'?30:0,gift:50}];
+const cycleDay=d=>((d-1)%28)+1;
+function eventToday(){const d=cycleDay(S.day);return EVENTS.filter(e=>e.day===d)[0]||null}
+function eventOff(it){const e=eventToday();return e?e.off(it):0}
+function eventBanner(){const e=eventToday();if(e)return'<div class="evt">'+e.emoji+' <b>'+e.name+'</b> today! '+e.desc+'</div>';
+  const d=cycleDay(S.day),nx=EVENTS.filter(q=>q.day>d)[0]||EVENTS[0],n=nx.day>d?nx.day-d:28-d+nx.day;return'<div class="small" style="margin:0 4px 8px">Next event: '+nx.emoji+' '+nx.name+' in '+n+' day'+(n>1?'s':'')+'</div>'}
+function rating(it){const r=rng(hash(it.id));return{stars:Math.round((1.5+r()*3.5)*2)/2,count:Math.floor(r()*r()*25000)+3}}
+function starStr(s){let o='';for(let i=1;i<=5;i++)o+=s>=i?'★':s>=i-.5?'⯪':'☆';return o}
+function reviewsFor(it){const r=rng(hash(it.id)+9);const out=[];for(let i=0;i<3;i++){const c2=COLORS[Math.floor(r()*COLORS.length)][0];
+  out.push({who:REVIEWERS[Math.floor(r()*REVIEWERS.length)],s:1+Math.floor(r()*5),t:REVIEWS[Math.floor(r()*REVIEWS.length)].replace('{n}',BASES[it.cat].filter(b=>b.key===it.shape)[0].name.toLowerCase()).replace('{c}',it.colorName).replace('{c2}',c2)})}return out}
+
+/* ---------- sheet (bottom modal) ---------- */
+function sheet(html){const s=$('#sheet');s.hidden=false;s.innerHTML='<div class="sheetbox"><button class="icon x" id="shx" aria-label="close">✕</button>'+html+'</div>';$('#shx').onclick=closeSheet;s.onclick=e=>{if(e.target===s)closeSheet()}}
+function closeSheet(){const s=$('#sheet');s.hidden=true;s.innerHTML=''}
+const sheetOpen=()=>!$('#sheet').hidden;
+
+/* ---------- mailbox / notifications / packages ---------- */
+function notify(msg){S.inbox.unshift({msg:msg,day:S.day,read:false});if(S.inbox.length>40)S.inbox.length=40}
+const unread=()=>S.inbox.filter(m=>!m.read).length;
+const packagesReady=()=>S.orders.filter(o=>o.status==='delivered');
+function wishOnSale(){return Object.keys(S.wish).filter(id=>ITEM[id]&&offOf(ITEM[id])>0).length}
+function mailHud(){const b=$('#mailb');if(!b)return;const n=unread()+packagesReady().length;b.textContent=n?String(n):'';
+  const r=document.querySelector('[data-nb=room]');if(r)r.textContent=packagesReady().length||'';const o=document.querySelector('[data-nb=online]');if(o)o.textContent=wishOnSale()?'♥':''}
+function openMail(){const pk=packagesReady();
+  sheet('<h3>📬 Mailbox</h3>'+(pk.length?'<div class="card" style="background:#fff8e1">📦 <b>'+pk.length+' package'+(pk.length>1?'s':'')+'</b> on your doorstep!<button class="btn green big" id="col">Bring them inside</button></div>':'')+
+    (S.inbox.length?S.inbox.map(m=>'<div class="slot"><span style="'+(m.read?'':'font-weight:800')+'">'+esc(m.msg)+'</span><span class="small" style="white-space:nowrap">Day '+m.day+'</span></div>').join(''):'<p class="small">No mail. Even the spam forgot about you.</p>'));
+  S.inbox.forEach(m=>{m.read=true});save();
+  if($('#col'))$('#col').onclick=()=>{collect();closeSheet()}}
+function collect(){const pk=packagesReady();if(!pk.length)return;pk.forEach(o=>{o.status='collected';S.owned[o.id]=(S.owned[o.id]||0)+1;const it=ITEM[o.id];if(it.slot&&!S.equipped[it.slot])S.equipped[it.slot]=it.id});
+  sfx('buy');toast('📦 Unboxed '+pk.length+' package'+(pk.length>1?'s':'')+'! Check your closet/room.');save();rerender()}
+function drawDoorstep(x,c){const n=packagesReady().length;x.fillStyle='#795548';x.fillRect(0,(ROWS-1)*c,c*.12,c);if(!n)return;
+  x.font=(c*.75)+'px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('📦',c*.55,(ROWS-.5)*c);
+  x.fillStyle='#ff1744';circ(x,c*.85,(ROWS-.85)*c,c*.2);x.fill();x.fillStyle='#fff';x.font='bold '+(c*.26)+'px sans-serif';x.fillText(n,c*.85,(ROWS-.84)*c)}
+function toggleWish(it){if(S.wish[it.id])delete S.wish[it.id];else{S.wish[it.id]=1;toast('💖 Added to wishlist. We\'ll ping you when it\'s on sale.')}sfx('click');save()}
+
+/* ---------- money: Mall Rat Card + Pay in 4 ---------- */
+const cardLimit=()=>Math.min(10000,500+100*S.shifts);
+function payWith(m,amt,label){
+  if(m==='cash'){if(S.cash<amt)return false;S.cash-=amt}
+  else if(m==='card'){if(S.card.bal+amt>cardLimit())return false;S.card.bal+=amt}
+  else{const part=Math.ceil(amt/4);if(S.cash<part)return false;S.cash-=part;S.bnpl.push({label:label,amt:part,left:3})}
+  S.spent+=amt;bumpCash();if(S.card.bal>cardLimit()*.6)setTimeout(()=>toast('💳 Your card is getting heavy. Future-you just sighed audibly.'),1900);return true}
+function openPay(title,amt,done,extra){
+  const lim=cardLimit(),part=Math.ceil(amt/4);
+  sheet('<h3>'+esc(title)+'</h3><div style="font-size:26px" class="pr">'+money(amt)+'</div>'+(extra||'')+
+   '<button class="btn green big" data-m="cash" '+(S.cash>=amt?'':'disabled')+'>💵 Cash (you have '+money(S.cash)+')</button>'+
+   '<button class="btn big" data-m="card" '+(S.card.bal+amt<=lim?'':'disabled')+'>💳 Mall Rat Card · '+money(lim-S.card.bal)+' left · 3%/day</button>'+
+   '<button class="btn alt big" data-m="bnpl" '+(S.cash>=part?'':'disabled')+'>🐢 Pay in 4: '+money(part)+' now + 3 daily</button>'+
+   '<p class="small">Credit is fun until it isn\'t. Card interest compounds every in-game day.</p>');
+  onAll($('#sheet'),'[data-m]',b=>{if(payWith(b.dataset.m,amt,title)){closeSheet();done(b.dataset.m)}else{sfx('bad');toast('Payment declined 😬')}})}
+
+/* ---------- daily processing ---------- */
+function onNewDay(){
+  if(S.card.bal>0){const i=Math.ceil(S.card.bal*CARD_RATE);S.card.bal+=i;if(S.card.bal>cardLimit()*.6)notify('💳 Card balance is '+money(S.card.bal)+' (+'+money(i)+' interest). No pressure. (Some pressure.)')}
+  S.bnpl.forEach(b=>{if(S.cash>=b.amt)S.cash-=b.amt;else{S.card.bal+=b.amt+LATE_FEE;notify('🐢 Pay-in-4 for '+b.label+' bounced: moved to your card + '+money(LATE_FEE)+' late fee')}b.left--});S.bnpl=S.bnpl.filter(b=>b.left>0);
+  if(S.crime.active&&S.day>=S.crime.next){if(S.cash>=CRIME_FEE){S.cash-=CRIME_FEE;S.crime.next=S.day+7;notify('📦 Clamazon Crime renewed ('+money(CRIME_FEE)+')')}
+    else if(S.card.bal+CRIME_FEE<=cardLimit()){S.card.bal+=CRIME_FEE;S.crime.next=S.day+7;notify('📦 Crime renewed on your card')}else{S.crime.active=false;notify('📦 Crime membership lapsed (couldn\'t pay)')}}
+  S.orders.forEach(o=>{if(o.status==='shipping'&&S.day>=o.arrive){o.status='delivered';notify('📦 Delivered: '+ITEM[o.id].name+' is on your doorstep!')}});
+  fbRefresh();
+  Object.keys(S.wish).forEach(id=>{const it=ITEM[id];if(it&&offOf(it))notify('💖 Wishlist alert: '+it.name+' is '+offOf(it)+'% off today!')});
+  const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
+}
+
+/* ---------- Fleabay ---------- */
+const inc=a=>Math.max(1,Math.round(a.bid*.06));
+const nextBid=a=>a.high?a.bid+inc(a):a.bid;
+function fmtLeft(ms){const s=Math.max(0,Math.ceil(ms/1000));return s?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):'ended'}
+function fleaRefill(){const now=Date.now(),pool=ITEMS.filter(i=>MALL_STORE[i.store]&&!i.rare);
+  while(S.flea.filter(a=>!a.done&&a.seller!=='you').length<5){const it=pick(pool),st=Math.max(1,Math.round(it.price*.15));
+    S.flea.push({aid:S.oid++,id:it.id,seller:pick(NPC),bid:st,high:null,end:now+(60+rand(180))*1000,npcMax:Math.round(it.price*(.45+Math.random()*.5)),escrow:0,done:false,bids:0})}}
+function playerBid(a){if(a.done||a.high==='you'||a.seller==='you')return;const amt=nextBid(a);
+  if(S.cash<amt){toast('You need '+money(amt)+' cash to back that bid');sfx('bad');return}
+  S.cash-=amt;a.bid=amt;a.high='you';a.escrow=amt;a.bids++;if(a.end-Date.now()<10000)a.end=Date.now()+10000;sfx('coin');toast('🙌 You\'re the high bidder!');save();rerender()}
+function npcBid(a){const amt=nextBid(a);if(amt>a.npcMax)return false;
+  if(a.high==='you'){S.cash+=a.escrow;a.escrow=0;notify('😤 Outbid on '+ITEM[a.id].name+' (now '+money(amt)+')');toast('😤 Outbid on '+ITEM[a.id].name+'!');sfx('bad')}
+  a.bid=amt;a.high=pick(NPC.filter(n=>n!==a.seller&&n!==a.high));a.bids++;return true}
+function endAuction(a){a.done=true;const it=ITEM[a.id];
+  if(a.seller==='you'){if(a.high){const pay=Math.round(a.bid*.9);S.cash+=pay;S.stats3.flipped++;notify('💸 Sold '+it.name+' on Fleabay for '+money(a.bid)+' (you get '+money(pay)+' after the 10% fee)');toast('💸 Fleabay sale: +'+money(pay));sfx('coin')}
+    else{S.owned[a.id]=(S.owned[a.id]||0)+1;notify('🦗 No bids on '+it.name+'. It came back home.')}}
+  else if(a.high==='you'){S.orders.unshift({oid:S.oid++,id:a.id,src:'Fleabay',price:a.bid,day:S.day,arrive:S.day,status:'delivered'});S.stats3.won++;
+    notify('🏆 You won '+it.name+' for '+money(a.bid)+'! It\'s on your doorstep.');toast('🏆 Won '+it.name+'!');sfx('level')}}
+function removeOne(id){S.owned[id]--;if(!S.owned[id]){delete S.owned[id];Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==id)}
+  else{const pl=S.room.filter(q=>q.id===id);if(pl.length>S.owned[id])S.room.splice(S.room.indexOf(pl[0]),1)}}
+function listItem(it,start){removeOne(it.id);S.flea.push({aid:S.oid++,id:it.id,seller:'you',bid:start,high:null,end:Date.now()+120000,npcMax:Math.round(it.price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
+  sfx('click');toast('🔨 Listed! Auction ends in 2:00');save();closeSheet();rerender()}
+function onlineTick(){
+  const now=Date.now();let ch=false;
+  S.flea.forEach(a=>{if(a.done)return;if(now>=a.end){endAuction(a);ch=true;return}
+    const p=(a.end-now)<15000?.3:.07;if((a.high==='you'||!a.high||a.seller==='you')&&Math.random()<p&&npcBid(a))ch=true});
+  const before=S.flea.length;S.flea=S.flea.filter(a=>!a.done||now-a.end<300000);if(S.flea.length!==before)ch=true;
+  if(S.flea.filter(a=>!a.done&&a.seller!=='you').length<5){fleaRefill();ch=true}
+  if(S.fb.day!==S.day){fbRefresh();ch=true}
+  if(ch){save();if(screen==='online'&&onTab==='flea'&&!sheetOpen())rerender()}
+  Array.prototype.forEach.call(document.querySelectorAll('[data-end]'),e=>{e.textContent=fmtLeft(+e.dataset.end-now)});
+}
+
+/* ---------- Facenook Marketplace ---------- */
+function fbRefresh(){const pool=ITEMS.filter(i=>MALL_STORE[i.store]&&!i.rare);S.fb={day:S.day,list:[]};
+  for(let i=0;i<6;i++){const it=pick(pool),sl=pick(FB_SELLERS),ask=nicePrice(it.price*(.35+Math.random()*.35));
+    S.fb.list.push({lid:S.oid++,id:it.id,seller:sl[0],face:sl[1],ask:ask,floor:Math.round(ask*(.6+Math.random()*.25)),scam:!!KO_OF[it.id]&&Math.random()<.3,status:'open',chat:[],counter:0,tries:0,asked:false})}}
+function openFb(l){const it=ITEM[l.id];
+  const chat=l.chat.map(m=>'<div class="bub '+(m[0]==='me'?'me':'')+'">'+esc(m[1])+'</div>').join('');
+  sheet('<div class="row" style="align-items:flex-start"><img src="'+thumb(it)+'" style="width:76px;border-radius:10px"><div style="flex:1"><b>'+esc(it.name)+'</b><div class="small">'+l.face+' '+esc(l.seller)+' · retail '+money(it.price)+'</div><div class="pr">Asking '+money(l.ask)+'</div></div></div>'+
+   '<div class="chat" id="chat">'+(chat||'<div class="small center">Say hi to the seller…</div>')+'</div>'+
+   (l.status==='ghosted'?'<p class="center">👻 '+esc(l.seller)+' has left the chat. Forever.</p>':l.status==='sold'?'<p class="center">✅ You bought this.</p>':
+   (!l.asked?'<button class="btn big" id="ask">👋 "Hi, is this still available?"</button>':
+    '<div class="row"><input type="number" id="offer" inputmode="numeric" value="'+Math.round((l.counter||l.ask)*.75)+'" style="flex:1;width:auto"><button class="btn" id="off">Offer</button></div>'+
+    (l.counter?'<button class="btn green big" id="acc">🤝 Accept '+money(l.counter)+'</button>':'')+'<button class="btn alt big" id="full">Pay asking price '+money(l.ask)+'</button>')));
+  const ch=$('#chat');ch.scrollTop=ch.scrollHeight;
+  const say=(w,t)=>l.chat.push([w,t]),ghost=()=>{l.status='ghosted';sfx('bad')};
+  if($('#ask'))$('#ask').onclick=()=>{l.asked=true;say('me','Hi, is this still available?');
+    if(Math.random()<.1){say('them','…');ghost()}else say('them',pick(['Yes!!! still available','yes. no lowballs I know what I have','Yeah but 3 other people want it','who is this','Yes 😊 porch pickup only, 2am','Available. Cash, Venmoo, or interesting rocks.']));save();openFb(l)};
+  if($('#off'))$('#off').onclick=()=>{const v=parseInt($('#offer').value,10);if(!(v>0))return;l.tries++;say('me','Would you take '+money(v)+'?');
+    if(v>=l.ask){l.counter=l.ask;say('them','Sure lol. '+money(l.ask)+' it is')}
+    else if(v>=l.floor){l.counter=v;say('them',pick(['Ugh fine. '+money(v)+'. Come get it','Deal 🤝 '+money(v),'ok '+money(v)+' but you have to compliment my dog']))}
+    else if(v>=l.floor*.75&&l.tries<5){l.counter=Math.max(l.floor,Math.round((v+l.ask)/2));say('them','Best I can do is '+money(l.counter))}
+    else if(Math.random()<.35||l.tries>=5){say('them',pick(['lol','Seen ✓','🙄','Blocked.']));ghost()}
+    else{l.counter=l.ask;say('them','lol no. '+money(l.ask)+' firm')}
+    save();openFb(l)};
+  const buyAt=p=>openPay('Facenook: '+it.name,p,()=>{l.status='sold';S.stats3.haggled++;
+    if(l.scam){const ko=ITEM[KO_OF[l.id]];S.owned[ko.id]=(S.owned[ko.id]||0)+1;S.stats3.scammed++;notify('🤡 Facenook: your "'+it.name+'" is actually a '+ko.name+'. Worth '+money(ko.price)+'.');toast('🤡 Plot twist: it\'s a '+ko.name+' (worth '+money(ko.price)+')');sfx('bad')}
+    else{S.owned[it.id]=(S.owned[it.id]||0)+1;toast('🎉 Got it for '+money(p)+'! (retail '+money(it.price)+')');sfx('buy')}save();rerender()});
+  if($('#acc'))$('#acc').onclick=()=>buyAt(l.counter);if($('#full'))$('#full').onclick=()=>buyAt(l.ask);
+}
+
+/* ---------- Clamazon ---------- */
+let onTab='clam',clamQ='',clamCat='all',clamSort='rel';
+function clamDeliver(){return S.crime.active?'🚀 FREE instant delivery (Crime)':'🚚 '+money(SHIP_FEE)+' shipping · arrives Day '+(S.day+1)}
+function buyClam(it){const p=priceOf(it),ship=S.crime.active?0:SHIP_FEE,tot=p+ship;
+  openPay('Clamazon: '+it.name,tot,()=>{const o={oid:S.oid++,id:it.id,src:'Clamazon',price:tot,day:S.day,arrive:S.crime.active?S.day:S.day+1,status:S.crime.active?'delivered':'shipping'};
+    S.orders.unshift(o);if(S.orders.length>60)S.orders.length=60;
+    notify(S.crime.active?'📦 Crime delivery: '+it.name+' is already on your doorstep.':'🚚 Ordered '+it.name+'. Arrives Day '+o.arrive+'.');
+    sfx('buy');toast(S.crime.active?'📦 Delivered instantly! Check your mailbox':'🚚 Ordered! Arrives Day '+o.arrive);save();rerender()},
+    '<div class="small">Item '+money(p)+(ship?' + '+money(ship)+' shipping':'')+' · '+clamDeliver()+'</div>')}
+function clamDetail(it){const rt=rating(it);
+  sheet('<div class="row" style="align-items:flex-start"><img src="'+thumb(it)+'" style="width:110px;border-radius:12px"><div style="flex:1"><b>'+esc(it.name)+'</b><div class="stars">'+starStr(rt.stars)+' <span class="small">'+rt.stars+' ('+rt.count.toLocaleString('en-US')+')</span></div><div class="pr" style="font-size:20px">'+money(priceOf(it))+'</div><div class="small">'+clamDeliver()+'</div></div></div>'+
+   '<button class="btn big" id="cbuy" style="background:#ffa41c;box-shadow:0 2px 0 #c77700">Buy now</button><div class="lbl">Customer reviews</div>'+
+   reviewsFor(it).map(r=>'<div class="slot" style="display:block"><b>'+r.who+'</b> <span class="stars">'+starStr(r.s)+'</span><br>'+esc(r.t)+'</div>').join(''));
+  $('#cbuy').onclick=()=>buyClam(it)}
+function clamCard(it){const rt=rating(it),off=offOf(it),d=document.createElement('div');d.className='item';
+  d.innerHTML='<img alt="" src="'+thumb(it)+'" data-a="det">'+(off?'<span class="badge">-'+off+'%</span>':'')+'<button class="heart" data-a="wish">'+(S.wish[it.id]?'❤️':'🤍')+'</button><div class="nm">'+esc(it.name)+'</div>'+
+   '<div class="stars">'+starStr(rt.stars)+' <span class="small">('+rt.count.toLocaleString('en-US')+')</span></div><div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(priceOf(it))+'</span></div>'+
+   '<div class="small">'+(S.crime.active?'🚀 Crime: FREE today':'Arrives Day '+(S.day+1))+'</div><div class="row"><button class="btn alt" data-a="det" style="flex:1;padding:8px 4px">Reviews</button><button class="btn" data-a="buy" style="flex:1;padding:8px 4px;background:#ffa41c;box-shadow:0 2px 0 #c77700">Buy</button></div>';
+  onAll(d,'[data-a]',b=>{const a=b.dataset.a;if(a==='wish'){toggleWish(it);b.textContent=S.wish[it.id]?'❤️':'🤍'}else if(a==='buy')buyClam(it);else clamDetail(it)});return d}
+function fillClam(){const g=$('#cgrid');if(!g)return;const q=clamQ.toLowerCase().trim();
+  let r=CLAM.filter(i=>(clamCat==='all'||i.cat===clamCat)&&(!q||q.split(/\s+/).every(w=>i.name.toLowerCase().indexOf(w)>=0)));
+  if(clamSort==='lo')r.sort((a,b)=>priceOf(a)-priceOf(b));else if(clamSort==='hi')r.sort((a,b)=>priceOf(b)-priceOf(a));else if(clamSort==='stars')r.sort((a,b)=>rating(b).stars-rating(a).stars);
+  g.innerHTML='';$('#ccount').textContent=r.length+' results';r.slice(0,60).forEach(i=>g.appendChild(clamCard(i)));
+  if(!r.length)g.innerHTML='<div class="card">No results for "'+esc(clamQ)+'". Try "hoodie", "red", or "console".</div>'}
+function renderClam(v){
+  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#232f3e">clamazon<span style="color:#ff9900">.</span> <span class="small" style="color:#ccc">Everything. Eventually.</span></div>'+
+   '<div class="card row sp" style="background:'+(S.crime.active?'#e3f2fd':'#fff')+'">'+(S.crime.active?'<div>📦 <b>Crime member</b><div class="small">Free instant delivery · renews Day '+S.crime.next+' ('+money(CRIME_FEE)+'/wk)</div></div><button class="btn alt" id="crime">Cancel</button>':
+    '<div>📦 <b>Clamazon Crime</b><div class="small">'+money(CRIME_FEE)+'/week · FREE instant delivery · Crime Day deals</div></div><button class="btn" id="crime" style="background:#00a8e1;box-shadow:0 2px 0 #007aa3">Join</button>')+'</div>'+
+   '<input type="search" id="cq" placeholder="🔍 Search Clamazon" value="'+esc(clamQ)+'"><div class="row sp" style="margin:6px 0"><span class="small" id="ccount"></span><select id="csort" style="padding:6px;border-radius:8px"><option value="rel">Featured</option><option value="lo">Price: low→high</option><option value="hi">Price: high→low</option><option value="stars">Avg. review</option></select></div><div id="ctabs"></div><div class="grid" id="cgrid"></div>');
+  const ct=$('#ctabs'),cats=['all'].concat(Object.keys(BASES));const t=document.createElement('div');t.className='tabs';
+  cats.forEach(c=>{const b=document.createElement('button');b.textContent=c==='all'?'All':CAT_LABEL[c];b.className=c===clamCat?'on':'';b.onclick=()=>{clamCat=c;Array.prototype.forEach.call(t.children,x=>x.className='');b.className='on';fillClam()};t.appendChild(b)});ct.appendChild(t);
+  $('#csort').value=clamSort;$('#csort').onchange=e=>{clamSort=e.target.value;fillClam()};
+  $('#cq').oninput=e=>{clamQ=e.target.value;fillClam()};
+  $('#crime').onclick=()=>{if(S.crime.active){S.crime.active=false;toast('Crime cancelled. Shipping is slow again 🐌');save();rerender()}
+    else openPay('Clamazon Crime (1 week)',CRIME_FEE,()=>{S.crime.active=true;S.crime.next=S.day+7;notify('📦 Welcome to Clamazon Crime! Instant delivery unlocked.');sfx('level');save();rerender()})};
+  fillClam();
+}
+function renderFlea(v){
+  const now=Date.now(),mine=S.flea.filter(a=>a.seller==='you'),theirs=S.flea.filter(a=>a.seller!=='you');
+  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:linear-gradient(90deg,#e53238,#0064d2,#f5af02,#86b817)">Fleabay 🔨 <span class="small" style="color:#fff">Bid. Win. Regret.</span></div>'+
+    '<div class="card row sp"><div><b>Sell your stuff</b><div class="small">2-min auction · NPCs bid · 10% fee</div></div><button class="btn" id="list">+ List an item</button></div>');
+  const row=a=>{const it=ITEM[a.id],live=!a.done;const you=a.high==='you';
+    return'<div class="card row" style="align-items:flex-start"><img src="'+thumb(it)+'" style="width:70px;border-radius:10px"><div style="flex:1"><b>'+esc(it.name)+'</b><div class="small">'+(a.seller==='you'?'Your listing':'Seller: '+esc(a.seller))+' · retail '+money(it.price)+'</div>'+
+      '<div>'+(a.high?'Bid':'Starting')+' <b class="pr">'+money(a.bid)+'</b> · '+a.bids+' bid'+(a.bids===1?'':'s')+(a.high?' · <b>'+(you?'You\'re winning 🎉':esc(a.high))+'</b>':'')+'</div>'+
+      '<div class="small">'+(live?'⏱ <b data-end="'+a.end+'">'+fmtLeft(a.end-now)+'</b> left':(a.seller==='you'?(a.high?'💸 Sold':'🦗 Unsold'):you?'🏆 You won!':'Ended'))+'</div></div>'+
+      (live&&a.seller!=='you'?'<button class="btn" data-bid="'+a.aid+'" '+(you?'disabled':'')+'>'+(you?'Top bid':'Bid '+money(nextBid(a)))+'</button>':'')+'</div>'};
+  if(mine.length)v.insertAdjacentHTML('beforeend','<div class="lbl">Your listings</div>'+mine.map(row).join(''));
+  v.insertAdjacentHTML('beforeend','<div class="lbl">Live auctions</div>'+theirs.filter(a=>!a.done).sort((a,b)=>a.end-b.end).map(row).join('')+(theirs.some(a=>a.done)?'<div class="lbl">Recently ended</div>'+theirs.filter(a=>a.done).map(row).join(''):''));
+  onAll(v,'[data-bid]',b=>playerBid(S.flea.filter(a=>a.aid===+b.dataset.bid)[0]));
+  $('#list').onclick=()=>{const own=Object.keys(S.owned).map(id=>ITEM[id]);
+    sheet('<h3>🔨 List on Fleabay</h3>'+(own.length?own.map(it=>'<div class="slot"><span class="row" style="flex-wrap:nowrap"><img src="'+thumb(it)+'" style="width:44px;border-radius:8px"><span>'+esc(it.name)+'<br><span class="small">worth '+money(it.price)+'</span></span></span><button class="btn" data-l="'+it.id+'">List</button></div>').join(''):'<p>You don\'t own anything yet!</p>'));
+    onAll($('#sheet'),'[data-l]',b=>{const it=ITEM[b.dataset.l];
+      sheet('<h3>List '+esc(it.name)+'</h3><div class="small">Retail '+money(it.price)+'. Lower starting bids attract more bidders.</div><div class="lbl">Starting bid</div><input type="number" id="lstart" value="'+Math.max(1,Math.round(it.price*.25))+'"><button class="btn big green" id="lgo">Start 2-minute auction</button>');
+      $('#lgo').onclick=()=>{const v2=parseInt($('#lstart').value,10);if(!(v2>0))return;listItem(it,v2)}})};
+}
+function renderFb(v){
+  if(S.fb.day!==S.day)fbRefresh();
+  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#1877f2">Facenook Marketplace 🏷️ <span class="small" style="color:#dbe7ff">New listings every day</span></div><div class="small" style="margin:0 4px 8px">Used goods, wild prices. Haggle! Some deals are too good to be true…</div><div class="grid" id="fbg"></div>');
+  S.fb.list.forEach(l=>{const it=ITEM[l.id],d=document.createElement('div');d.className='item';
+    d.innerHTML='<img alt="" src="'+thumb(it)+'">'+(l.status!=='open'?'<span class="badge" style="background:#555">'+(l.status==='sold'?'SOLD':'👻 GHOSTED')+'</span>':'')+'<div class="nm">'+esc(it.name)+'</div><div><span class="was">'+money(it.price)+'</span><span class="pr">'+money(l.ask)+'</span></div><div class="small">'+l.face+' '+esc(l.seller)+'</div><button class="btn" style="background:#1877f2;box-shadow:0 2px 0 #0d5bc4">'+(l.status==='open'?'💬 Message':'View')+'</button>';
+    d.querySelector('button').onclick=()=>openFb(l);$('#fbg').appendChild(d)})}
+function renderOrders(v){
+  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#6d4c41">🚚 Orders & tracking</div>');
+  const pk=packagesReady().length;if(pk)v.insertAdjacentHTML('beforeend','<div class="card row sp" style="background:#fff8e1"><span>📦 <b>'+pk+'</b> package(s) on your doorstep</span><button class="btn green" id="ocol">Bring inside</button></div>');
+  if(!S.orders.length)v.insertAdjacentHTML('beforeend','<div class="card">No orders yet. Clamazon is <i>right there</i>.</div>');
+  S.orders.forEach(o=>{const it=ITEM[o.id],st=o.status==='collected'?4:o.status==='delivered'?3:S.day>=o.arrive-0?2:1;
+    v.insertAdjacentHTML('beforeend','<div class="card row" style="align-items:flex-start"><img src="'+thumb(it)+'" style="width:56px;border-radius:8px"><div style="flex:1"><b>'+esc(it.name)+'</b><div class="small">'+o.src+' · '+money(o.price)+' · ordered Day '+o.day+'</div>'+
+      '<div class="small">'+(o.status==='collected'?'✅ Unboxed':o.status==='delivered'?'📦 Delivered to your doorstep':'🚚 Shipped · arrives Day '+o.arrive)+'</div><div class="steps">'+[1,2,3,4].map(i=>'<i class="'+(i<=st?'on':'')+'"></i>').join('')+'</div></div></div>')});
+  if($('#ocol'))$('#ocol').onclick=collect}
+function renderWish(v){
+  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#e91e63">💖 Wishlist</div><div class="small" style="margin:0 4px 8px">Tap 🤍 on any item to save it. We\'ll mail you when it goes on sale.</div><div class="grid" id="wg"></div>');
+  const ids=Object.keys(S.wish).filter(id=>ITEM[id]);if(!ids.length){$('#wg').innerHTML='<div class="card">Nothing yet. Go heart something pretty.</div>';return}
+  const open=openStores().map(s=>s.id);
+  ids.forEach(id=>{const it=ITEM[id],off=offOf(it),d=document.createElement('div');d.className='item';
+    const where=it.store==='clamazon'?'Clamazon':(STORES.filter(s=>s.id===it.store)[0]||{name:'?'}).name,avail=it.store==='clamazon'||open.indexOf(it.store)>=0;
+    d.innerHTML='<img alt="" src="'+thumb(it)+'">'+(off?'<span class="badge">-'+off+'%</span>':'')+'<button class="heart" data-a="wish">❤️</button><div class="nm">'+esc(it.name)+'</div><div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(priceOf(it))+'</span></div><div class="small">'+esc(where)+(avail?' · open now':' · closed today')+'</div><button class="btn" data-a="buy" '+(avail&&stockLeft(it)>0?'':'disabled')+'>Buy</button>';
+    onAll(d,'[data-a]',b=>{if(b.dataset.a==='wish'){toggleWish(it);rerender()}else if(it.store==='clamazon')buyClam(it);else buy(it)});$('#wg').appendChild(d)})}
+function renderWallet(v){
+  const lim=cardLimit(),bal=S.card.bal,pct=Math.min(1,bal/lim);
+  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:linear-gradient(90deg,#424242,#9e9e9e)">💳 Mall Rat Card</div>'+
+   '<div class="card"><div class="slot"><span>💵 Cash</span><b>'+money(S.cash)+'</b></div><div class="slot"><span>💳 Card balance</span><b style="color:'+(bal?'#d32f2f':'#222')+'">'+money(bal)+'</b></div><div class="slot"><span>Credit limit (grows with shifts worked)</span><b>'+money(lim)+'</b></div>'+
+   '<div class="bar"><div style="width:'+pct*100+'%;background:'+(pct>.6?'#e53935':'#ff9800')+'"></div></div><div class="small">Interest: 3% per in-game day, compounding. '+(bal?'Tomorrow you\'ll owe ~'+money(bal+Math.ceil(bal*CARD_RATE))+'.':'')+'</div>'+
+   (pct>.6?'<p style="background:#ffebee;border-radius:10px;padding:8px">🫠 Gentle vibe check: that balance is getting chunky. Maybe a burger shift or two before the next haul?</p>':'')+
+   '<div class="row" style="margin-top:8px"><button class="btn green" id="payall" '+(bal&&S.cash?'':'disabled')+'>Pay '+money(Math.min(bal,S.cash))+'</button><button class="btn alt" id="pay50" '+(bal&&S.cash>=1?'':'disabled')+'>Pay half</button></div></div>'+
+   '<div class="card"><div class="lbl" style="margin-top:0">🐢 Pay-in-4 plans</div>'+(S.bnpl.length?S.bnpl.map(b=>'<div class="slot"><span>'+esc(b.label)+'</span><b>'+money(b.amt)+' × '+b.left+' more days</b></div>').join(''):'<div class="small">None. Your future self thanks you.</div>')+'<div class="small">Missed payments go on your card + '+money(LATE_FEE)+' late fee.</div></div>');
+  const pay=a=>{a=Math.min(a,S.cash,S.card.bal);if(a<=0)return;S.cash-=a;S.card.bal-=a;sfx('coin');toast('Paid '+money(a)+' toward your card ✨');save();rerender()};
+  $('#payall').onclick=()=>pay(bal);$('#pay50').onclick=()=>pay(Math.ceil(bal/2))}
+const OTABS=[['clam','📦 Clamazon'],['flea','🔨 Fleabay'],['fb','🏷️ Facenook'],['orders','🚚 Orders'],['wish','💖 Wishlist'],['wallet','💳 Wallet']];
+function renderOnline(v){
+  const t=document.createElement('div');t.className='tabs';
+  OTABS.forEach(o=>{const b=document.createElement('button');b.textContent=o[1]+(o[0]==='orders'&&packagesReady().length?' ('+packagesReady().length+')':'');b.className=o[0]===onTab?'on':'';b.dataset.ot=o[0];b.onclick=()=>{onTab=o[0];sfx('click');render();window.scrollTo(0,0)};t.appendChild(b)});
+  v.appendChild(t);({clam:renderClam,flea:renderFlea,fb:renderFb,orders:renderOrders,wish:renderWish,wallet:renderWallet})[onTab](v);
+}
+ACH.push(['crime','Crime Pays 📦','Join Clamazon Crime',s=>s.crime.active],['won','Gavel Gremlin 🔨','Win a Fleabay auction',s=>s.stats3.won>0],
+ ['flip','Flipper 💸','Sell an item on Fleabay',s=>s.stats3.flipped>0],['haggle','Haggle Hero 🤝','Buy something on Facenook',s=>s.stats3.haggled>0],
+ ['scam','Lesson Learned 🤡','Get scammed on Facenook',s=>s.stats3.scammed>0],['debt','In Debt We Trust 💳','Carry a $500+ card balance',s=>s.card.bal>=500],
+ ['gadget','Gadget Goblin 🎮','Own 3 electronics',s=>Object.keys(s.owned).filter(id=>ITEM[id].cat==='electronics').length>=3]);
 /* ============================== JOBS ==============================
    Each job: make(el, api) -> {tick(dt), bot()}. api.pay(base) / api.miss(msg).
    bot() performs one correct action (used by automated tests). */
@@ -820,12 +1126,13 @@ function boot(){
   try{
     if(!storageOK){const b=$('#banner');b.hidden=false;b.innerHTML='⚠️ This viewer blocks saving. Progress lasts only while it\'s open. Go to <b>⭐ Me → Export code</b> to keep it!'}
     $('#mute').onclick=()=>{S.muted=!S.muted;save();sfx('click')};
-    setInterval(()=>{if(!S.char)return;if(checkDay()){toast('☀️ Day '+S.day+'! Stores rotated & new deals');sfx('level');if(screen==='mall'&&!shift)rerender()}
+    $('#mail').onclick=()=>{sfx('click');openMail()};
+    setInterval(()=>{if(!S.char)return;onlineTick();if(checkDay()){toast('☀️ Day '+S.day+'! Stores rotated & new deals');sfx('level');if(screen==='mall'&&!shift)rerender()}
       Array.prototype.forEach.call(document.querySelectorAll('.cd'),e=>{e.textContent=timeLeft()})},1000);
     screen=S.char?'mall':'create';nav();render();
   }catch(e){showError(e)}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 /* test hook (harmless in play) */
-window.__game={get S(){return S},ITEMS:ITEMS,ITEM:ITEM,STORES:STORES,JOBS:JOBS,go:go,get shift(){return shift},endShift:endShift,render:render,openStores:openStores,deals:deals,thumb:thumb,buy:id=>buy(ITEM[id])};
+window.__game={get S(){return S},ITEMS:ITEMS,ITEM:ITEM,STORES:STORES,JOBS:JOBS,go:go,get shift(){return shift},endShift:endShift,render:render,openStores:openStores,deals:deals,thumb:thumb,buy:id=>buy(ITEM[id]),onlineTick:onlineTick,nextDay:nextDay,CLAM:CLAM,KO_OF:KO_OF};
 </script></body></html>

@@ -79,13 +79,32 @@ textarea{width:100%;height:80px;border-radius:10px;border:2px solid #ddd;padding
 .slot .btn{padding:6px 10px;font-size:13px}
 .flash{animation:flash .3s}@keyframes flash{50%{background:#ffcdd2}}
 .lock{opacity:.55}
+nav button,.icon{position:relative}
+.nb{position:absolute;top:1px;right:12%;background:#ff1744;color:#fff;border-radius:10px;font-size:10px;font-style:normal;padding:1px 5px;font-weight:800;line-height:14px}
+.nb:empty{display:none}
+#sheet{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+#sheet[hidden]{display:none}
+.sheetbox{background:#fff;width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 14px 24px;position:relative;animation:fade .2s}
+.sheetbox h3{margin:0 36px 8px 0}
+.sheetbox .x{position:absolute;top:10px;right:10px;background:#eee;color:#333}
+.sheetbox .btn.big{margin-top:8px;font-size:15px}
+.item .heart{position:absolute;top:4px;right:4px;border:0;background:#fff;border-radius:50%;width:30px;height:30px;font-size:15px;box-shadow:0 1px 3px #0003;padding:0;margin:0}
+.stars{color:#f5a623;font-size:13px;letter-spacing:-1px}
+.chat{background:#f0f2f5;border-radius:12px;padding:8px;margin:8px 0;max-height:230px;overflow:auto;display:flex;flex-direction:column;gap:4px}
+.bub{background:#fff;border-radius:14px;padding:6px 10px;max-width:80%;font-size:14px;align-self:flex-start}
+.bub.me{background:#0084ff;color:#fff;align-self:flex-end}
+.evt{background:linear-gradient(90deg,#ffe082,#ffab91);border-radius:14px;padding:10px 12px;margin-bottom:10px;font-weight:700}
+.ohead{border-radius:14px;padding:10px 12px;margin-bottom:8px;color:#fff;font-weight:800;font-size:20px}
+.steps{display:flex;gap:3px;margin-top:4px}.steps i{flex:1;height:6px;border-radius:3px;background:#ddd}.steps i.on{background:#2bb34a}
+input[type=search],input[type=number]{width:100%;padding:10px;border-radius:10px;border:2px solid #ddd;font-size:16px}
 </style></head><body>
 <div id="app">
-<header><div>🛍️ Mall Rat</div><div class="hr"><span id="day" class="pill">Day 1</span><button id="mute" class="icon" aria-label="sound">🔊</button><span id="cash" class="pill cash">$0</span></div></header>
+<header><div>🛍️ Mall Rat</div><div class="hr"><span id="day" class="pill">Day 1</span><button id="mute" class="icon" aria-label="sound">🔊</button><button id="mail" class="icon" aria-label="mailbox">📬<i class="nb" id="mailb"></i></button><span id="cash" class="pill cash">$0</span></div></header>
 <div id="banner" hidden></div>
 <main id="view"></main>
 </div>
 <nav id="nav"></nav>
 <div id="toast"></div>
 <div id="overlay" hidden></div>
+<div id="sheet" hidden></div>
 <script>

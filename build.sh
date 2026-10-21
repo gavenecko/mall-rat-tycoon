@@ -1,0 +1,2 @@
+#!/bin/sh
+cd "$(dirname "$0")" && cat parts/1.html parts/2a.js parts/2b.js parts/2c.js parts/3.js parts/4.js parts/5.js parts/7.js parts/6.js > index.html && printf '</script></body></html>\n' >> index.html
