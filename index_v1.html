@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Mall Rat Tycoon</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:system-ui,sans-serif;background:#fdf0f6;color:#222;user-select:none}
+#app{max-width:720px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{position:sticky;top:0;z-index:5;background:#ff4f9a;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+#cash{background:#fff;color:#1a8f3a;padding:4px 10px;border-radius:20px}
+main{flex:1;padding:10px 10px 80px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:2px solid #ff4f9a;z-index:5}
+nav button{flex:1;border:0;background:none;padding:8px 0;font-size:12px;display:flex;flex-direction:column;align-items:center}
+nav button span{font-size:22px}
+nav button.on{background:#ffe0ef;font-weight:700}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#ff4f9a;color:#fff;font-size:15px}
+.btn.alt{background:#555}.btn:disabled{opacity:.4}
+.card{background:#fff;border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 2px 6px #0001}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.item{background:#fff;border-radius:12px;padding:8px;text-align:center;box-shadow:0 1px 4px #0002;font-size:13px}
+.item .sw{height:54px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:4px}
+.item .pr{color:#1a8f3a;font-weight:700}
+.item button{width:100%;margin-top:4px;padding:7px}
+.store{display:flex;align-items:center;gap:10px;padding:14px;border-radius:14px;color:#fff;margin-bottom:10px;font-weight:700;font-size:18px;cursor:pointer}
+.store small{display:block;font-weight:400;font-size:12px;opacity:.9}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:8px}
+.tabs button{border:0;border-radius:20px;padding:6px 12px;background:#eee;white-space:nowrap}
+.tabs button.on{background:#ff4f9a;color:#fff}
+canvas{display:block;margin:0 auto;max-width:100%;touch-action:manipulation;border-radius:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 16px;border-radius:20px;opacity:0;transition:.3s;z-index:9;pointer-events:none}
+.ing{font-size:15px;padding:12px 6px;border-radius:12px;border:2px solid #ddd;background:#fff;flex:1 1 30%}
+.ticket{background:#fffbe0;border:2px dashed #e0b000;border-radius:10px;padding:8px;font-size:14px}
+.bar{height:10px;background:#eee;border-radius:5px;overflow:hidden}.bar div{height:100%;background:#2bb34a;transition:width .1s linear}
+</style></head><body>
+<div id="app">
+<header><div>🛍️ Mall Rat Tycoon</div><div id="cash">$0</div></header>
+<main id="view"></main>
+</div>
+<nav id="nav"></nav>
+<div id="toast"></div>
+<script>
+"use strict";
+/* ================= DATA (expand here) ================= */
+const STORES = [
+ {id:'frauda',name:'Frauda',tag:'Milano-ish luxury',color:'#111',emoji:'👜',cats:['tops','bottoms','shoes','accessories'],tier:[2000,40000]},
+ {id:'goochie',name:'Goochie',tag:'Double G, double price',color:'#0a6b3a',emoji:'🐍',cats:['hats','tops','shoes','accessories'],tier:[800,25000]},
+ {id:'balence',name:'BalenceNada',tag:'Ugly but $$$',color:'#444',emoji:'👟',cats:['shoes','tops','bottoms'],tier:[900,30000]},
+ {id:'vuitno',name:'Louis Vuitno',tag:'Monogram everything',color:'#6b4a1e',emoji:'🧳',cats:['accessories','hats','decor'],tier:[1500,60000]},
+ {id:'shanel',name:'Shanel',tag:'No. 5 of 10',color:'#000',emoji:'💄',cats:['tops','accessories','shoes'],tier:[1200,50000]},
+ {id:'dollar',name:'Dollar Treet',tag:'Everything $1-ish',color:'#2a9d3a',emoji:'💵',cats:['hats','accessories','decor','tops'],tier:[1,5]},
+ {id:'wally',name:"Wally's Mart",tag:'Save money. Live... ok.',color:'#1f6fd1',emoji:'🛒',cats:['tops','bottoms','shoes','furniture','decor'],tier:[5,120]},
+ {id:'ikeya',name:'Ikeya',tag:'Some assembly required',color:'#0051ba',emoji:'🪑',cats:['furniture','decor'],tier:[20,900]},
+ {id:'thrift',name:'Thrift Shift',tag:'Pre-loved, pre-smelled',color:'#9b59b6',emoji:'♻️',cats:['hats','tops','bottoms','shoes','furniture'],tier:[2,40]},
+ {id:'versnatchy',name:'Versnatchy',tag:'Medusa approved',color:'#c9a400',emoji:'👑',cats:['tops','furniture','decor'],tier:[3000,80000]},
+ {id:'targay',name:'Targit',tag:'Came for soap, left with a lamp',color:'#cc0000',emoji:'🎯',cats:['decor','furniture','tops','hats'],tier:[10,250]},
+];
+const SLOTS=['hats','tops','bottoms','shoes','accessories'];
+const ROOM_CATS=['furniture','decor'];
+const BASES={ // [name, emoji, shape]
+ hats:[['Cap','🧢','cap'],['Beanie','🧶','beanie'],['Top Hat','🎩','top'],['Bucket Hat','👒','bucket'],['Crown','👑','crown']],
+ tops:[['Tee','👕','tee'],['Hoodie','🧥','hoodie'],['Blazer','🥼','blazer'],['Tank','🎽','tank'],['Puffer','🧥','puffer']],
+ bottoms:[['Jeans','👖','pants'],['Shorts','🩳','shorts'],['Skirt','👗','skirt'],['Joggers','👖','pants'],['Cargo Pants','👖','pants']],
+ shoes:[['Sneakers','👟','sneak'],['Boots','🥾','boot'],['Heels','👠','heel'],['Slides','🩴','slide'],['Loafers','👞','sneak']],
+ accessories:[['Sunglasses','🕶️','glasses'],['Chain','📿','chain'],['Handbag','👜','bag'],['Watch','⌚','watch'],['Scarf','🧣','scarf']],
+ furniture:[['Sofa','🛋️','sofa'],['Bed','🛏️','bed'],['Chair','🪑','chair'],['Table','🟫','table'],['Bookshelf','📚','shelf'],['Bathtub','🛁','tub']],
+ decor:[['Plant','🪴','plant'],['Lamp','💡','lamp'],['Painting','🖼️','art'],['Rug','🟥','rug'],['Disco Ball','🪩','disco'],['TV','📺','tv'],['Fish Tank','🐠','fish']],
+};
+const ADJ=['Classic','Ultra','Drip','Mega','Vintage','Limited','Glitter','Chunky','Basic'];
+const COLORS=[['Red','#e53935'],['Pink','#ff5fa2'],['Blue','#1e88e5'],['Black','#222'],['White','#f2f2f2'],['Gold','#d4af37'],['Green','#43a047'],['Purple','#8e44ad'],['Orange','#fb8c00'],['Beige','#d7c4a3']];
+const START_CASH=150, ROTATE_MS=3*60*1000, OPEN_COUNT=4;
+
+/* ================= INVENTORY GENERATION ================= */
+function rng(seed){return()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}}
+const ITEMS=[];
+(function gen(){
+  const r=rng(42);
+  STORES.forEach(s=>s.cats.forEach(cat=>{
+    const bases=BASES[cat];
+    for(let i=0;i<4;i++){
+      const b=bases[Math.floor(r()*bases.length)], c=COLORS[Math.floor(r()*COLORS.length)], a=ADJ[Math.floor(r()*ADJ.length)];
+      const [lo,hi]=s.tier, t=Math.pow(r(),1.6);
+      let price=lo*Math.pow(hi/lo,t); price=price<10?Math.max(1,Math.round(price)):Math.round(price/ (price>1000?50:5))*(price>1000?50:5);
+      ITEMS.push({id:`${s.id}-${cat}-${i}`,store:s.id,name:`${s.name} ${a} ${c[0]} ${b[0]}`,cat,slot:SLOTS.includes(cat)?cat:null,
+        price,color:c[1],emoji:b[1],shape:b[2]});
+    }
+  }));
+})();
+const ITEM=Object.fromEntries(ITEMS.map(i=>[i.id,i]));
+
+/* ================= STATE / SAVE ================= */
+const SAVE_KEY='mallrat_v1';
+const $=q=>document.querySelector(q);
+let S=load();
+function fresh(){return{cash:START_CASH,owned:{},equipped:{},room:[],rotSeed:0,rotAt:Date.now(),best:0,earned:0}}
+/* storage guarded: sandboxed iframes / file viewers may throw on ANY localStorage access */
+const MEM={};
+const store={get(k){try{return window.localStorage.getItem(k)}catch(e){return k in MEM?MEM[k]:null}},
+  set(k,v){MEM[k]=v;try{window.localStorage.setItem(k,v)}catch(e){}}};
+function load(){try{return Object.assign(fresh(),JSON.parse(store.get(SAVE_KEY))||{})}catch(e){return fresh()}}
+function save(){store.set(SAVE_KEY,JSON.stringify(S));$('#cash').textContent=money(S.cash)}
+const money=n=>'$'+Math.floor(n).toLocaleString();
+function toast(t){const e=$('#toast');e.textContent=t;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.opacity=0,1600)}
+
+/* ================= STORE ROTATION ================= */
+function checkRotation(){
+  const n=Math.floor((Date.now()-S.rotAt)/ROTATE_MS);
+  if(n>0){S.rotSeed+=n;S.rotAt+=n*ROTATE_MS;save();return true}return false;
+}
+function openStores(){
+  const r=rng(S.rotSeed*7919+3), pool=STORES.slice();
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+  // always keep at least one cheap store open so broke players can shop
+  const open=pool.slice(0,OPEN_COUNT);
+  if(!open.some(s=>s.tier[1]<300)){open[OPEN_COUNT-1]=pool.find(s=>s.tier[1]<300)}
+  return open;
+}
+function timeLeft(){const ms=ROTATE_MS-(Date.now()-S.rotAt);const s=Math.max(0,Math.ceil(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+
+/* ================= AVATAR DRAWING ================= */
+function drawAvatar(ctx,x,y,sc,eq){
+  ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);
+  const it=s=>eq[s]&&ITEM[eq[s]];
+  const skin='#f1c27d';
+  // legs
+  ctx.fillStyle=skin;ctx.fillRect(-14,40,10,46);ctx.fillRect(4,40,10,46);
+  const bo=it('bottoms');
+  if(bo){ctx.fillStyle=bo.color;
+    if(bo.shape==='shorts'){ctx.fillRect(-16,36,32,24)}
+    else if(bo.shape==='skirt'){ctx.beginPath();ctx.moveTo(-16,36);ctx.lineTo(16,36);ctx.lineTo(24,66);ctx.lineTo(-24,66);ctx.fill()}
+    else{ctx.fillRect(-16,36,14,50);ctx.fillRect(2,36,14,50);ctx.fillRect(-16,36,32,12)}}
+  else{ctx.fillStyle='#ddd';ctx.fillRect(-16,36,32,14)} // undies
+  const sh=it('shoes');
+  ctx.fillStyle=sh?sh.color:'#888';
+  const sy=sh&&sh.shape==='boot'?76:84;
+  ctx.fillRect(-18,sy,16,90-sy);ctx.fillRect(2,sy,16,90-sy);
+  if(sh&&sh.shape==='heel'){ctx.fillRect(-18,90,4,6);ctx.fillRect(14,90,4,6)}
+  if(sh&&sh.shape==='sneak'){ctx.fillStyle='#fff';ctx.fillRect(-18,88,16,2);ctx.fillRect(2,88,16,2)}
+  // torso + arms
+  const tp=it('tops');
+  ctx.fillStyle=skin;ctx.fillRect(-30,-4,10,38);ctx.fillRect(20,-4,10,38);
+  ctx.fillStyle=tp?tp.color:'#bbb';ctx.fillRect(-20,-6,40,44);
+  if(tp){
+    if(tp.shape!=='tank'){ctx.fillRect(-30,-6,10,tp.shape==='tee'?14:34);ctx.fillRect(20,-6,10,tp.shape==='tee'?14:34)}
+    if(tp.shape==='blazer'){ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(-6,-6);ctx.lineTo(6,-6);ctx.lineTo(0,14);ctx.fill()}
+    if(tp.shape==='puffer'){ctx.strokeStyle='#0003';ctx.lineWidth=2;for(let i=4;i<38;i+=9){ctx.beginPath();ctx.moveTo(-20,i);ctx.lineTo(20,i);ctx.stroke()}}
+    if(tp.shape==='hoodie'){ctx.fillStyle='#0002';ctx.fillRect(-10,18,20,10)}
+  }
+  // head
+  ctx.fillStyle=skin;ctx.beginPath();ctx.arc(0,-24,20,0,7);ctx.fill();
+  ctx.fillStyle='#222';ctx.fillRect(-8,-28,4,4);ctx.fillRect(4,-28,4,4);
+  ctx.strokeStyle='#a0522d';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-18,6,0.2,2.9);ctx.stroke();
+  ctx.fillStyle='#5a3825';ctx.beginPath();ctx.arc(0,-30,20,Math.PI,0);ctx.fill();
+  const ac=it('accessories');
+  if(ac){ctx.fillStyle=ac.color;ctx.strokeStyle=ac.color;ctx.lineWidth=3;
+    if(ac.shape==='glasses'){ctx.fillStyle='#111';ctx.fillRect(-14,-31,11,8);ctx.fillRect(3,-31,11,8);ctx.fillRect(-3,-29,6,2)}
+    if(ac.shape==='chain'){ctx.beginPath();ctx.arc(0,-4,12,0.3,2.8);ctx.stroke()}
+    if(ac.shape==='bag'){ctx.fillRect(28,22,18,16);ctx.beginPath();ctx.arc(37,22,7,Math.PI,0);ctx.stroke()}
+    if(ac.shape==='watch'){ctx.fillRect(-31,24,12,6)}
+    if(ac.shape==='scarf'){ctx.fillRect(-16,-8,32,8);ctx.fillRect(4,-2,8,20)}}
+  const h=it('hats');
+  if(h){ctx.fillStyle=h.color;
+    if(h.shape==='cap'){ctx.beginPath();ctx.arc(0,-34,20,Math.PI,0);ctx.fill();ctx.fillRect(0,-36,30,5)}
+    if(h.shape==='beanie'){ctx.beginPath();ctx.arc(0,-34,21,Math.PI,0);ctx.fill();ctx.beginPath();ctx.arc(0,-56,5,0,7);ctx.fill()}
+    if(h.shape==='top'){ctx.fillRect(-26,-40,52,5);ctx.fillRect(-15,-72,30,34)}
+    if(h.shape==='bucket'){ctx.fillRect(-28,-40,56,6);ctx.fillRect(-18,-56,36,18)}
+    if(h.shape==='crown'){ctx.beginPath();ctx.moveTo(-18,-40);ctx.lineTo(-18,-60);ctx.lineTo(-9,-48);ctx.lineTo(0,-62);ctx.lineTo(9,-48);ctx.lineTo(18,-60);ctx.lineTo(18,-40);ctx.fill()}}
+  ctx.restore();
+}
+function avatarCanvas(w,h){
+  const c=document.createElement('canvas'),d=devicePixelRatio||1;c.width=w*d;c.height=h*d;c.style.width=w+'px';c.style.height=h+'px';
+  const x=c.getContext('2d');x.scale(d,d);
+  const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#ffe3f1');g.addColorStop(1,'#d6ecff');x.fillStyle=g;x.fillRect(0,0,w,h);
+  x.fillStyle='#0001';x.beginPath();x.ellipse(w/2,h*0.86,50,8,0,0,7);x.fill();
+  drawAvatar(x,w/2,h*0.5,h/260,S.equipped);return c;
+}
+
+/* ================= SCREENS ================= */
+const SCREENS={mall:'🏬 Mall',closet:'👗 Closet',room:'🏠 Room',work:'🍔 Work'};
+let screen='mall',sub=null,filter='all',tick=null;
+function nav(){ $('#nav').innerHTML=Object.entries(SCREENS).map(([k,v])=>{const[e,...t]=v.split(' ');return`<button data-s="${k}" class="${k===screen?'on':''}"><span>${e}</span>${t.join(' ')}</button>`}).join('');
+  $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>go(b.dataset.s));}
+function go(s,sb=null){if(burger.running&&s!=='work')burger.stop();screen=s;sub=sb;filter='all';nav();render()}
+function render(){clearInterval(tick);save();const v=$('#view');v.innerHTML='';({mall:renderMall,closet:renderCloset,room:renderRoom,work:renderWork})[screen](v);window.scrollTo(0,0)}
+
+function itemCard(it,mode){
+  const owned=S.owned[it.id]||0, eq=Object.values(S.equipped).includes(it.id);
+  const d=document.createElement('div');d.className='item';
+  d.innerHTML=`<div class="sw" style="background:${it.color}33;border:3px solid ${it.color}">${it.emoji}</div><div>${it.name}</div>`+
+   (mode==='shop'?`<div class="pr">${money(it.price)}</div>${owned?`<small>Owned ×${owned}</small>`:''}<button class="btn">Buy</button>`:
+   `<small>×${owned}${ROOM_CATS.includes(it.cat)?` · ${S.room.filter(p=>p.id===it.id).length} placed`:''}</small><div class="row"><button class="btn ${eq?'alt':''}" style="flex:1">${it.slot?(eq?'Unequip':'Wear'):'Place'}</button><button class="btn alt" style="flex:0 0 auto" title="Sell for 50%">💲</button></div>`);
+  const bs=d.querySelectorAll('button');
+  if(mode==='shop'){bs[0].disabled=S.cash<it.price;bs[0].onclick=()=>buy(it)}
+  else{bs[0].onclick=()=>{if(it.slot){if(eq)delete S.equipped[it.slot];else S.equipped[it.slot]=it.id;render()}else{placing=it.id;go('room')}};
+       bs[1].onclick=()=>sell(it)}
+  return d;
+}
+function buy(it){if(S.cash<it.price)return toast('Too broke! Go flip burgers 🍔');S.cash-=it.price;S.owned[it.id]=(S.owned[it.id]||0)+1;
+  if(it.slot&&!S.equipped[it.slot])S.equipped[it.slot]=it.id;toast('Bought '+it.name+' ✨');render()}
+function sell(it){S.owned[it.id]--;S.cash+=Math.floor(it.price/2);
+  if(!S.owned[it.id]){delete S.owned[it.id];for(const k in S.equipped)if(S.equipped[k]===it.id)delete S.equipped[k];S.room=S.room.filter(p=>p.id!==it.id)}
+  else{const placed=S.room.filter(p=>p.id===it.id);if(placed.length>S.owned[it.id])S.room.splice(S.room.indexOf(placed[0]),1)}
+  toast('Sold for '+money(it.price/2));render()}
+
+function renderMall(v){
+  checkRotation();
+  if(sub){const s=STORES.find(x=>x.id===sub);
+    if(!openStores().includes(s)){sub=null;return renderMall(v)}
+    v.innerHTML=`<div class="store" style="background:${s.color}"><span style="font-size:34px">${s.emoji}</span><div>${s.name}<small>${s.tag}</small></div></div>
+     <div class="row" style="margin-bottom:8px"><button class="btn alt" id="back">← Mall</button><small>Closes in <b id="cd">${timeLeft()}</b></small></div><div class="tabs"></div><div class="grid"></div>`;
+    $('#back').onclick=()=>go('mall');
+    const cats=['all',...s.cats],tabs=v.querySelector('.tabs');
+    cats.forEach(c=>{const b=document.createElement('button');b.textContent=c;b.className=c===filter?'on':'';b.onclick=()=>{filter=c;const y=scrollY;render();scrollTo(0,y)};tabs.appendChild(b)});
+    const g=v.querySelector('.grid');ITEMS.filter(i=>i.store===s.id&&(filter==='all'||i.cat===filter)).sort((a,b)=>a.price-b.price).forEach(i=>g.appendChild(itemCard(i,'shop')));
+  } else {
+    v.innerHTML=`<div class="card row" style="justify-content:space-between"><div><b>Stores rotate in</b> <span id="cd" style="font-size:20px;font-weight:800">${timeLeft()}</span></div><small>${STORES.length} stores · ${ITEMS.length} items</small></div>`;
+    openStores().forEach(s=>{const d=document.createElement('div');d.className='store';d.style.background=s.color;
+      d.innerHTML=`<span style="font-size:34px">${s.emoji}</span><div>${s.name}<small>${s.tag} · ${money(s.tier[0])}–${money(s.tier[1])}</small></div>`;
+      d.onclick=()=>go('mall',s.id);v.appendChild(d)});
+    const closed=STORES.filter(s=>!openStores().includes(s)).map(s=>s.name).join(', ');
+    v.insertAdjacentHTML('beforeend',`<div class="card"><small>🔒 Closed now: ${closed}</small></div>`);
+  }
+  tick=setInterval(()=>{if(checkRotation()){toast('🔄 New stores are open!');render()}else{const c=$('#cd');if(c)c.textContent=timeLeft()}},1000);
+}
+
+function renderCloset(v){
+  const top=document.createElement('div');top.className='card';top.style.textAlign='center';
+  top.appendChild(avatarCanvas(200,240));
+  const val=Object.entries(S.owned).reduce((t,[id,n])=>t+ITEM[id].price*n,0);
+  top.insertAdjacentHTML('beforeend',`<div><small>Closet value: <b>${money(val)}</b> · Lifetime wages: ${money(S.earned)}</small></div>`);
+  v.appendChild(top);
+  const tabs=document.createElement('div');tabs.className='tabs';
+  ['all',...SLOTS,...ROOM_CATS].forEach(c=>{const b=document.createElement('button');b.textContent=c;b.className=c===filter?'on':'';b.onclick=()=>{filter=c;render()};tabs.appendChild(b)});
+  v.appendChild(tabs);
+  const g=document.createElement('div');g.className='grid';
+  const mine=Object.keys(S.owned).map(id=>ITEM[id]).filter(i=>i&&(filter==='all'||i.cat===filter));
+  if(!mine.length)v.insertAdjacentHTML('beforeend','<div class="card">Nothing here yet. Hit the 🏬 Mall!</div>');
+  mine.forEach(i=>g.appendChild(itemCard(i,'closet')));v.appendChild(g);
+  v.insertAdjacentHTML('beforeend',`<div style="text-align:center;margin-top:20px"><button class="btn alt" id="reset">Reset save</button></div>`);
+  $('#reset').onclick=e=>{const b=e.target;if(b.dataset.armed){S=fresh();render();toast('Progress wiped')}else{b.dataset.armed=1;b.textContent='Tap again to wipe everything';b.style.background='#e53935';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Reset save';b.style.background=''}},3000)}};
+}
+
+/* ---- Room ---- */
+const GW=8,GH=8;let placing=null,selected=null;
+function drawFurni(x,it,px,py,c){
+  x.fillStyle=it.color;const p=c*0.1,w=c-2*p;
+  if(it.shape==='rug'){x.globalAlpha=.7;x.fillRect(px+2,py+2,c-4,c-4);x.globalAlpha=1}
+  else x.fillRect(px+p,py+c*0.45,w,c*0.45);
+  x.font=(c*0.6)+'px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(it.emoji,px+c/2,py+c*0.45);
+}
+function renderRoom(v){
+  const placeable=Object.keys(S.owned).map(id=>ITEM[id]).filter(i=>i&&ROOM_CATS.includes(i.cat));
+  v.innerHTML=`<div class="card"><small id="hint"></small></div>`;
+  const W=Math.min(innerWidth-20,600),c=Math.floor(W/GW),cv=document.createElement('canvas'),d=devicePixelRatio||1;
+  cv.width=c*GW*d;cv.height=c*GH*d;cv.style.width=c*GW+'px';cv.style.height=c*GH+'px';v.appendChild(cv);
+  const x=cv.getContext('2d');x.scale(d,d);
+  const hint=()=>$('#hint').innerHTML=placing?`Tap an empty tile to place <b>${ITEM[placing].name}</b>`:selected!=null?`Tap a tile to move it, or <button class="btn alt" id="rm" style="padding:4px 8px">Remove</button>`:'Tap furniture to select & move it. Pick an item below to place.';
+  function draw(){
+    for(let i=0;i<GW;i++)for(let j=0;j<GH;j++){x.fillStyle=j<2?((i%2)?'#f6d6e6':'#fbe3ef'):((i+j)%2?'#c9a27e':'#d4b08c');x.fillRect(i*c,j*c,c,c)}
+    x.fillStyle='#0002';x.fillRect(0,2*c-3,GW*c,3);
+    S.room.forEach((p,k)=>{drawFurni(x,ITEM[p.id],p.x*c,p.y*c,c);if(k===selected){x.strokeStyle='#ff4f9a';x.lineWidth=3;x.strokeRect(p.x*c+2,p.y*c+2,c-4,c-4)}});
+    drawAvatar(x,c*GW-c*1.2,c*GH-c*1.6,c/90,S.equipped);
+    hint();const rm=$('#rm');if(rm)rm.onclick=()=>{S.room.splice(selected,1);selected=null;save();render()};
+  }
+  cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect(),gx=Math.floor((e.clientX-r.left)/c),gy=Math.floor((e.clientY-r.top)/c);
+    const hit=S.room.findIndex(p=>p.x===gx&&p.y===gy);
+    if(placing){if(hit<0){S.room.push({id:placing,x:gx,y:gy});if(S.room.filter(p=>p.id===placing).length>=S.owned[placing])placing=null;save()}else toast('Tile taken')}
+    else if(hit>=0)selected=hit===selected?null:hit;
+    else if(selected!=null){S.room[selected].x=gx;S.room[selected].y=gy;selected=null;save()}
+    draw();renderList()});
+  const list=document.createElement('div');list.className='grid';list.style.marginTop='10px';v.appendChild(list);
+  function renderList(){list.innerHTML='';
+    if(!placeable.length)list.innerHTML='<div class="card">No furniture yet — try Ikeya, Targit or Thrift Shift!</div>';
+    placeable.forEach(it=>{const left=S.owned[it.id]-S.room.filter(p=>p.id===it.id).length;const b=document.createElement('div');b.className='item';
+      b.innerHTML=`<div class="sw" style="background:${it.color}33">${it.emoji}</div><div>${it.name}</div><small>${left} to place</small><button class="btn" ${left?'':'disabled'}>${placing===it.id?'Placing…':'Place'}</button>`;
+      b.querySelector('button').onclick=()=>{placing=it.id;selected=null;draw();renderList()};list.appendChild(b)})}
+  draw();renderList();
+}
+
+/* ---- Burger Bonanza ---- */
+const INGS=[['bun','🍞','#e0a050'],['patty','🥩','#6b3a1e'],['cheese','🧀','#ffcc00'],['lettuce','🥬','#4caf50'],['tomato','🍅','#e53935'],['onion','🧅','#d9b3ff'],['pickle','🥒','#7cb342'],['bacon','🥓','#c0392b']];
+const CUSTOMERS=['🧑','👵','🤠','👽','🧛','🦸','👩‍🚀','🐸','🤡','🧙'];
+const burger={running:false,
+  start(){Object.assign(this,{running:true,score:0,orders:0,round:0,shiftEnd:Date.now()+60000});this.next()},
+  stop(){this.running=false;clearInterval(this.iv)},
+  next(){this.round++;const n=Math.min(2+Math.floor(this.round/2),6),mid=[];
+    for(let i=0;i<n;i++)mid.push(INGS[1+Math.floor(Math.random()*(INGS.length-1))][0]);
+    this.order=['bun',...mid,'bun'];this.stack=[];this.cust=CUSTOMERS[Math.floor(Math.random()*CUSTOMERS.length)];
+    this.limit=4000+this.order.length*1300;this.t0=Date.now();},
+  tap(id){if(!this.running)return;const want=this.order[this.stack.length];
+    if(id!==want){toast('❌ Wrong! '+this.cust+' is upset');this.next();return}
+    this.stack.push(id);
+    if(this.stack.length===this.order.length){const left=1-(Date.now()-this.t0)/this.limit,pay=5+this.order.length*2,tip=Math.round(left*pay*1.5);
+      this.score+=pay+tip;this.orders++;toast(`✅ +${money(pay)} + ${money(tip)} tip`);this.next()}}
+};
+function renderWork(v){
+  if(!burger.running){
+    v.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:60px">🍔</div><h2>Burger Bonanza</h2>
+     <p>Tap ingredients <b>bottom to top</b> to match each order before the customer storms off. 60-second shift. Faster = bigger tips!</p>
+     ${burger.orders!=null&&burger.last!=null?`<p>Last shift: <b>${burger.last.orders}</b> orders, earned <b>${money(burger.last.score)}</b></p>`:''}
+     <p><small>Best shift: ${money(S.best)}</small></p><button class="btn" id="go" style="font-size:20px;padding:14px 30px">Clock In</button></div>`;
+    $('#go').onclick=()=>{burger.start();render()};return}
+  v.innerHTML=`<div class="row" style="justify-content:space-between"><b>⏱ <span id="shift"></span></b><b>💰 <span id="earn"></span> · 🍔 <span id="ord"></span></b></div>
+   <div class="card"><div class="row"><span style="font-size:44px" id="cust"></span><div class="ticket" style="flex:1" id="ticket"></div></div><div class="bar" style="margin-top:8px"><div id="pat"></div></div></div>
+   <canvas id="plate"></canvas><div class="row" id="ings" style="margin-top:8px"></div>`;
+  INGS.forEach(([id,e])=>{const b=document.createElement('button');b.className='ing';b.innerHTML=`${e}<br>${id}`;b.onpointerdown=ev=>{ev.preventDefault();burger.tap(id);paint()};$('#ings').appendChild(b)});
+  const cv=$('#plate'),W=Math.min(innerWidth-20,400),H=170,d=devicePixelRatio||1;cv.width=W*d;cv.height=H*d;cv.style.width=W+'px';cv.style.height=H+'px';
+  const x=cv.getContext('2d');x.scale(d,d);
+  function paint(){
+    if(!burger.running)return;
+    $('#cust').textContent=burger.cust;
+    $('#ticket').innerHTML='Order: '+burger.order.map((o,i)=>`<span style="opacity:${i<burger.stack.length?.3:1}">${INGS.find(g=>g[0]===o)[1]}</span>`).join(' ')+'<br><small>(bottom → top)</small>';
+    x.fillStyle='#fff7e6';x.fillRect(0,0,W,H);x.fillStyle='#ccc';x.beginPath();x.ellipse(W/2,H-12,90,10,0,0,7);x.fill();
+    burger.stack.forEach((s,i)=>{const g=INGS.find(q=>q[0]===s);x.fillStyle=g[2];const y=H-22-i*16;
+      if(s==='bun'){x.beginPath();i===0?x.ellipse(W/2,y,70,9,0,0,7):x.ellipse(W/2,y,70,18,0,Math.PI,0);x.fill()}
+      else{x.beginPath();x.rect(W/2-72,y-6,144,12);x.fill()}});
+  }
+  function loop(){
+    if(!burger.running)return;const now=Date.now();
+    if(now>=burger.shiftEnd){burger.stop();S.cash+=burger.score;S.earned+=burger.score;S.best=Math.max(S.best,burger.score);burger.last={orders:burger.orders,score:burger.score};
+      toast('Shift over! Paid '+money(burger.score));return render()}
+    const p=1-(now-burger.t0)/burger.limit;
+    if(p<=0){toast('😤 Customer left!');burger.next();paint()}
+    $('#pat').style.width=Math.max(0,p*100)+'%';$('#pat').style.background=p<.3?'#e53935':'#2bb34a';
+    $('#shift').textContent=Math.ceil((burger.shiftEnd-now)/1000)+'s';$('#earn').textContent=money(burger.score);$('#ord').textContent=burger.orders;
+  }
+  paint();loop();tick=setInterval(loop,100);
+}
+
+/* ================= BOOT ================= */
+function showError(e){const v=document.getElementById('view');if(v)v.innerHTML='<div class="card" style="color:#b00"><b>Oops, the game hit an error:</b><br>'+String(e&&e.message||e)+'</div>'}
+window.addEventListener('error',ev=>showError(ev.error||ev.message));
+function boot(){try{nav();render()}catch(e){showError(e)}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+window.__game={get S(){return S},ITEMS,STORES,burger,go,buy:id=>buy(ITEM[id])};
+</script></body></html>
