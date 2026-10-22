@@ -10,7 +10,7 @@ const store={
   get(k){if(storageOK){try{return window.localStorage.getItem(k)}catch(e){}}return Object.prototype.hasOwnProperty.call(MEM,k)?MEM[k]:null},
   set(k,v){MEM[k]=v;if(storageOK){try{window.localStorage.setItem(k,v)}catch(e){}}}
 };
-function fresh(){return{v:3,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},rap:{optin:false,lastSteal:{},hot:{},arrests:0,heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
+function fresh(){return{v:3,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},dark:false,rap:{optin:false,lastSteal:{},hot:{},arrests:0,heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
   shifts:0,earned:0,spent:0,dealsBought:0,ach:{},tutDone:false,muted:false,savedAt:0}}
 function normalize(o){
   if(!o||typeof o!=='object'||typeof o.cash!=='number'||isNaN(o.cash))throw new Error('Not a valid save');
@@ -77,7 +77,7 @@ function sfx(n){if(S.muted)return;try{if(!AC){const C=window.AudioContext||windo
   let t=AC.currentTime;(SFX[n]||SFX.click).forEach(s=>{const o=AC.createOscillator(),g=AC.createGain();o.type=s[2]||'square';o.frequency.value=s[0];g.gain.setValueAtTime(.06,t);g.gain.exponentialRampToValueAtTime(.001,t+s[1]);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+s[1]+.02);t+=s[1]*.85})}catch(e){}}
 
 /* ============================ UI HELPERS ============================ */
-function toast(t){const e=$('#toast');e.textContent=t;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>{e.style.opacity=0},1800)}
+function toast(t){const e=$('#toast');e.textContent=t;e.style.opacity=1;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>{e.style.opacity=0;e.classList.remove('show')},1800)}
 function floatText(t,color){const e=document.createElement('div');e.className='float';e.textContent=t;e.style.color=color||'#1a8f3a';document.body.appendChild(e);setTimeout(()=>e.remove(),1050)}
 function hud(){$('#cash').textContent=money(S.cash);$('#day').textContent='Day '+S.day;mailHud()}
 function bumpCash(){const c=$('#cash');c.classList.add('bump');setTimeout(()=>c.classList.remove('bump'),200)}

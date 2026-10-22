@@ -72,15 +72,22 @@ function drawTop(x,it,b,skin){
     x.fillStyle='#222';circ(x,0,109,1.6);x.fill();circ(x,0,115,1.6);x.fill()}
   if(s==='puffer'){x.strokeStyle='rgba(0,0,0,.25)';x.lineWidth=1.5;for(let y=89;y<120;y+=8)line(x,-b.sh-2,y,b.sh+2,y);x.strokeStyle='#ccc';line(x,0,82,0,120)}
 }
+const AV={blink:false,mood:'smile'};
 function drawHead(x,ch){
-  const sk=ch.skin;x.fillStyle=sk;circ(x,-29,53,5);x.fill();circ(x,29,53,5);x.fill();
+  const sk=ch.skin;x.fillStyle=sk;circ(x,-29,53,5);x.fill();circ(x,29,53,5);x.fill();x.fillStyle=tint(sk,.85);circ(x,-29,53,2.4);x.fill();circ(x,29,53,2.4);x.fill();x.fillStyle=sk;
   circ(x,0,48,30);x.fill();x.strokeStyle='rgba(0,0,0,.2)';x.lineWidth=1;x.stroke();
   const g=x.createRadialGradient(-8,38,4,0,48,31);g.addColorStop(0,'rgba(255,255,255,.28)');g.addColorStop(1,'rgba(0,0,0,.12)');x.fillStyle=g;circ(x,0,48,30);x.fill();
-  [-1,1].forEach(f=>{x.fillStyle='#2b2b2b';ell(x,f*11,56,4.2,5.6);x.fill();x.fillStyle='#fff';circ(x,f*11+1.5,54,1.7);x.fill();
+  const iris=ch.eyeColor||'#5b3a29';[-1,1].forEach(f=>{const ex=f*11;
+    if(AV.blink||AV.mood==='happy'){x.strokeStyle='#2b2b2b';x.lineWidth=2;x.lineCap='round';x.beginPath();if(AV.blink)x.arc(ex,54,4.4,.15*Math.PI,.85*Math.PI);else x.arc(ex,58,4.4,1.15*Math.PI,1.85*Math.PI);x.stroke()}
+    else{x.fillStyle='#fff';ell(x,ex,56,4.8,6.2);x.fill();x.fillStyle=iris;ell(x,ex+.4,56.8,3.8,5);x.fill();x.fillStyle='#1b1b1b';ell(x,ex+.4,57.4,2.1,2.9);x.fill();
+      x.strokeStyle='#2b2b2b';x.lineWidth=1.6;x.beginPath();x.ellipse(ex,56,4.8,6.2,0,Math.PI*1.05,Math.PI*1.95);x.stroke();
+      x.fillStyle='#fff';circ(x,ex+2,53.6,1.7);x.fill();circ(x,ex-1.4,59,.9);x.fill()}
     x.strokeStyle=ch.hairColor;x.lineWidth=2;x.lineCap='round';line(x,f*7,46,f*15,45);
     if(ch.gender==='female'){x.strokeStyle='#2b2b2b';x.lineWidth=1.3;line(x,f*14.5,52,f*17,49.5)}
     x.fillStyle='rgba(255,100,120,.33)';ell(x,f*19,64,5,3);x.fill()});
-  x.strokeStyle='#8a3b2b';x.lineWidth=1.6;x.beginPath();x.arc(0,63,4.5,.2*Math.PI,.8*Math.PI);x.stroke();
+  x.lineCap='round';if(AV.mood==='wow'){x.fillStyle='#7a2b25';ell(x,0,66,3.2,4);x.fill()}else if(AV.mood==='happy'){x.fillStyle='#7a2b25';x.beginPath();x.arc(0,63,5.5,0,Math.PI);x.closePath();x.fill();x.fillStyle='#ff8a80';ell(x,0,66.5,2.8,1.4);x.fill()}
+  else{x.strokeStyle='#8a3b2b';x.lineWidth=1.8;x.beginPath();x.arc(0,63,4.5,.2*Math.PI,.8*Math.PI);x.stroke()}
+  x.fillStyle='rgba(0,0,0,.08)';ell(x,0,60.5,1.6,1);x.fill();
 }
 function hairBack(x,ch){
   x.fillStyle=ch.hairColor;x.strokeStyle='rgba(0,0,0,.25)';x.lineWidth=1;const h=ch.hair;
@@ -125,9 +132,19 @@ function drawAvatar(x,ch,eq){
   drawHead(x,ch);hairFront(x,ch);
   const a=g('accessories');if(a)drawAcc(x,a,b);const h=g('hats');if(h)drawHat(x,h);
 }
+/* outlined avatar: draw once to an offscreen canvas, stamp a dark silhouette around it for a clean sticker outline */
+function outlinedAvatar(x,ch,eq,sc,blink){const d=window.devicePixelRatio||1,W=Math.ceil(150*sc*d),H=Math.ceil(200*sc*d),o=document.createElement('canvas');o.width=W;o.height=H;const g=o.getContext('2d');
+  g.translate(W/2,8*sc*d);g.scale(sc*d,sc*d);const pb=AV.blink;AV.blink=!!blink;drawAvatar(g,ch,eq);AV.blink=pb;
+  const s=document.createElement('canvas');s.width=W;s.height=H;const q=s.getContext('2d');q.drawImage(o,0,0);q.globalCompositeOperation='source-in';q.fillStyle='#2a2238';q.fillRect(0,0,W,H);
+  const k=Math.max(1.2,2*sc)*d;x.save();x.setTransform(1,0,0,1,0,0);return{o:o,s:s,k:k,W:W,H:H}}
 function avatarCanvas(w,h,ch,eq,bg){
-  const c=document.createElement('canvas'),x=setupCanvas(c,w,h);
-  if(bg!==false){const gr=x.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#ffe3f1');gr.addColorStop(1,'#d6ecff');x.fillStyle=gr;x.fillRect(0,0,w,h)}
-  const sc=h/195;x.fillStyle='rgba(0,0,0,.12)';ell(x,w/2,h*.93,56*sc,6*sc);x.fill();
-  x.translate(w/2,h*.93-162*sc);x.scale(sc,sc);drawAvatar(x,ch||S.char,eq||S.equipped);return c;
+  const c=document.createElement('canvas'),x=setupCanvas(c,w,h),d=window.devicePixelRatio||1;ch=ch||S.char;eq=eq||S.equipped;
+  const sc=h/195;
+  c._draw=blink=>{x.save();x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);
+    if(bg!==false){const gr=x.createLinearGradient(0,0,0,h);gr.addColorStop(0,S&&S.dark?'#2a2340':'#ffe3f1');gr.addColorStop(1,S&&S.dark?'#1b2a40':'#d6ecff');x.fillStyle=gr;x.fillRect(0,0,w,h);
+      const rg=x.createRadialGradient(w/2,h*.45,10,w/2,h*.45,h*.6);rg.addColorStop(0,'rgba(255,255,255,.55)');rg.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=rg;x.fillRect(0,0,w,h)}
+    x.fillStyle='rgba(30,10,40,.18)';ell(x,w/2,h*.93,52*sc,6.5*sc);x.fill();
+    const A=outlinedAvatar(x,ch,eq,sc,blink),ox=Math.round((w/2)*d-A.W/2),oy=Math.round((h*.93-162*sc)*d-8*sc*d);
+    for(let i=0;i<8;i++){const a=i*Math.PI/4;x.drawImage(A.s,ox+Math.cos(a)*A.k,oy+Math.sin(a)*A.k)}x.drawImage(A.o,ox,oy);x.restore();x.restore()};
+  c._draw(false);c.classList.add('blinky');return c;
 }

@@ -2,11 +2,12 @@
 const TABS=[['mall','🏬','Mall'],['closet','👗','Closet'],['room','🏠','Room'],['work','💼','Work'],['online','📱','Online'],['me','⭐','Me']];
 let screen='mall',sub=null,filter='all',jobTick=null;
 function nav(){const n=$('#nav');n.style.display=screen==='create'?'none':'flex';
-  n.innerHTML=TABS.map(t=>'<button data-s="'+t[0]+'" class="'+(t[0]===screen?'on':'')+'"><span>'+t[1]+'</span>'+t[2]+'<i class="nb" data-nb="'+t[0]+'"></i></button>').join('');
+  n.innerHTML=TABS.map(t=>'<button data-s="'+t[0]+'" aria-label="'+t[2]+'" class="'+(t[0]===screen?'on':'')+'">'+icon(t[0])+t[2]+'<i class="nb" data-nb="'+t[0]+'"></i></button>').join('');
   onAll(n,'button',b=>{sfx('click');go(b.dataset.s)});mailHud()}
 function go(s,sb){if(shift&&s!=='work')endShift();screen=s;sub=sb||null;filter='all';nav();render();window.scrollTo(0,0)}
 function render(){
-  clearInterval(jobTick);jobTick=null;hud();const v=$('#view');v.innerHTML='';
+  clearInterval(jobTick);jobTick=null;hud();applyTheme();const v=$('#view');v.innerHTML='';const tt=$('#ttl');if(tt)tt.textContent=sub==='alley'?'Back Alley':sub&&STORES.filter(q=>q.id===sub)[0]?STORES.filter(q=>q.id===sub)[0].name:TITLES[screen]||'';
+  if(render.last!==screen+sub){render.last=screen+sub;v.classList.remove('enter');void v.offsetWidth;v.classList.add('enter')}
   try{({mall:renderMall,closet:renderCloset,room:renderRoom,work:renderWork,me:renderMe,create:renderCreate,online:renderOnline})[screen](v)}catch(e){showError(e)}
 }
 function rerender(){const y=window.scrollY;render();window.scrollTo(0,y)}
@@ -14,13 +15,14 @@ function rerender(){const y=window.scrollY;render();window.scrollTo(0,y)}
 function itemCard(it,mode){
   const owned=S.owned[it.id]||0,eq=S.equipped[it.slot]===it.id,off=offOf(it),p=priceOf(it),left=stockLeft(it);
   const shopM=mode==='shop'||mode==='store';const d=document.createElement('div');d.className='item'+(eq&&!shopM?' eq':'');
-  let h='<img alt="" src="'+thumb(it)+'">'+(it.rare?'<span class="badge r">LIMITED · '+left+' left</span>':off?'<span class="badge">-'+off+'%</span>':'')+'<button class="heart" data-a="wish" aria-label="wishlist">'+(S.wish[it.id]?'❤️':'🤍')+'</button><div class="nm">'+esc(it.name)+'</div>';
+  const rr_=rarity(it);let h='<img alt="'+esc(it.name)+'" src="'+thumb(it)+'" data-a="det">'+(it.rare?'<span class="badge r">LIMITED · '+left+' left</span>':off?'<span class="badge sale">-'+off+'% SALE</span>':'')+'<button class="heart" data-a="wish" aria-label="wishlist">'+(S.wish[it.id]?'❤️':'🤍')+'</button><span class="rar rar-'+rr_+'">'+rr_.toUpperCase()+'</span><div class="nm">'+esc(it.name)+'</div>';
   if(shopM){h+='<div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(p)+'</span></div><div class="small">'+(owned?'Owned ×'+owned:'&nbsp;')+'</div><button class="btn" data-a="buy">'+(left<=0?'Sold out':'Buy')+'</button>'+(mode==='store'&&left>0&&canSteal(it.store)?'<button class="btn" data-a="steal" style="padding:6px;font-size:12px;background:#7b1fa2;box-shadow:0 2px 0 #4a148c">🤏 Five-finger discount</button>':'')}
   else{const placed=S.room.filter(q=>q.id===it.id).length;
     h+='<div class="small">×'+owned+(it.slot?'':' · '+placed+' placed')+' · worth '+money(it.price)+'</div><div class="row"><button class="btn '+(eq?'alt':'green')+'" style="flex:1" data-a="use">'+(it.slot?(eq?'Take off':'Wear'):'Place')+'</button><button class="btn alt" style="flex:0 0 46px" data-a="sell" title="Sell for half">💲</button></div>'}
   d.innerHTML=h;
   onAll(d,'[data-a]',b=>{const a=b.dataset.a;
-    if(a==='wish'){toggleWish(it);b.textContent=S.wish[it.id]?'❤️':'🤍'}
+    if(a==='det'){sfx('click');itemDetail(it)}
+    else if(a==='wish'){toggleWish(it);b.textContent=S.wish[it.id]?'❤️':'🤍'}
     else if(a==='buy')buy(it);
     else if(a==='steal')stealAttempt(it);
     else if(a==='sell')sell(it);
@@ -57,8 +59,8 @@ function renderMall(v){
   if(sub&&isBanned(sub)){sub=null;toast('🚫 You\'re banned from that store');return renderMall(v)}
   if(sub){const s=STORES.filter(q=>q.id===sub)[0];
     if(!s||open.indexOf(s)<0){sub=null;toast('That store just closed!');return renderMall(v)}
-    v.innerHTML='<div class="store" style="background:'+s.color+'"><span style="font-size:34px">'+s.emoji+'</span><div>'+esc(s.name)+'<small>'+esc(s.tag)+'</small></div></div>'+
-      '<div class="row sp" style="margin-bottom:8px"><button class="btn alt" id="back">← Mall</button>'+heatPill()+(S.rap.optin&&stealWait(s.id)?'<span class="heat" style="background:#607d8b">🤏 try again in '+stealWait(s.id)+'d</span> ':'')+'<span class="small">Closes in <b class="cd">'+timeLeft()+'</b></span></div>';
+    v.innerHTML=storeHero(s)+
+      '<div class="subbar"><button class="btn alt" id="back">← Mall</button>'+heatPill()+(S.rap.optin&&stealWait(s.id)?'<span class="heat" style="background:#607d8b">🤏 try again in '+stealWait(s.id)+'d</span> ':'')+'<span class="small">Closes in <b class="cd">'+timeLeft()+'</b></span></div>';
     v.querySelector('#back').onclick=()=>{sfx('click');go('mall')};
     v.appendChild(tabsBar(['all'].concat(s.cats),rerender));
     const g=document.createElement('div');g.className='grid';v.appendChild(g);
@@ -66,20 +68,19 @@ function renderMall(v){
     return;
   }
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
-    '<div class="lbl">🔥 Daily Deals</div><div class="hs" id="deals"></div><div class="lbl">🏬 Open today</div><div id="stores"></div>';
+    '<div class="lbl">🔥 Daily Deals</div><div class="hs" id="deals"></div><div class="concourse"><div class="ctitle"><span>🏬 Main Concourse</span><span class="small">'+open.length+' open</span></div><div class="fronts" id="stores"></div></div>';
   deals().forEach(d=>v.querySelector('#deals').appendChild(itemCard(ITEM[d.id],'shop')));
   v.insertAdjacentHTML('afterbegin',eventBanner());
-  open.forEach(s=>{const d=document.createElement('div');d.className='store';d.style.background=s.color;
-    const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length;
-    d.innerHTML='<span style="font-size:34px">'+s.emoji+'</span><div style="flex:1">'+esc(s.name)+'<small>'+esc(s.tag)+' · '+money(s.tier[0])+'–'+money(s.tier[1])+'+</small></div>'+(isBanned(s.id)?'<span class="badge" style="position:static">🚫 BANNED</span>':rare?'<span class="badge r" style="position:static">✨ LIMITED</span>':'');
-    d.onclick=()=>{if(isBanned(s.id)){sfx('bad');toast('🚫 Security remembers your face. Banned until Day '+S.rap.bans[s.id]);return}sfx('click');go('mall',s.id)};v.querySelector('#stores').appendChild(d)});
-  v.insertAdjacentHTML('beforeend','<div class="card small">🔒 Closed today: '+STORES.filter(s=>open.indexOf(s)<0).map(s=>esc(s.name)).join(', ')+'</div>');v.appendChild(alleyCard());
+  open.forEach(s=>{const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length,bn=isBanned(s.id);
+    v.querySelector('#stores').insertAdjacentHTML('beforeend',storefront(s,{banned:bn,flag:bn?'🚫 BANNED':rare?'✨ LIMITED':''}));const d=v.querySelector('#stores').lastChild;
+    d.onclick=()=>{if(isBanned(s.id)){sfx('bad');toast('🚫 Security remembers your face. Banned until Day '+S.rap.bans[s.id]);return}sfx('click');go('mall',s.id)}});
+  v.insertAdjacentHTML('beforeend','<div class="lbl" style="font-size:14px">🔒 Shutters down today</div><div class="closed-row">'+STORES.filter(s=>open.indexOf(s)<0).map(s=>'<span>'+esc(s.name)+'</span>').join('')+'</div>');v.appendChild(alleyCard());
 }
 
 /* ---------- CLOSET ---------- */
 function renderCloset(v){
   const top=document.createElement('div');top.className='card center';
-  const av=avatarCanvas(200,250);av.className='bob';top.appendChild(av);
+  const av=avatarCanvas(200,250);av.classList.add('idle');top.appendChild(av);
   top.insertAdjacentHTML('beforeend','<div style="font-weight:800;margin-top:4px">'+esc(S.char.name)+'</div><div class="small">Outfit: <b>'+money(SLOTS.reduce((t,k)=>t+(S.equipped[k]?ITEM[S.equipped[k]].price:0),0))+'</b> · Closet: <b>'+money(closetValue(S))+'</b> · Net worth: <b>'+money(netWorth(S))+'</b></div>');
   v.appendChild(top);v.appendChild(tabsBar(['all'].concat(SLOTS,ROOM_CATS),rerender));
   const mine=Object.keys(S.owned).map(id=>ITEM[id]).filter(i=>filter==='all'||i.cat===filter).sort((a,b)=>(a.slot?0:1)-(b.slot?0:1)||b.price-a.price);
@@ -102,17 +103,15 @@ function renderRoom(v){
   v.insertAdjacentHTML('beforeend','<div class="row" style="margin-top:8px" id="ctl"></div><div class="lbl">Your furniture & decor</div><div class="grid" id="plist"></div>');
   function draw(){
     x.clearRect(0,0,c*COLS,c*ROWS);
-    for(let i=0;i<COLS;i++){x.fillStyle=i%2?'#f6d6e6':'#fbe3ef';x.fillRect(i*c,0,c,WALL*c)}
-    for(let j=WALL;j<ROWS;j++){x.fillStyle=j%2?'#d4b08c':'#caa47e';x.fillRect(0,j*c,COLS*c,c);x.strokeStyle='rgba(0,0,0,.08)';x.lineWidth=1;for(let i=(j%2)*c/2;i<COLS*c;i+=c*1.5)line(x,i,j*c,i,(j+1)*c)}
-    x.fillStyle='#fff';x.fillRect(0,WALL*c-4,COLS*c,4);
+    x.drawImage(roomBg(c),0,0,c*COLS,c*ROWS);
     if(room.placing||room.sel>=0){x.strokeStyle='rgba(255,255,255,.4)';x.lineWidth=1;for(let i=1;i<COLS;i++)line(x,i*c,0,i*c,ROWS*c);for(let j=1;j<ROWS;j++)line(x,0,j*c,COLS*c,j*c)}
     const order=S.room.map((p,i)=>({p:p,i:i,it:ITEM[p.id]}));
     const lay=l=>order.filter(o=>o.it.layer===l);
     lay('wall').concat(lay('rug')).forEach(o=>drawFurn(x,o.it,o.p.x*c,o.p.y*c,o.it.w*c,o.it.h*c));
-    const objs=lay('floor').map(o=>({z:o.p.y+o.it.h,f:()=>drawFurn(x,o.it,o.p.x*c,o.p.y*c,o.it.w*c,o.it.h*c)}));
-    objs.push({z:S.avatar.y+1.01,f:()=>{const sc=c*2.2/170;x.save();x.translate((S.avatar.x+.5)*c,(S.avatar.y+.92)*c-162*sc);x.scale(sc,sc);drawAvatar(x,S.char,S.equipped);x.restore()}});
+    const objs=lay('floor').map(o=>({z:o.p.y+o.it.h,f:()=>{furnShadow(x,o.p.x*c,o.p.y*c,o.it.w*c,o.it.h*c);drawFurn(x,o.it,o.p.x*c,o.p.y*c,o.it.w*c,o.it.h*c)}}));
+    objs.push({z:S.avatar.y+1.01,f:()=>{const sc=c*2.2/170;x.fillStyle='rgba(30,10,30,.22)';ell(x,(S.avatar.x+.5)*c,(S.avatar.y+.92)*c,c*.42,c*.12);x.fill();x.save();x.translate((S.avatar.x+.5)*c,(S.avatar.y+.92)*c-162*sc);x.scale(sc,sc);drawAvatar(x,S.char,S.equipped);x.restore()}});
     objs.sort((a,b)=>a.z-b.z).forEach(o=>o.f());
-    drawDoorstep(x,c);
+    x.drawImage(roomLight(c),0,0,c*COLS,c*ROWS);drawDoorstep(x,c);
     if(room.sel>=0){const p=S.room[room.sel],it=ITEM[p.id];x.strokeStyle='#ff1493';x.lineWidth=3;x.setLineDash([6,4]);x.strokeRect(p.x*c+2,p.y*c+2,it.w*c-4,it.h*c-4);x.setLineDash([])}
     const P=room.placing&&ITEM[room.placing];
     $('#hint').innerHTML=P?'Tap a spot to place <b>'+esc(P.name)+'</b> ('+P.w+'×'+P.h+(P.layer==='wall'?', goes on the wall':P.layer==='rug'?', rug: furniture can sit on it':'')+')':
@@ -145,7 +144,7 @@ function renderRoom(v){
 
 /* ---------- ME: stats, achievements, saves ---------- */
 function renderMe(v){
-  const top=document.createElement('div');top.className='card row';top.appendChild(avatarCanvas(110,140));
+  const top=document.createElement('div');top.className='card row';{const a=avatarCanvas(110,140);a.classList.add('idle');top.appendChild(a)}
   top.insertAdjacentHTML('beforeend','<div style="flex:1"><div style="font-size:20px;font-weight:800">'+esc(S.char.name)+'</div><div class="small">'+GENDERS[S.char.gender].label+' · '+BODIES[S.char.body].label+'</div><button class="btn" id="edit" style="margin-top:8px">✏️ Edit look</button></div>');
   v.appendChild(top);
   const st=[['📅 Day',S.day],['💵 Cash',money(S.cash)],['🏦 Net worth',money(netWorth(S))],['👗 Closet value',money(closetValue(S))],['📦 Items owned',itemCount(S)],['💼 Shifts worked',S.shifts],['💰 Earned at jobs',money(S.earned)],['🛍️ Total spent',money(S.spent)]];

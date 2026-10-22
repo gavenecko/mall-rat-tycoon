@@ -64,10 +64,13 @@ const THUMB={};
 function thumb(it){
   if(THUMB[it.id])return THUMB[it.id];
   const N=160,c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');
-  x.fillStyle=lum(it.color)>.85?'#dcdce6':'#f7f2f8';rr(x,0,0,N,N,22);x.fill();
+  const RB=RAR_BG[rarity(it)],gb=x.createRadialGradient(N/2,N*.42,8,N/2,N/2,N*.75);gb.addColorStop(0,lum(it.color)>.85?'#e4e2ee':RB[0]);gb.addColorStop(1,RB[1]);x.fillStyle=gb;rr(x,0,0,N,N,26);x.fill();
+  x.fillStyle='rgba(255,255,255,.45)';ell(x,N*.3,N*.18,N*.28,N*.08);x.fill();
+  x.fillStyle='rgba(40,20,60,.16)';ell(x,N/2,N*.9,N*.3,N*.045);x.fill();
+  x.save();x.shadowColor='rgba(40,20,60,.28)';x.shadowBlur=8;x.shadowOffsetY=4;
   if(it.slot){const bb=BBOX[it.slot==='accessories'?it.shape:it.slot],sc=Math.min(N/bb[2],N/bb[3])*.8,b=BODIES.average,sk='#f6c89f';
     x.translate(N/2,N/2);x.scale(sc,sc);x.translate(-(bb[0]+bb[2]/2),-(bb[1]+bb[3]/2));
     if(it.slot==='hats')drawHat(x,it);else if(it.slot==='tops')drawTop(x,it,b,sk);else if(it.slot==='bottoms')drawBottom(x,it,b);else if(it.slot==='shoes')drawShoes(x,it,b,sk);else drawAcc(x,it,b)}
   else{const u=N*.82/Math.max(it.w,it.h),W=u*it.w,H=u*it.h;drawFurn(x,it,(N-W)/2,(N-H)/2,W,H)}
-  return THUMB[it.id]=c.toDataURL();
+  x.restore();return THUMB[it.id]=c.toDataURL();
 }

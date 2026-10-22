@@ -35,16 +35,16 @@ function renderWork(v){
 }
 function runShift(v){
   const j=shift.job;
-  v.innerHTML='<div class="card row sp" style="padding:8px 12px"><b>'+j.emoji+' '+j.name+'</b><b>⏱ <span id="stime"></span></b><b>💰 <span id="searn"></span></b></div><div id="jarea"></div><button class="btn alt" id="quit" style="margin-top:10px;width:100%">Clock out early</button>';
+  v.innerHTML='<div class="card row sp jhead" style="padding:10px 14px;background:linear-gradient(120deg,'+(JOB_HEAD[j.id]||'#ff6f61,#ff3d81')+')"><b>'+j.emoji+' '+j.name+'</b><b>⏱ <span id="stime"></span></b><b>💰 <span id="searn"></span></b></div><div id="jarea"></div><button class="btn alt" id="quit" style="margin-top:10px;width:100%">Clock out early</button>';
   const api={
-    pay:base=>{if(!shift)return;if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*jobMult(j.id)));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
-    miss:msg=>{toast(msg);sfx('bad');const a=$('#jarea');if(a){a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash')}}
+    pay:base=>{if(!shift)return;shift.combo=(shift.combo||0)+1;burst(shift.combo>=5?14:8);if(shift.combo>=3&&shift.combo%1===0)comboText(shift.combo+'× COMBO!');if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*jobMult(j.id)*(1+Math.min(.5,Math.max(0,shift.combo-2)*.05))));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
+    miss:msg=>{if(shift)shift.combo=0;toast(msg);sfx('bad');const a=$('#jarea');if(a){a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash');shake(a)}}
   };
   function upd(){if(!shift)return;const now=Date.now(),dt=Math.min(.1,(now-shift.last)/1000);shift.last=now;
     if(now>=shift.end){endShift();render();return}
     if(shift.game&&shift.game.tick)shift.game.tick(dt);
     const t=$('#stime');if(t){t.textContent=Math.ceil((shift.end-now)/1000)+'s';$('#searn').textContent=money(shift.earned)}}
-  shift.game=j.make($('#jarea'),api);
+  $('#jarea').style.setProperty('--jbg',JOB_BG[j.id]||'');shift.game=j.make($('#jarea'),api);
   $('#quit').onclick=()=>{endShift();render()};
   upd();jobTick=setInterval(upd,50);
 }
