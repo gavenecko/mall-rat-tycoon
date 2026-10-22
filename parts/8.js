@@ -4,6 +4,15 @@
    never beat a burger shift on average. Test hooks: window.__stealForce / __bustForce / __raidForce. */
 let stealIv=null;
 const R=()=>S.rap;
+const LUX=s=>s&&s.tier[1]>=2000;
+const COOLDOWN=7;
+function stealWait(sid){const l=S.rap.lastSteal[sid];return l===undefined?0:Math.max(0,l+COOLDOWN-S.day)}
+const canSteal=sid=>S.rap.optin&&stealWait(sid)===0;
+const sellable=id=>!ITEM[id].fake||S.rap.optin;
+function hotTake(id){const h=S.rap.hot;if(h[id]>0){h[id]--;if(!h[id])delete h[id];return true}return false}
+function hotClamp(id){const h=S.rap.hot;if(h[id]>(S.owned[id]||0)){h[id]=S.owned[id]||0;if(!h[id])delete h[id]}}
+function hotBust(it,claimed,where){let bust=Math.random()<(.35+S.rap.heat/200);if(window.__bustForce!==undefined)bust=window.__bustForce;
+  if(!bust){addHeat(5);return false}S.rap.busted++;setTimeout(()=>courtCase({what:'Fencing stolen '+it.name+' on '+where,base:Math.max(claimed,it.price),heat:25,confiscated:true,emoji:'🧾'}),50);return true}
 const isBanned=id=>!!(S.rap.bans[id]&&S.day<=S.rap.bans[id]);
 function heatColor(h){return h>=60?'#d32f2f':h>=30?'#f57c00':h>0?'#fbc02d':'#43a047'}
 function heatPill(){const h=Math.round(R().heat);return'<span class="heat" style="background:'+heatColor(h)+'">🔥 Heat '+h+'</span> '}
@@ -14,23 +23,34 @@ function security(it){const s=storeOf(it),hi=s?s.tier[1]:100;const a=Math.min(1,
 /* ---------- court ---------- */
 function courtCase(c){
   const r=R(),prior=r.offenses;r.offenses++;r.caught++;addHeat(c.heat||15);
-  const fine=Math.max(10,Math.round(c.base*(1.5+.25*Math.min(2,prior)))),cs=Math.min(6,2+prior),forced=prior>=2;
-  let ban='';if(c.store){r.storeOff[c.store]=(r.storeOff[c.store]||0)+1;const n=r.storeOff[c.store];if(n>=2){r.bans[c.store]=S.day+2*(n-1);ban='<p>🚫 <b>Banned from '+esc(storeOf({store:c.store}).name)+' until Day '+r.bans[c.store]+'.</b> Your photo is now on the wall behind the register.</p>'}}
-  const entry={day:S.day,what:c.what,pen:cs+' shifts community service'};r.record.unshift(entry);if(r.record.length>30)r.record.length=30;
-  r.cs+=cs;notify('🚨 '+c.what+': '+(forced?cs+' shifts community service (assigned)':'court date pending'));sfx('bad');save();
+  const fee=100+100*prior,fine=Math.max(30,Math.round(c.base*(3+prior)))+fee,petty=fine<=600,cs=Math.min(15,Math.max(4+2*prior,Math.ceil(fine/60))),repeat=prior>=2;
+  const st=c.store&&storeOf({store:c.store});
+  let ban='';if(c.store){r.storeOff[c.store]=(r.storeOff[c.store]||0)+1;const n=r.storeOff[c.store],len=LUX(st)?7*n:n>=2?5*(n-1):0;if(len){r.bans[c.store]=S.day+len;ban='<p>🚫 <b>Banned from '+esc(storeOf({store:c.store}).name)+' until Day '+r.bans[c.store]+'.</b> Your photo is now on the wall behind the register.</p>'}}
+  const entry={day:S.day,what:c.what,pen:''};r.record.unshift(entry);if(r.record.length>30)r.record.length=30;
+  // repeat offenders: fine is charged automatically AND community service. Non-petty: fine only (no CS option). Petty first/second: choose.
+  const charge=()=>{if(S.cash>=fine)S.cash-=fine;else S.card.bal+=fine;r.finesPaid+=fine};
+  let mode;if(repeat){charge();r.cs+=cs;mode='both';entry.pen='Fine '+money(fine)+' + '+cs+' shifts CS'}
+  else if(!petty){charge();mode='fine';entry.pen='Fine '+money(fine)}
+  else{r.cs+=cs;mode='choose';entry.pen=cs+' shifts community service'}
+  notify('🚨 '+c.what+': '+entry.pen);sfx('bad');save();hud();
   sheet('<h3>🚨 Busted!</h3><div style="font-size:44px;text-align:center">👮‍♀️'+(c.emoji||'🛍️')+'</div><p>'+esc(c.what)+'.'+(c.confiscated?' The item has been confiscated.':'')+'</p>'+
     '<div class="small">Offense #'+r.offenses+' · Heat '+Math.round(r.heat)+'/100</div>'+ban+
-    (forced?'<p>⚖️ Judge Judgy has seen enough of you. <b>'+cs+' shifts of community service</b>, no fine option. Paid jobs are blocked until it\'s done.</p><button class="btn alt big" id="docs">🧹 Yes, Your Honor</button>':
-     '<p>⚖️ Choose your penalty:</p><button class="btn big" id="payfine">💸 Pay a '+money(fine)+' fine</button><button class="btn alt big" id="docs">🧹 '+cs+' shifts of community service (unpaid, blocks paid jobs)</button>'));
+    '<div class="small">Fine = '+(3+prior)+'× item value + '+money(fee)+' court fee</div>'+
+    (mode==='both'?'<p>⚖️ Judge Judgy has seen enough of you. Fine of <b>'+money(fine)+'</b> (charged'+(S.card.bal>0?', some to your card':'')+') <b>AND '+cs+' shifts of community service</b>. Paid jobs are blocked until it\'s done.</p><button class="btn alt big" id="docs">😔 Yes, Your Honor</button>':
+     mode==='fine'?'<p>⚖️ That\'s no petty theft. Fine of <b>'+money(fine)+'</b>, charged to your cash (or card, with interest). Community service isn\'t an option at this amount.</p><button class="btn alt big" id="docs">😔 Yes, Your Honor</button>':
+     '<p>⚖️ Petty theft. Choose your penalty:</p><button class="btn big" id="payfine">💸 Pay a '+money(fine)+' fine</button><button class="btn alt big" id="docs">🧹 '+cs+' shifts of community service (unpaid, 15 pieces each, blocks paid jobs)</button>'));
   $('#docs').onclick=()=>{closeSheet();toast('🧹 Report to 💼 Work for community service');rerender()};
-  if($('#payfine'))$('#payfine').onclick=()=>openPay('Court fine',fine,()=>{r.cs=Math.max(0,r.cs-cs);r.finesPaid+=fine;entry.pen='Fine '+money(fine);toast('⚖️ Fine paid. Try to stay boring.');save();rerender()});
+  if($('#payfine'))$('#payfine').onclick=()=>openPay('Court fine',fine,()=>{r.cs=Math.max(0,r.cs-cs);r.finesPaid+=fine;entry.pen='Fine '+money(fine);hud();toast('⚖️ Fine paid. Try to stay boring.');save();rerender()});
 }
 
 /* ---------- shoplifting stealth minigame ---------- */
+function catchP(sec){return Math.min(.9,.25+.3*sec+R().heat/250)}
 function stealAttempt(it){
   if(isBanned(it.store)){toast('🚫 You\'re banned here');return}
+  if(!S.rap.optin)return;if(!canSteal(it.store)){toast('⏳ Security still remembers you. Try again in '+stealWait(it.store)+' days');return}
+  S.rap.lastSteal[it.store]=S.day;save();
   const sec=security(it),half=.22+.5*sec,speed=1.3+2.4*sec,lvl=sec<.3?'low 😴':sec<.6?'medium 👀':'HIGH 🚨';
-  sheet('<h3>🤏 Five-finger discount?</h3><div class="small">'+esc(it.name)+' · security <b>'+lvl+'</b>. Tap GRAB while the camera looks away. Getting caught means a fine or community service. '+heatPill()+'</div><canvas id="stc"></canvas><div class="bar"><div id="stt"></div></div>'+
+  sheet('<h3>🤏 Five-finger discount?</h3><div class="small">'+esc(it.name)+' · security <b>'+lvl+'</b>. Tap GRAB while the camera looks away. Even then, there\'s a <b>'+Math.round(catchP(sec)*100)+'%</b> chance someone sees you. Caught = '+(3+R().offenses)+'× fine + court fee. One attempt per store per week. '+heatPill()+'</div><canvas id="stc"></canvas><div class="bar"><div id="stt"></div></div>'+
     '<button class="btn big" id="grab" style="background:#7b1fa2;box-shadow:0 2px 0 #4a148c">🤏 GRAB</button><button class="btn alt big" id="walk">😇 Never mind (buy it like a normal person)</button>');
   const W=Math.min(window.innerWidth-40,420),H=170,x=setupCanvas($('#stc'),W,H),img=new Image();img.src=thumb(it);
   const t0=Date.now(),LIMIT=7000;let ang=0,done=false;
@@ -45,17 +65,17 @@ function stealAttempt(it){
   clearInterval(stealIv);stealIv=setInterval(draw,30);draw();
   $('#walk').onclick=()=>{closeSheet();buy(it)};
   $('#grab').onclick=()=>{if(done)return;done=true;clearInterval(stealIv);const seen=Math.abs(ang)<half;
-    let caught=seen?Math.random()<.9:Math.random()<(.04+.22*sec+R().heat/400);
+    let caught=Math.random()<(seen?.95:catchP(sec));
     if(window.__stealForce)caught=window.__stealForce==='caught';
     closeSheet();
-    if(!caught){S.owned[it.id]=(S.owned[it.id]||0)+1;if(it.rare)S.stock[it.id]=(S.stock[it.id]||0)+1;R().stolen++;const h=Math.round(3+8*sec);addHeat(h);
+    if(!caught){S.owned[it.id]=(S.owned[it.id]||0)+1;R().hot[it.id]=(R().hot[it.id]||0)+1;if(it.rare)S.stock[it.id]=(S.stock[it.id]||0)+1;R().stolen++;const h=Math.round(6+12*sec);addHeat(h);
       sfx('buy');toast('😈 Got away with it… for now. Heat +'+h);save();rerender()}
     else courtCase({what:'Caught shoplifting '+it.name+' from '+storeOf(it).name,base:priceOf(it),store:it.store,heat:Math.round(15+20*sec),confiscated:true,emoji:'🤏'})};
 }
 
 /* ---------- community service ---------- */
 function makeLitter(el,api){
-  el.innerHTML='<div class="card small center">Pick up <b>10+</b> pieces of litter this shift for it to count. Unpaid. Character-building.</div><canvas id="cv"></canvas>';
+  el.innerHTML='<div class="card small center">Pick up <b>15+</b> pieces of litter this shift for it to count. Unpaid. Character-building.</div><canvas id="cv"></canvas>';
   const W=Math.min(window.innerWidth-24,420),H=330,cv=el.querySelector('#cv'),x=setupCanvas(cv,W,H);let L=[],sp=0;
   const grab=o=>{L.splice(L.indexOf(o),1);api.pay(0)};
   cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;const o=L.filter(o=>Math.hypot(o.x-px,o.y-py)<30)[0];if(o)grab(o)});
@@ -69,7 +89,7 @@ const CS_JOB={id:'cs',name:'Community Service',emoji:'🧹',cs:true,make:makeLit
 function csCard(v){const r=R();if(r.cs<=0)return;
   v.insertAdjacentHTML('beforeend','<div class="card" style="border:3px solid #f57c00"><div class="row"><span style="font-size:40px">🧹</span><div style="flex:1"><b>Community Service</b><div class="small">'+r.cs+' shift'+(r.cs>1?'s':'')+' left · unpaid · paid jobs blocked until done</div></div><button class="btn" id="csgo" style="background:#f57c00;box-shadow:0 2px 0 #bf5f00">Start</button></div></div>');
   $('#csgo').onclick=()=>{lastResult=null;startShift(CS_JOB)}}
-function csEnd(s){const r=R(),okk=s.count>=10;if(okk){r.cs=Math.max(0,r.cs-1);r.csDone++;addHeat(-5);if(!r.cs){notify('⚖️ Community service complete. Society (cautiously) welcomes you back.');R().heat=Math.max(0,R().heat-10)}}
+function csEnd(s){const r=R(),okk=s.count>=15;if(okk){r.cs=Math.max(0,r.cs-1);r.csDone++;addHeat(-5);if(!r.cs){notify('⚖️ Community service complete. Society (cautiously) welcomes you back.');R().heat=Math.max(0,R().heat-10)}}
   lastResult={job:CS_JOB,earned:0,count:s.count,levelUp:0};save();toast(okk?'🧹 Shift counted! '+r.cs+' left':'🧹 Only '+s.count+' pieces. That shift didn\'t count.');sfx(okk?'coin':'bad')}
 
 /* ---------- Back Alley (counterfeits) ---------- */
@@ -79,13 +99,15 @@ const alleyPrice=it=>Math.max(5,nicePrice(ITEM[it.real].price*.08));
 function alleyStock(){return shuffle(FAKES,rng(S.day*31+7)).slice(0,8)}
 function maybeContact(){if(!R().alley&&Math.random()<.35){R().alley=true;notify('🕶️ "Shady Steve" slid into your DMs: "u like designer? cheap. back alley behind the food court. tell no one."');setTimeout(()=>toast('🕶️ New contact unlocked the Back Alley…'),2000)}}
 function alleyCard(){const d=document.createElement('div');d.className='store';d.style.background='#263238';
-  d.innerHTML='<span style="font-size:34px">🚪</span><div style="flex:1">Back Alley<small>'+(alleyOpen()?'"Designer" goods. No receipts. No questions.':'🔒 Locked: come back Day 3, or know a guy on Facenook')+'</small></div>';
-  d.onclick=()=>{if(!alleyOpen()){sfx('bad');toast('🔒 The door is locked. A sign says "Day 3".');return}sfx('click');go('mall','alley')};return d}
+  d.innerHTML='<span style="font-size:34px">🚪</span><div style="flex:1">Back Alley<small>'+(alleyOpen()?'"Designer" goods. No receipts. No questions.':'Shop opens Day 3 · ⚙️ Shady settings inside')+'</small></div>';
+  d.onclick=()=>{sfx('click');go('mall','alley')};return d}
 function renderAlley(v){
   v.innerHTML='<div class="store" style="background:#263238"><span style="font-size:34px">🕶️</span><div>Back Alley<small>Stock changes daily. Everything is 100% authentic*</small></div></div>'+
     '<div class="row sp" style="margin-bottom:8px"><button class="btn alt" id="back">← Mall</button>'+heatPill()+'</div>'+
     '<div class="card small">*Counterfeit. Fine to wear. Resale value is trash, and passing fakes off as real on Fleabay/Facenook can get you busted. Buying here adds a little Heat.</div><div class="grid" id="ag"></div>';
   $('#back').onclick=()=>go('mall');
+  shadyCard(v);
+  if(!alleyOpen()){$('#ag').innerHTML='<div class="card center">🔒 The counterfeit stall opens on Day 3 (or if you know a guy on Facenook).</div>';return}
   alleyStock().forEach(it=>{const p=alleyPrice(it),real=ITEM[it.real],d=document.createElement('div');d.className='item';
     d.innerHTML='<img alt="" src="'+thumb(it)+'"><span class="badge" style="background:#455a64">COUNTERFEIT</span><div class="nm">'+esc(it.name)+'</div><div class="small">"Basically a '+esc(real.name)+'" ('+money(real.price)+')</div><div class="pr">'+money(p)+'</div><div class="small">Owned ×'+(S.owned[it.id]||0)+'</div><button class="btn" style="background:#455a64;box-shadow:0 2px 0 #263238">Buy (cash/card)</button>';
     d.querySelector('button').onclick=()=>openPay('Back Alley: '+it.name,p,()=>{S.owned[it.id]=(S.owned[it.id]||0)+1;R().alleyBought++;addHeat(2);
@@ -96,36 +118,52 @@ function renderAlley(v){
 function fakeBust(it,claimed,where){let bust=Math.random()<(.25+R().heat/250);if(window.__bustForce!==undefined)bust=window.__bustForce;
   if(!bust){addHeat(4);return false}R().busted++;
   setTimeout(()=>courtCase({what:'Selling a counterfeit "'+ITEM[it.real].name+'" on '+where,base:claimed,heat:20,confiscated:true,emoji:'🕶️'}),50);return true}
-function fbSell(){const own=Object.keys(S.owned).map(id=>ITEM[id]);
-  sheet('<h3>📣 Sell on Facenook</h3><div class="small">A buyer messages you with an offer. Counterfeits get offers like the real thing… if nobody looks too closely.</div>'+(own.length?own.map(it=>'<div class="slot"><span class="row" style="flex-wrap:nowrap"><img src="'+thumb(it)+'" style="width:44px;border-radius:8px"><span>'+esc(it.fake?ITEM[it.real].name+' (wink)':it.name)+'<br><span class="small">'+(it.fake?'🕶️ counterfeit · real value '+money(it.price):'worth '+money(it.price))+'</span></span></span><button class="btn" data-s="'+it.id+'">Post</button></div>').join(''):'<p>You don\'t own anything.</p>'));
-  onAll($('#sheet'),'[data-s]',b=>{const it=ITEM[b.dataset.s],claim=it.fake?ITEM[it.real]:it,offer=Math.max(1,Math.round(claim.price*(.4+Math.random()*.3))),buyer=pick(FB_SELLERS);
-    sheet('<h3>📣 '+esc(claim.name)+'</h3><div class="chat"><div class="bub">'+buyer[1]+' '+esc(buyer[0])+': is this still available?? I\'ll give you '+money(offer)+' rn</div></div>'+(it.fake?'<div class="small">🕶️ It\'s a fake. If they notice, that\'s a fraud charge.</div>':'')+
+function fbSell(){const own=Object.keys(S.owned).filter(sellable).map(id=>ITEM[id]);
+  sheet('<h3>📣 Sell on Facenook</h3><div class="small">A buyer messages you with an offer. Counterfeits get offers like the real thing… if nobody looks too closely.</div>'+(own.length?own.map(it=>'<div class="slot"><span class="row" style="flex-wrap:nowrap"><img src="'+thumb(it)+'" style="width:44px;border-radius:8px"><span>'+esc(it.fake?ITEM[it.real].name+' (wink)':it.name)+'<br><span class="small">'+(it.fake?'🕶️ counterfeit · real value '+money(it.price):(R().hot[it.id]?'🧾 stolen · ':'')+'worth '+money(it.price))+'</span></span></span><button class="btn" data-s="'+it.id+'">Post</button></div>').join(''):'<p>You don\'t own anything.</p>'));
+  onAll($('#sheet'),'[data-s]',b=>{const it=ITEM[b.dataset.s],claim=it.fake?ITEM[it.real]:it,hot=!it.fake&&R().hot[it.id]>0,offer=Math.max(1,Math.round(claim.price*(hot?.08:.4+Math.random()*.3))),buyer=pick(FB_SELLERS);
+    sheet('<h3>📣 '+esc(claim.name)+'</h3><div class="chat"><div class="bub">'+buyer[1]+' '+esc(buyer[0])+': is this still available?? I\'ll give you '+money(offer)+' rn</div></div>'+(it.fake?'<div class="small">🕶️ It\'s a fake. If they notice, that\'s a fraud charge.</div>':hot?'<div class="small">🧾 It\'s stolen. Buyers lowball "no receipt" stuff, and the cops watch Facenook.</div>':'')+
       '<button class="btn green big" id="sok">🤝 Sell for '+money(offer)+'</button><button class="btn alt big" id="sno">Nah</button>');
     $('#sno').onclick=closeSheet;
     $('#sok').onclick=()=>{closeSheet();removeOne(it.id);
       if(it.fake&&fakeBust(it,claim.price,'Facenook')){save();rerender();return}
+      if(hot){hotTake(it.id);if(hotBust(it,offer,'Facenook')){save();rerender();return}}hotClamp(it.id);
       if(it.fake)R().fakesSold++;S.cash+=offer;bumpCash();sfx('coin');toast('💸 Sold for '+money(offer)+'!');save();rerender()}})}
 
 /* ---------- daily: heat decay, bans, raids ---------- */
-function crimeNewDay(){const r=R();r.heat=Math.max(0,Math.round(r.heat*.85-4));
+function crimeNewDay(){const r=R();r.heat=Math.max(0,Math.round(r.heat*.95-1));
   Object.keys(r.bans).forEach(k=>{if(S.day>r.bans[k]){delete r.bans[k];notify('🚪 Your ban from '+storeOf({store:k}).name+' has expired. Behave.')}});
+  let arrest=r.heat>=60&&Math.random()<(r.heat-50)/80;if(window.__arrestForce!==undefined)arrest=window.__arrestForce;
+  if(arrest){let n=0,val=0;Object.keys(r.hot).forEach(id=>{const k=Math.min(r.hot[id],S.owned[id]||0);for(let i=0;i<k;i++){removeOne(id);n++;val+=ITEM[id].price}});r.hot={};
+    const fine=Math.round(500+15*r.heat+val);if(S.cash>=fine)S.cash-=fine;else S.card.bal+=fine;r.arrests++;r.finesPaid+=fine;r.offenses++;r.heat=Math.max(0,r.heat-15);r.cs+=4;
+    r.record.unshift({day:S.day,what:'ARRESTED for possession of stolen goods',pen:'Fine '+money(fine)+', '+n+' stolen item'+(n===1?'':'s')+' seized, +4 shifts CS'});
+    notify('🚓 ARRESTED! Officers seized '+n+' stolen item'+(n===1?'':'s')+', fined you '+money(fine)+' and added 4 shifts of community service.')}
   let raid=r.heat>=50&&Math.random()<(r.heat-40)/120;if(window.__raidForce!==undefined)raid=window.__raidForce;
   if(raid){let n=0;Object.keys(S.owned).forEach(id=>{if(ITEM[id].fake){n+=S.owned[id];while(S.owned[id])removeOne(id)}});
     const fine=Math.round(75+4*r.heat);if(S.cash>=fine)S.cash-=fine;else S.card.bal+=fine;r.raids++;r.finesPaid+=fine;r.heat=Math.max(0,r.heat-25);
     r.record.unshift({day:S.day,what:'Police raid on your apartment',pen:'Fine '+money(fine)+(n?', '+n+' counterfeit'+(n>1?'s':'')+' seized':'')});
     notify('🚔 POLICE RAID! They seized '+n+' counterfeit item'+(n===1?'':'s')+' and fined you '+money(fine)+'. Your neighbors are now very interested in you.')}}
 
+/* ---------- opt-in "Shady stuff" settings ---------- */
+function shadyCard(v){const on=S.rap.optin;
+  v.querySelector('.card').insertAdjacentHTML('beforebegin','<div class="card" id="shady" style="border:3px solid #455a64"><div class="row sp"><div style="flex:1"><b>⚙️ Shady stuff</b><div class="small">Shows the 🤏 shoplifting button in stores and lets you sell counterfeits. Off by default. Buying/wearing fakes doesn\'t need it.</div></div>'+
+    '<button class="btn" id="shadyT" style="background:'+(on?'#d32f2f':'#455a64')+';box-shadow:0 2px 0 #263238">'+(on?'ON · turn off':'OFF · turn on')+'</button></div></div>');
+  $('#shadyT').onclick=()=>{if(S.rap.optin){S.rap.optin=false;save();toast('😇 Shady stuff off');rerender();return}disclaimer()}}
+function disclaimer(){sheet('<h3>⚠️ Before you turn this on</h3><p><b>Mall Rat Tycoon is a fictional parody.</b> The crime here is cartoonish and the penalties are deliberately mild.</p>'+
+  '<p>In real life, <b>shoplifting and selling counterfeit goods are crimes</b>. They can bring criminal charges, a permanent criminal record, large fines, jail time, and civil penalties (stores and brands can sue you). The real consequences are far harsher than anything in this game, and they follow you into job applications, housing and travel.</p>'+
+  '<p class="small">In this game, too, crime is a losing strategy: working pays better over time.</p><button class="btn big" id="dok" style="background:#d32f2f;box-shadow:0 2px 0 #9a0007">I understand, enable</button><button class="btn alt big" id="dno">Keep it off</button>');
+  $('#dno').onclick=closeSheet;$('#dok').onclick=()=>{S.rap.optin=true;save();closeSheet();toast('🕶️ Shady stuff enabled. You can turn it off any time.');rerender()}}
+
 /* ---------- Me: criminal record ---------- */
 function recordCard(){const r=R(),bans=Object.keys(r.bans).filter(isBanned);
   return'<div class="card"><div class="lbl" style="margin-top:0">🚔 Criminal record</div>'+heatPill()+'<div class="bar"><div style="width:'+r.heat+'%;background:'+heatColor(r.heat)+'"></div></div>'+
-    [['Offenses',r.offenses],['Items shoplifted (got away)',r.stolen],['Times caught',r.caught],['Counterfeits sold',r.fakesSold],['Fines paid',money(r.finesPaid)],['Community service done / owed',r.csDone+' / '+r.cs],['Police raids',r.raids],['Store bans',bans.length?bans.map(b=>storeOf({store:b}).name+' (→Day '+r.bans[b]+')').join(', '):'none']]
+    [['Offenses',r.offenses],['Items shoplifted (got away)',r.stolen],['Times caught',r.caught],['Counterfeits sold',r.fakesSold],['Fines paid',money(r.finesPaid)],['Community service done / owed',r.csDone+' / '+r.cs],['Police raids / arrests',r.raids+' / '+r.arrests],['Stolen items on hand',Object.keys(r.hot).reduce((a,k)=>a+r.hot[k],0)],['Store bans',bans.length?bans.map(b=>storeOf({store:b}).name+' (→Day '+r.bans[b]+')').join(', '):'none']]
       .map(a=>'<div class="slot"><span>'+a[0]+'</span><b>'+a[1]+'</b></div>').join('')+
     (r.record.length?'<div class="lbl">Rap sheet</div>'+r.record.slice(0,8).map(e=>'<div class="slot"><span>Day '+e.day+': '+esc(e.what)+'</span><span class="small">'+esc(e.pen)+'</span></div>').join(''):'<div class="small">Squeaky clean. Suspiciously so.</div>')+
     '<div class="small" style="margin-top:6px">Heat cools off a bit every day. High Heat = more security attention and police raids.</div></div>'}
 
 /* ---------- header overflow menu ---------- */
-function openMore(){sheet('<h3>Menu</h3>'+heatPill()+'<button class="btn alt big" id="mSnd">'+(S.muted?'🔇 Sound: off':'🔊 Sound: on')+'</button><button class="btn alt big" id="mTut">❓ Tutorial</button><button class="btn alt big" id="mMe">⭐ Stats, record & saves</button><button class="btn alt big" id="mMail">📬 Mailbox</button>');
-  $('#mSnd').onclick=()=>{S.muted=!S.muted;save();sfx('click');openMore()};$('#mTut').onclick=()=>{closeSheet();showTut(0)};$('#mMe').onclick=()=>{closeSheet();go('me')};$('#mMail').onclick=()=>openMail()}
+function openMore(){sheet('<h3>Menu</h3>'+heatPill()+'<button class="btn alt big" id="mShady">🕶️ Back Alley &amp; shady settings ('+(S.rap.optin?'on':'off')+')</button>'+'<button class="btn alt big" id="mSnd">'+(S.muted?'🔇 Sound: off':'🔊 Sound: on')+'</button><button class="btn alt big" id="mTut">❓ Tutorial</button><button class="btn alt big" id="mMe">⭐ Stats, record & saves</button><button class="btn alt big" id="mMail">📬 Mailbox</button>');
+  $('#mShady').onclick=()=>{closeSheet();go('mall','alley')};$('#mSnd').onclick=()=>{S.muted=!S.muted;save();sfx('click');openMore()};$('#mTut').onclick=()=>{closeSheet();showTut(0)};$('#mMe').onclick=()=>{closeSheet();go('me')};$('#mMail').onclick=()=>openMail()}
 
 ACH.push(['steal','Five-Finger Discount 🤏','Get away with shoplifting',s=>s.rap.stolen>0],['caught','Caught Red-Handed 🚨','Get caught shoplifting',s=>s.rap.caught>0],
  ['banned','Persona Non Grata 🚫','Get banned from a store',s=>Object.keys(s.rap.storeOff).some(k=>s.rap.storeOff[k]>=2)],['reformed','Reformed 😇','Finish all your community service',s=>s.rap.csDone>0&&s.rap.cs===0],

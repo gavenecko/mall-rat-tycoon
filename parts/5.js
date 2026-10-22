@@ -15,7 +15,7 @@ function itemCard(it,mode){
   const owned=S.owned[it.id]||0,eq=S.equipped[it.slot]===it.id,off=offOf(it),p=priceOf(it),left=stockLeft(it);
   const shopM=mode==='shop'||mode==='store';const d=document.createElement('div');d.className='item'+(eq&&!shopM?' eq':'');
   let h='<img alt="" src="'+thumb(it)+'">'+(it.rare?'<span class="badge r">LIMITED · '+left+' left</span>':off?'<span class="badge">-'+off+'%</span>':'')+'<button class="heart" data-a="wish" aria-label="wishlist">'+(S.wish[it.id]?'❤️':'🤍')+'</button><div class="nm">'+esc(it.name)+'</div>';
-  if(shopM){h+='<div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(p)+'</span></div><div class="small">'+(owned?'Owned ×'+owned:'&nbsp;')+'</div><button class="btn" data-a="buy">'+(left<=0?'Sold out':'Buy')+'</button>'+(mode==='store'&&left>0?'<button class="btn" data-a="steal" style="padding:6px;font-size:12px;background:#7b1fa2;box-shadow:0 2px 0 #4a148c">🤏 Five-finger discount</button>':'')}
+  if(shopM){h+='<div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(p)+'</span></div><div class="small">'+(owned?'Owned ×'+owned:'&nbsp;')+'</div><button class="btn" data-a="buy">'+(left<=0?'Sold out':'Buy')+'</button>'+(mode==='store'&&left>0&&canSteal(it.store)?'<button class="btn" data-a="steal" style="padding:6px;font-size:12px;background:#7b1fa2;box-shadow:0 2px 0 #4a148c">🤏 Five-finger discount</button>':'')}
   else{const placed=S.room.filter(q=>q.id===it.id).length;
     h+='<div class="small">×'+owned+(it.slot?'':' · '+placed+' placed')+' · worth '+money(it.price)+'</div><div class="row"><button class="btn '+(eq?'alt':'green')+'" style="flex:1" data-a="use">'+(it.slot?(eq?'Take off':'Wear'):'Place')+'</button><button class="btn alt" style="flex:0 0 46px" data-a="sell" title="Sell for half">💲</button></div>'}
   d.innerHTML=h;
@@ -41,7 +41,8 @@ function grant(it,p){
   sfx('buy');floatText('-'+money(p),'#d32f2f');bumpCash();toast('Bought '+it.name+' ✨');save();rerender();
 }
 function sell(it){
-  const v=Math.floor(it.price/2);S.owned[it.id]--;S.cash+=v;
+  const hot=hotTake(it.id);if(hot&&hotBust(it,it.price,'a pawn shop')){removeOne(it.id);hotClamp(it.id);save();rerender();return}
+  const v=Math.floor(it.price*(hot?.1:.5));S.owned[it.id]--;S.cash+=v;if(hot)toast('🧾 Pawn shop paid '+money(v)+' for "no receipt" goods');
   if(!S.owned[it.id]){delete S.owned[it.id];Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===it.id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==it.id)}
   else{const pl=S.room.filter(q=>q.id===it.id);if(pl.length>S.owned[it.id])S.room.splice(S.room.indexOf(pl[0]),1)}
   sfx('coin');floatText('+'+money(v));toast('Sold for '+money(v));save();rerender();
@@ -57,7 +58,7 @@ function renderMall(v){
   if(sub){const s=STORES.filter(q=>q.id===sub)[0];
     if(!s||open.indexOf(s)<0){sub=null;toast('That store just closed!');return renderMall(v)}
     v.innerHTML='<div class="store" style="background:'+s.color+'"><span style="font-size:34px">'+s.emoji+'</span><div>'+esc(s.name)+'<small>'+esc(s.tag)+'</small></div></div>'+
-      '<div class="row sp" style="margin-bottom:8px"><button class="btn alt" id="back">← Mall</button>'+heatPill()+'<span class="small">Closes in <b class="cd">'+timeLeft()+'</b></span></div>';
+      '<div class="row sp" style="margin-bottom:8px"><button class="btn alt" id="back">← Mall</button>'+heatPill()+(S.rap.optin&&stealWait(s.id)?'<span class="heat" style="background:#607d8b">🤏 try again in '+stealWait(s.id)+'d</span> ':'')+'<span class="small">Closes in <b class="cd">'+timeLeft()+'</b></span></div>';
     v.querySelector('#back').onclick=()=>{sfx('click');go('mall')};
     v.appendChild(tabsBar(['all'].concat(s.cats),rerender));
     const g=document.createElement('div');g.className='grid';v.appendChild(g);

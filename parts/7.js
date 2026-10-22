@@ -93,13 +93,13 @@ function npcBid(a){const amt=nextBid(a);if(amt>a.npcMax)return false;
   if(a.high==='you'){S.cash+=a.escrow;a.escrow=0;notify('😤 Outbid on '+ITEM[a.id].name+' (now '+money(amt)+')');toast('😤 Outbid on '+ITEM[a.id].name+'!');sfx('bad')}
   a.bid=amt;a.high=pick(NPC.filter(n=>n!==a.seller&&n!==a.high));a.bids++;return true}
 function endAuction(a){a.done=true;const it=ITEM[a.claim||a.id];
-  if(a.seller==='you'){if(a.high&&ITEM[a.id].fake&&fakeBust(ITEM[a.id],a.bid,'Fleabay')){notify('🚨 Fleabay flagged your "'+it.name+'" as counterfeit. Sale reversed, item seized.')}else if(a.high){if(ITEM[a.id].fake)S.rap.fakesSold++;const pay=Math.round(a.bid*.9);S.cash+=pay;S.stats3.flipped++;notify('💸 Sold '+it.name+' on Fleabay for '+money(a.bid)+' (you get '+money(pay)+' after the 10% fee)');toast('💸 Fleabay sale: +'+money(pay));sfx('coin')}
+  if(a.seller==='you'){if(a.high&&ITEM[a.id].fake&&fakeBust(ITEM[a.id],a.bid,'Fleabay')){notify('🚨 Fleabay flagged your "'+it.name+'" as counterfeit. Sale reversed, item seized.')}else if(a.high&&a.hot&&hotBust(ITEM[a.id],a.bid,'Fleabay')){notify('🚨 Fleabay flagged "'+it.name+'" as reported stolen. Sale reversed, item seized.')}else if(a.high){if(ITEM[a.id].fake)S.rap.fakesSold++;const pay=Math.round(a.bid*(a.hot?.25:.9));S.cash+=pay;S.stats3.flipped++;notify('💸 Sold '+it.name+' on Fleabay for '+money(a.bid)+' (you get '+money(pay)+' after the 10% fee)');toast('💸 Fleabay sale: +'+money(pay));sfx('coin')}
     else{S.owned[a.id]=(S.owned[a.id]||0)+1;notify('🦗 No bids on '+it.name+'. It came back home.')}}
   else if(a.high==='you'){S.orders.unshift({oid:S.oid++,id:a.id,src:'Fleabay',price:a.bid,day:S.day,arrive:S.day,status:'delivered'});S.stats3.won++;
     notify('🏆 You won '+it.name+' for '+money(a.bid)+'! It\'s on your doorstep.');toast('🏆 Won '+it.name+'!');sfx('level')}}
 function removeOne(id){S.owned[id]--;if(!S.owned[id]){delete S.owned[id];Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==id)}
-  else{const pl=S.room.filter(q=>q.id===id);if(pl.length>S.owned[id])S.room.splice(S.room.indexOf(pl[0]),1)}}
-function listItem(it,start){removeOne(it.id);S.flea.push({aid:S.oid++,id:it.id,seller:'you',bid:start,high:null,end:Date.now()+120000,claim:it.fake?it.real:null,npcMax:Math.round((it.fake?ITEM[it.real]:it).price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
+  else{const pl=S.room.filter(q=>q.id===id);if(pl.length>S.owned[id])S.room.splice(S.room.indexOf(pl[0]),1)}if(S.rap)hotClamp(id)}
+function listItem(it,start){const hot=!it.fake&&hotTake(it.id);removeOne(it.id);hotClamp(it.id);S.flea.push({aid:S.oid++,id:it.id,hot:hot,seller:'you',bid:start,high:null,end:Date.now()+120000,claim:it.fake?it.real:null,npcMax:Math.round((it.fake?ITEM[it.real]:it).price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
   sfx('click');toast('🔨 Listed! Auction ends in 2:00');save();closeSheet();rerender()}
 function onlineTick(){
   const now=Date.now();let ch=false;
@@ -190,7 +190,7 @@ function renderFlea(v){
   if(mine.length)v.insertAdjacentHTML('beforeend','<div class="lbl">Your listings</div>'+mine.map(row).join(''));
   v.insertAdjacentHTML('beforeend','<div class="lbl">Live auctions</div>'+theirs.filter(a=>!a.done).sort((a,b)=>a.end-b.end).map(row).join('')+(theirs.some(a=>a.done)?'<div class="lbl">Recently ended</div>'+theirs.filter(a=>a.done).map(row).join(''):''));
   onAll(v,'[data-bid]',b=>playerBid(S.flea.filter(a=>a.aid===+b.dataset.bid)[0]));
-  $('#list').onclick=()=>{const own=Object.keys(S.owned).map(id=>ITEM[id]);
+  $('#list').onclick=()=>{const own=Object.keys(S.owned).filter(sellable).map(id=>ITEM[id]);
     sheet('<h3>🔨 List on Fleabay</h3>'+(own.length?own.map(it=>'<div class="slot"><span class="row" style="flex-wrap:nowrap"><img src="'+thumb(it)+'" style="width:44px;border-radius:8px"><span>'+esc(it.name)+'<br><span class="small">worth '+money(it.price)+'</span></span></span><button class="btn" data-l="'+it.id+'">List</button></div>').join(''):'<p>You don\'t own anything yet!</p>'));
     onAll($('#sheet'),'[data-l]',b=>{const it=ITEM[b.dataset.l];
       sheet('<h3>List '+esc(it.name)+'</h3><div class="small">Retail '+money(it.price)+'. Lower starting bids attract more bidders.</div><div class="lbl">Starting bid</div><input type="number" id="lstart" value="'+Math.max(1,Math.round(it.price*.25))+'"><button class="btn big green" id="lgo">Start 2-minute auction</button>');
