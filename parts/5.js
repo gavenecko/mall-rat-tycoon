@@ -6,7 +6,7 @@ function nav(){const n=$('#nav');n.style.display=screen==='create'?'none':'flex'
   onAll(n,'button',b=>{sfx('click');go(b.dataset.s)});mailHud()}
 function go(s,sb){if(shift&&s!=='work')endShift();screen=s;sub=sb||null;filter='all';nav();render();window.scrollTo(0,0)}
 function render(){
-  clearInterval(jobTick);jobTick=null;hud();applyTheme();const v=$('#view');v.innerHTML='';const tt=$('#ttl');if(tt)tt.textContent=sub==='alley'?'Back Alley':sub&&STORES.filter(q=>q.id===sub)[0]?STORES.filter(q=>q.id===sub)[0].name:TITLES[screen]||'';
+  clearInterval(jobTick);jobTick=null;hud();applyTheme();const v=$('#view');v.innerHTML='';const tt=$('#ttl');if(tt)tt.textContent=sub==='alley'?'Back Alley':sub==='outside'?'Outside':sub&&STORES.filter(q=>q.id===sub)[0]?STORES.filter(q=>q.id===sub)[0].name:TITLES[screen]||'';
   if(render.last!==screen+sub){render.last=screen+sub;v.classList.remove('enter');void v.offsetWidth;v.classList.add('enter')}
   try{({mall:renderMall,closet:renderCloset,room:renderRoom,work:renderWork,me:renderMe,create:renderCreate,online:renderOnline})[screen](v)}catch(e){showError(e)}
 }
@@ -18,7 +18,7 @@ function itemCard(it,mode){
   const rr_=rarity(it);let h='<img alt="'+esc(it.name)+'" src="'+thumb(it)+'" data-a="det">'+(it.rare?'<span class="badge r">LIMITED · '+left+' left</span>':off?'<span class="badge sale">-'+off+'% SALE</span>':'')+'<button class="heart" data-a="wish" aria-label="wishlist">'+(S.wish[it.id]?'❤️':'🤍')+'</button><span class="rar rar-'+rr_+'">'+rr_.toUpperCase()+'</span><div class="nm">'+esc(it.name)+'</div>';
   if(shopM){h+='<div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(p)+'</span></div><div class="small">'+(owned?'Owned ×'+owned:'&nbsp;')+'</div><button class="btn" data-a="buy">'+(left<=0?'Sold out':'Buy')+'</button>'+(mode==='store'&&left>0&&canSteal(it.store)?'<button class="btn" data-a="steal" style="padding:6px;font-size:12px;background:#7b1fa2;box-shadow:0 2px 0 #4a148c">🤏 Five-finger discount</button>':'')}
   else{const placed=S.room.filter(q=>q.id===it.id).length;
-    h+='<div class="small">×'+owned+(it.slot?'':' · '+placed+' placed')+' · worth '+money(it.price)+'</div><div class="row"><button class="btn '+(eq?'alt':'green')+'" style="flex:1" data-a="use">'+(it.slot?(eq?'Take off':'Wear'):'Place')+'</button><button class="btn alt" style="flex:0 0 46px" data-a="sell" title="Sell for half">💲</button></div>'}
+    h+='<div class="small">×'+owned+(it.slot?'':' · '+placed+' placed')+' · worth '+money(it.price)+'</div><div class="row"><button class="btn '+(eq?'alt':'green')+'" style="flex:1" data-a="use">'+(it.slot?(eq?'Take off':'Wear'):it.surf?'Apply':it.ext?'Install':'Place')+'</button><button class="btn alt" style="flex:0 0 46px" data-a="sell" title="Sell for half">💲</button></div>'}
   d.innerHTML=h;
   onAll(d,'[data-a]',b=>{const a=b.dataset.a;
     if(a==='det'){sfx('click');itemDetail(it)}
@@ -27,6 +27,7 @@ function itemCard(it,mode){
     else if(a==='steal')stealAttempt(it);
     else if(a==='sell')sell(it);
     else if(it.slot){if(eq)delete S.equipped[it.slot];else S.equipped[it.slot]=it.id;sfx('click');save();rerender()}
+    else if(useHomeItem(it)){}
     else{room.placing=it.id;room.sel=-1;go('room')}});
   if(shopM)d.querySelector('[data-a=buy]').disabled=left<=0;
   return d;
@@ -40,12 +41,12 @@ function buy(it){
 function grant(it,p){
   S.owned[it.id]=(S.owned[it.id]||0)+1;if(it.rare)S.stock[it.id]=(S.stock[it.id]||0)+1;if(offOf(it))S.dealsBought++;
   if(it.slot&&!S.equipped[it.slot])S.equipped[it.slot]=it.id;
-  sfx('buy');floatText('-'+money(p),'#d32f2f');bumpCash();toast('Bought '+it.name+' ✨');save();rerender();
+  sfx('buy');floatText('-'+money(p),'#d32f2f');bumpCash();toast('Bought '+it.name+' ✨');save();rerender();avMood('happy');burst(10);
 }
 function sell(it){
   const hot=hotTake(it.id);if(hot&&hotBust(it,it.price,'a pawn shop')){removeOne(it.id);hotClamp(it.id);save();rerender();return}
   const v=Math.floor(it.price*(hot?.1:.5));S.owned[it.id]--;S.cash+=v;if(hot)toast('🧾 Pawn shop paid '+money(v)+' for "no receipt" goods');
-  if(!S.owned[it.id]){delete S.owned[it.id];Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===it.id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==it.id)}
+  if(!S.owned[it.id]){delete S.owned[it.id];setTimeout(()=>homeClean(it.id));Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===it.id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==it.id)}
   else{const pl=S.room.filter(q=>q.id===it.id);if(pl.length>S.owned[it.id])S.room.splice(S.room.indexOf(pl[0]),1)}
   sfx('coin');floatText('+'+money(v));toast('Sold for '+money(v));save();rerender();
 }
@@ -58,7 +59,7 @@ function renderMall(v){
   if(sub==='alley')return renderAlley(v);
   if(sub&&isBanned(sub)){sub=null;toast('🚫 You\'re banned from that store');return renderMall(v)}
   if(sub){const s=STORES.filter(q=>q.id===sub)[0];
-    if(!s||open.indexOf(s)<0){sub=null;toast('That store just closed!');return renderMall(v)}
+    if(!s||(open.indexOf(s)<0&&!s.park)){sub=null;toast('That store just closed!');return renderMall(v)}
     v.innerHTML=storeHero(s)+
       '<div class="subbar"><button class="btn alt" id="back">← Mall</button>'+heatPill()+(S.rap.optin&&stealWait(s.id)?'<span class="heat" style="background:#607d8b">🤏 try again in '+stealWait(s.id)+'d</span> ':'')+'<span class="small">Closes in <b class="cd">'+timeLeft()+'</b></span></div>';
     v.querySelector('#back').onclick=()=>{sfx('click');go('mall')};
@@ -68,13 +69,15 @@ function renderMall(v){
     return;
   }
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
-    '<div class="lbl">🔥 Daily Deals</div><div class="hs" id="deals"></div><div class="concourse"><div class="ctitle"><span>🏬 Main Concourse</span><span class="small">'+open.length+' open</span></div><div class="fronts" id="stores"></div></div>';
+    '<div class="lbl">'+svgI('flame')+' Daily Deals</div><div class="hs" id="deals"></div><div class="concourse"><div class="ctitle"><span>'+svgI('mall',18)+' Main Concourse</span><span class="small">'+open.length+' open</span></div><div class="fronts" id="stores"></div></div>';
   deals().forEach(d=>v.querySelector('#deals').appendChild(itemCard(ITEM[d.id],'shop')));
   v.insertAdjacentHTML('afterbegin',eventBanner());
   open.forEach(s=>{const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length,bn=isBanned(s.id);
     v.querySelector('#stores').insertAdjacentHTML('beforeend',storefront(s,{banned:bn,flag:bn?'🚫 BANNED':rare?'✨ LIMITED':''}));const d=v.querySelector('#stores').lastChild;
     d.onclick=()=>{if(isBanned(s.id)){sfx('bad');toast('🚫 Security remembers your face. Banned until Day '+S.rap.bans[s.id]);return}sfx('click');go('mall',s.id)}});
-  v.insertAdjacentHTML('beforeend','<div class="lbl" style="font-size:14px">🔒 Shutters down today</div><div class="closed-row">'+STORES.filter(s=>open.indexOf(s)<0).map(s=>'<span>'+esc(s.name)+'</span>').join('')+'</div>');v.appendChild(alleyCard());
+  v.insertAdjacentHTML('beforeend','<div class="lbl">'+svgI('park')+' Retail Park <span class="small">· always open</span></div><div class="concourse park"><div class="ctitle"><span>Home &amp; Garden</span><span class="small">open 24/7</span></div><div class="fronts" id="park"></div></div>');
+  STORES.filter(s=>s.park).forEach(s=>{v.querySelector('#park').insertAdjacentHTML('beforeend',storefront(s,{}));v.querySelector('#park').lastChild.onclick=()=>{sfx('click');go('mall',s.id)}});
+  v.insertAdjacentHTML('beforeend','<div class="lbl" style="font-size:14px">'+svgI('lock',16)+' Shutters down today</div><div class="closed-row">'+STORES.filter(s=>open.indexOf(s)<0&&!s.park).map(s=>'<span>'+esc(s.name)+'</span>').join('')+'</div>');v.appendChild(alleyCard());
 }
 
 /* ---------- CLOSET ---------- */
@@ -82,14 +85,14 @@ function renderCloset(v){
   const top=document.createElement('div');top.className='card center';
   const av=avatarCanvas(200,250);av.classList.add('idle');top.appendChild(av);
   top.insertAdjacentHTML('beforeend','<div style="font-weight:800;margin-top:4px">'+esc(S.char.name)+'</div><div class="small">Outfit: <b>'+money(SLOTS.reduce((t,k)=>t+(S.equipped[k]?ITEM[S.equipped[k]].price:0),0))+'</b> · Closet: <b>'+money(closetValue(S))+'</b> · Net worth: <b>'+money(netWorth(S))+'</b></div>');
-  v.appendChild(top);v.appendChild(tabsBar(['all'].concat(SLOTS,ROOM_CATS),rerender));
+  v.appendChild(top);v.appendChild(tabsBar(['all'].concat(SLOTS,ROOM_CATS,['plants','outdoor','surface','exterior']),rerender));
   const mine=Object.keys(S.owned).map(id=>ITEM[id]).filter(i=>filter==='all'||i.cat===filter).sort((a,b)=>(a.slot?0:1)-(b.slot?0:1)||b.price-a.price);
   if(!mine.length){v.insertAdjacentHTML('beforeend','<div class="card">Nothing here yet. Hit the 🏬 Mall!</div>');return}
   const g=document.createElement('div');g.className='grid';mine.forEach(i=>g.appendChild(itemCard(i,'closet')));v.appendChild(g);
 }
 
 /* ---------- ROOM ---------- */
-const COLS=8,ROWS=10,WALL=3;
+const COLS=8,WALL=3;let ROWS=10;
 const room={placing:null,sel:-1};
 function fits(id,X,Y,ignore){const it=ITEM[id];
   if(X<0||X+it.w>COLS||Y+it.h>ROWS)return false;
@@ -97,10 +100,11 @@ function fits(id,X,Y,ignore){const it=ITEM[id];
   return S.room.every((p,i)=>{if(i===ignore)return true;const q=ITEM[p.id];if(q.layer!==it.layer)return true;return X+it.w<=p.x||p.x+q.w<=X||Y+it.h<=p.y||p.y+q.h<=Y});
 }
 function renderRoom(v){
-  const placeable=Object.keys(S.owned).map(id=>ITEM[id]).filter(i=>!i.slot);
-  v.innerHTML='<div class="card small" id="hint"></div>';
+  if(sub==='outside')return renderOutside(v);syncRows();
+  const placeable=Object.keys(S.owned).map(id=>ITEM[id]).filter(i=>!i.slot&&INDOOR(i.cat));
+  v.innerHTML=homeSeg('in')+'<div class="card small" id="hint"></div>';bindSeg();
   const c=Math.floor(Math.min(window.innerWidth-24,560)/COLS),cv=document.createElement('canvas'),x=setupCanvas(cv,c*COLS,c*ROWS);v.appendChild(cv);
-  v.insertAdjacentHTML('beforeend','<div class="row" style="margin-top:8px" id="ctl"></div><div class="lbl">Your furniture & decor</div><div class="grid" id="plist"></div>');
+  v.insertAdjacentHTML('beforeend','<div class="row" style="margin-top:8px" id="ctl"></div><div class="lbl">'+svgI('sofa')+' Your furniture & decor</div><div class="grid" id="plist"></div>');
   function draw(){
     x.clearRect(0,0,c*COLS,c*ROWS);
     x.drawImage(roomBg(c),0,0,c*COLS,c*ROWS);
@@ -116,10 +120,11 @@ function renderRoom(v){
     const P=room.placing&&ITEM[room.placing];
     $('#hint').innerHTML=P?'Tap a spot to place <b>'+esc(P.name)+'</b> ('+P.w+'×'+P.h+(P.layer==='wall'?', goes on the wall':P.layer==='rug'?', rug: furniture can sit on it':'')+')':
       room.sel>=0?'Tap a new spot to move <b>'+esc(ITEM[S.room[room.sel].id].name)+'</b>, or remove it.':'Tap furniture to move it · tap the floor to walk · 💤 Sleep starts a new day';
-    const ctl=$('#ctl');const pk=packagesReady().length;ctl.innerHTML=(pk?'<button class="btn green" id="collect">📦 Bring in '+pk+' package'+(pk>1?'s':'')+'</button>':'')+(room.sel>=0?'<button class="btn" id="rm">Remove</button>':'')+(room.placing||room.sel>=0?'<button class="btn alt" id="cx">Cancel</button>':'')+'<button class="btn alt" id="sleep" style="margin-left:auto">💤 Sleep (next day)</button>';
+    const ctl=$('#ctl');const pk=packagesReady().length;ctl.innerHTML=(pk?'<button class="btn green" id="collect">📦 Bring in '+pk+' package'+(pk>1?'s':'')+'</button>':'')+(room.sel>=0?'<button class="btn" id="rm">Remove</button>':'')+(room.placing||room.sel>=0?'<button class="btn alt" id="cx">Cancel</button>':'')+'<button class="btn" id="remodel">🎨 Remodel</button><button class="btn alt" id="sleep" style="margin-left:auto">💤 Sleep (next day)</button>';
     if($('#collect'))$('#collect').onclick=()=>{collect()};
     if($('#rm'))$('#rm').onclick=()=>{S.room.splice(room.sel,1);room.sel=-1;sfx('click');save();draw();list()};
     if($('#cx'))$('#cx').onclick=()=>{room.sel=-1;room.placing=null;draw();list()};
+    $('#remodel').onclick=remodelSheet;
     $('#sleep').onclick=()=>{nextDay();sfx('level');toast('☀️ Good morning! Day '+S.day+': new stores & deals');draw()};
   }
   function list(){const pl=$('#plist');pl.innerHTML='';
@@ -148,9 +153,9 @@ function renderMe(v){
   top.insertAdjacentHTML('beforeend','<div style="flex:1"><div style="font-size:20px;font-weight:800">'+esc(S.char.name)+'</div><div class="small">'+GENDERS[S.char.gender].label+' · '+BODIES[S.char.body].label+'</div><button class="btn" id="edit" style="margin-top:8px">✏️ Edit look</button></div>');
   v.appendChild(top);
   const st=[['📅 Day',S.day],['💵 Cash',money(S.cash)],['🏦 Net worth',money(netWorth(S))],['👗 Closet value',money(closetValue(S))],['📦 Items owned',itemCount(S)],['💼 Shifts worked',S.shifts],['💰 Earned at jobs',money(S.earned)],['🛍️ Total spent',money(S.spent)]];
-  v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">📊 Stats</div>'+st.map(s=>'<div class="slot"><span>'+s[0]+'</span><b>'+s[1]+'</b></div>').join('')+'</div>');
-  v.insertAdjacentHTML('beforeend',recordCard());
-  v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">🏆 Achievements ('+Object.keys(S.ach).length+'/'+ACH.length+'), +'+money(ACH_REWARD)+' each</div><div class="ach">'+ACH.map(a=>'<div class="'+(S.ach[a[0]]?'got':'')+'"><b>'+a[1]+'</b><br>'+a[2]+'</div>').join('')+'</div></div>');
+  v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">'+svgI('chart')+' Stats</div>'+st.map(s=>'<div class="slot"><span>'+s[0]+'</span><b>'+s[1]+'</b></div>').join('')+'</div>');
+  v.insertAdjacentHTML('beforeend',homeCard()+recordCard());
+  v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">'+svgI('trophy')+' Achievements ('+Object.keys(S.ach).length+'/'+ACH.length+'), +'+money(ACH_REWARD)+' each</div><div class="ach">'+ACH.map(a=>'<div class="'+(S.ach[a[0]]?'got':'')+'"><b>'+a[1]+'</b><br>'+a[2]+'</div>').join('')+'</div></div>');
   let sl='<div class="card" id="saves"><div class="lbl" style="margin-top:0">💾 Saves</div><div class="small">'+(storageOK?'✅ Autosave is ON (saves after every action).':'⚠️ This viewer blocks storage: autosave & slots last only until you close it. Use <b>Export</b> to keep progress!')+'</div>';
   for(let n=1;n<=3;n++){const m=slotMeta(n);sl+='<div class="slot"><span><b>Slot '+n+'</b><br><span class="small">'+(m?esc(m.char?m.char.name:'?')+' · Day '+m.day+' · '+money(m.cash)+' · '+new Date(m.savedAt).toLocaleString():'Empty')+'</span></span><span><button class="btn" data-save="'+n+'">Save</button> <button class="btn alt" data-load="'+n+'" '+(m?'':'disabled')+'>Load</button></span></div>'}
   sl+='<div class="lbl">📤 Export / 📥 Import code</div><div class="small">Copy this code somewhere safe (notes app, message to yourself). Paste it back here to restore.</div>'+

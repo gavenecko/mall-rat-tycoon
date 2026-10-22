@@ -19,7 +19,7 @@ function endShift(){
   if(!shift)return;clearInterval(jobTick);jobTick=null;const s=shift;shift=null;if(s.job.cs){csEnd(s);return}const js=jobState(s.job.id),before=jobLevel(s.job.id);
   js.xp+=s.count*10+5;js.shifts++;js.best=Math.max(js.best,s.earned);S.shifts++;S.cash+=s.earned;S.earned+=s.earned;
   const lvl=jobLevel(s.job.id);lastResult={job:s.job,earned:s.earned,count:s.count,levelUp:lvl>before?lvl:0};
-  save();sfx(lastResult.levelUp?'level':'coin');bumpCash();
+  save();sfx(lastResult.levelUp?'level':'coin');bumpCash();if(s.earned>0)setTimeout(()=>avMood('happy',2600),50);
 }
 function renderWork(v){
   if(shift)return runShift(v);
@@ -61,7 +61,7 @@ function makeBurger(el,api){
   function next(){round++;const n=Math.min(2+Math.floor(round/2),6),mid=[];for(let i=0;i<n;i++)mid.push(ING[1+rand(ING.length-1)][0]);
     order=['bun'].concat(mid,['bun']);stack=[];limit=5000+order.length*1300;t0=Date.now();$('#cust').textContent=pick(CUSTOMERS);draw()}
   function draw(){$('#tk').innerHTML='<b>Order</b> (bottom → top):<br>'+order.map((o,i)=>'<span style="font-size:22px;opacity:'+(i<stack.length?.25:1)+'">'+E(o)[1]+'</span>').join(' ');
-    x.fillStyle='#fff7e6';x.fillRect(0,0,W,H);x.fillStyle='#ddd';ell(x,W/2,H-10,95,10);x.fill();
+    jobBg('kitchen',x,W,H);x.fillStyle='#ddd';ell(x,W/2,H-10,95,10);x.fill();
     stack.forEach((s,i)=>{const y=H-20-i*14;x.fillStyle=E(s)[2];
       if(s==='bun'){x.beginPath();if(i===0)x.ellipse(W/2,y,72,9,0,0,Math.PI*2);else x.ellipse(W/2,y+4,72,20,0,Math.PI,0);x.fill()}
       else if(s==='cheese'){poly(x,[W/2-74,y-4,W/2+74,y-4,W/2+60,y+6,W/2-60,y+6]);x.fill()}
@@ -99,7 +99,7 @@ function makeShelf(el,api){
   const W=Math.min(window.innerWidth-24,420),H=170,x=setupCanvas(el.querySelector('#cv'),W,H);
   let bins,target,t0,limit,n=0,streak=0;
   function next(){bins=shuffle(C).slice(0,4);target=pick(bins);const prod=pick(P);n++;limit=Math.max(1400,3600-n*90);t0=Date.now();
-    x.fillStyle='#eef3f7';x.fillRect(0,0,W,H);x.fillStyle='#b0bec5';x.fillRect(0,H-22,W,22);
+    jobBg('aisle',x,W,H);
     rr(x,W/2-50,22,100,124,10);x.fillStyle=target[1];x.fill();x.strokeStyle='rgba(0,0,0,.4)';x.lineWidth=2;x.stroke();
     rr(x,W/2-40,62,80,36,6);x.fillStyle='#fff';x.fill();x.fillStyle='#222';x.font='bold 18px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(prod,W/2,80);
     const pad=$('#pad');pad.innerHTML='';
@@ -118,7 +118,7 @@ function makeBarista(el,api){
   function next(){n++;const len=Math.min(3+Math.floor(n/3),6);recipe=[];for(let i=0;i<len;i++)recipe.push(pick(ING)[0]);made=[];phase='show';showUntil=Date.now()+1500+len*450;limit=5000+len*1500;
     $('#cust').textContent=pick(CUSTOMERS);draw()}
   function draw(){$('#tk').innerHTML=phase==='show'?'<b>Memorize!</b> 👀<br>'+recipe.map(r=>'<span style="font-size:22px">'+E(r)[1]+'</span>').join(' '):'<b>Make it!</b> (in order)<br>'+recipe.map((r,i)=>'<span style="font-size:22px">'+(i<made.length?E(r)[1]:'❓')+'</span>').join(' ');
-    x.fillStyle='#fdf6ec';x.fillRect(0,0,W,H);const cx=W/2,top=20,bot=H-12,hw=50,per=(bot-top-6)/recipe.length;
+    jobBg('cafe',x,W,H);const cx=W/2,top=20,bot=H-12,hw=50,per=(bot-top-6)/recipe.length;
     made.forEach((m,i)=>{x.fillStyle=E(m)[2];const y2=bot-i*per,y1=y2-per;poly(x,[cx-hw+4,y1,cx+hw-4,y1,cx+hw-8,y2,cx-hw+8,y2]);x.fill()});
     x.strokeStyle='#555';x.lineWidth=3;x.beginPath();x.moveTo(cx-hw,top);x.lineTo(cx-hw+6,bot);x.lineTo(cx+hw-6,bot);x.lineTo(cx+hw,top);x.stroke();x.beginPath();x.arc(cx+hw+8,(top+bot)/2,14,-1.3,1.3);x.stroke()}
   function tap(k){if(phase==='show'){phase='make';t0=Date.now()}
@@ -138,7 +138,7 @@ function makeDog(el,api){
   const lx=i=>W*(i+.5)/3, move=d=>{lane=Math.max(0,Math.min(2,lane+d));sfx('click')};
   $('#L').addEventListener('pointerdown',e=>{e.preventDefault();move(-1)});$('#R').addEventListener('pointerdown',e=>{e.preventDefault();move(1)});
   cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect();move(e.clientX-r.left<W/2?-1:1)});
-  function draw(){x.fillStyle='#8bc34a';x.fillRect(0,0,W,H);x.fillStyle='#e0d6c3';x.fillRect(W*.05,0,W*.9,H);x.strokeStyle='#fff';x.lineWidth=3;x.setLineDash([16,14]);x.lineDashOffset=-tm*speed;
+  function draw(){jobBg('park',x,W,H);x.fillStyle='rgba(224,214,195,.92)';x.fillRect(W*.05,0,W*.9,H);x.strokeStyle='#fff';x.lineWidth=3;x.setLineDash([16,14]);x.lineDashOffset=-tm*speed;
     line(x,W/3,0,W/3,H);line(x,2*W/3,0,2*W/3,H);x.setLineDash([]);x.font='34px serif';x.textAlign='center';x.textBaseline='middle';
     objs.forEach(o=>x.fillText({bone:'🦴',puddle:'💧',cat:'🐈',cone:'🚧'}[o.t],lx(o.lane),o.y));
     x.globalAlpha=stun>0&&Math.floor(stun*10)%2?.4:1;x.font='44px serif';x.fillText('🐕',lx(lane),dogY);x.globalAlpha=1;
@@ -162,7 +162,7 @@ function makePizza(el,api){
   function toss(){fly=.35;const h=houses.filter(q=>Math.abs(q.x-zone)<34&&!q.done)[0];
     if(h&&h===target){h.done=1;api.pay(6+speed/30);newTarget()}else api.miss(h?'🏠 Wrong house! That was #'+h.num:'🍕 Pizza on the sidewalk!')}
   $('#toss').addEventListener('pointerdown',e=>{e.preventDefault();toss()});
-  function draw(){x.fillStyle='#bbdefb';x.fillRect(0,0,W,H);x.fillStyle='#9e9e9e';x.fillRect(0,H-50,W,50);x.fillStyle='#fff';const off=(Date.now()/12)%40;for(let i=-40;i<W+40;i+=40)x.fillRect(i-off,H-27,20,4);
+  function draw(){jobBg('street',x,W,H);x.fillStyle='#9e9e9e';x.fillRect(0,H-50,W,50);x.fillStyle='#fff';const off=(Date.now()/12)%40;for(let i=-40;i<W+40;i+=40)x.fillRect(i-off,H-27,20,4);
     x.fillStyle='rgba(255,235,59,.35)';x.fillRect(zone-34,0,68,H-50);x.strokeStyle='#fbc02d';x.lineWidth=2;x.strokeRect(zone-34,1,68,H-52);
     houses.forEach(h=>{x.fillStyle=h.c;x.fillRect(h.x-30,70,60,90);x.fillStyle='#8d6e63';poly(x,[h.x-36,72,h.x+36,72,h.x,38]);x.fill();x.fillStyle='#5d4037';x.fillRect(h.x-8,128,16,32);
       x.fillStyle=h===target?'#d32f2f':'#fff';rr(x,h.x-16,82,32,22,5);x.fill();x.fillStyle=h===target?'#fff':'#222';x.font='bold 15px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(h.num,h.x,93);
@@ -190,4 +190,4 @@ function boot(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 /* test hook (harmless in play) */
-window.__game={get S(){return S},ITEMS:ITEMS,ITEM:ITEM,STORES:STORES,JOBS:JOBS,go:go,get shift(){return shift},endShift:endShift,render:render,openStores:openStores,deals:deals,thumb:thumb,buy:id=>buy(ITEM[id]),onlineTick:onlineTick,nextDay:nextDay,CLAM:CLAM,KO_OF:KO_OF,courtCase:courtCase,crimeNewDay:crimeNewDay,startShift:startShift,CS_JOB:CS_JOB,alleyStock:alleyStock,stealAttempt:stealAttempt,sell:sell,fbSell:fbSell};
+window.__game={get S(){return S},ITEMS:ITEMS,ITEM:ITEM,STORES:STORES,JOBS:JOBS,go:go,get shift(){return shift},endShift:endShift,render:render,openStores:openStores,deals:deals,thumb:thumb,buy:id=>buy(ITEM[id]),onlineTick:onlineTick,nextDay:nextDay,CLAM:CLAM,KO_OF:KO_OF,courtCase:courtCase,crimeNewDay:crimeNewDay,startShift:startShift,CS_JOB:CS_JOB,alleyStock:alleyStock,stealAttempt:stealAttempt,sell:sell,fbSell:fbSell,fits:fits,fitsYard:fitsYard,ITEM:ITEM,save:save,curbAppeal:curbAppeal,houseValue:houseValue};

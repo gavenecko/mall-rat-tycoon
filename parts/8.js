@@ -32,7 +32,7 @@ function courtCase(c){
   let mode;if(repeat){charge();r.cs+=cs;mode='both';entry.pen='Fine '+money(fine)+' + '+cs+' shifts CS'}
   else if(!petty){charge();mode='fine';entry.pen='Fine '+money(fine)}
   else{r.cs+=cs;mode='choose';entry.pen=cs+' shifts community service'}
-  notify('🚨 '+c.what+': '+entry.pen);sfx('bad');save();hud();
+  notify('🚨 '+c.what+': '+entry.pen);sfx('bad');save();hud();setTimeout(()=>avMood('wow',3000),60);
   sheet('<h3>🚨 Busted!</h3><div style="font-size:44px;text-align:center">👮‍♀️'+(c.emoji||'🛍️')+'</div><p>'+esc(c.what)+'.'+(c.confiscated?' The item has been confiscated.':'')+'</p>'+
     '<div class="small">Offense #'+r.offenses+' · Heat '+Math.round(r.heat)+'/100</div>'+ban+
     '<div class="small">Fine = '+(3+prior)+'× item value + '+money(fee)+' court fee</div>'+
@@ -79,7 +79,7 @@ function makeLitter(el,api){
   const W=Math.min(window.innerWidth-24,420),H=330,cv=el.querySelector('#cv'),x=setupCanvas(cv,W,H);let L=[],sp=0;
   const grab=o=>{L.splice(L.indexOf(o),1);api.pay(0)};
   cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;const o=L.filter(o=>Math.hypot(o.x-px,o.y-py)<30)[0];if(o)grab(o)});
-  function draw(){x.fillStyle='#a5d6a7';x.fillRect(0,0,W,H);x.fillStyle='#81c784';for(let i=0;i<8;i++){circ(x,(i*97)%W,(i*61)%H,30);x.fill()}x.fillStyle='#d7ccc8';x.fillRect(0,H/2-14,W,28);
+  function draw(){jobBg('park',x,W,H);x.fillStyle='#d7ccc8';x.fillRect(0,H/2-14,W,28);
     x.font='30px serif';x.textAlign='center';x.textBaseline='middle';L.forEach(o=>{x.globalAlpha=Math.min(1,o.life);x.fillText(o.e,o.x,o.y)});x.globalAlpha=1;x.fillText('🧹',W-24,H-24)}
   draw();
   return{tick(dt){sp-=dt;if(sp<=0){sp=.6;L.push({x:30+Math.random()*(W-60),y:30+Math.random()*(H-60),e:pick(['🥤','🍟','📰','🧃','🍌','🥫','🧻']),life:3})}L.forEach(o=>{o.life-=dt});L=L.filter(o=>o.life>0);draw()},
@@ -155,7 +155,7 @@ function disclaimer(){sheet('<h3>⚠️ Before you turn this on</h3><p><b>Mall R
 
 /* ---------- Me: criminal record ---------- */
 function recordCard(){const r=R(),bans=Object.keys(r.bans).filter(isBanned);
-  return'<div class="card"><div class="lbl" style="margin-top:0">🚔 Criminal record</div>'+heatPill()+'<div class="bar"><div style="width:'+r.heat+'%;background:'+heatColor(r.heat)+'"></div></div>'+
+  return'<div class="card"><div class="lbl" style="margin-top:0">'+svgI('gavel')+' Criminal record</div>'+heatPill()+'<div class="bar"><div style="width:'+r.heat+'%;background:'+heatColor(r.heat)+'"></div></div>'+
     [['Offenses',r.offenses],['Items shoplifted (got away)',r.stolen],['Times caught',r.caught],['Counterfeits sold',r.fakesSold],['Fines paid',money(r.finesPaid)],['Community service done / owed',r.csDone+' / '+r.cs],['Police raids / arrests',r.raids+' / '+r.arrests],['Stolen items on hand',Object.keys(r.hot).reduce((a,k)=>a+r.hot[k],0)],['Store bans',bans.length?bans.map(b=>storeOf({store:b}).name+' (→Day '+r.bans[b]+')').join(', '):'none']]
       .map(a=>'<div class="slot"><span>'+a[0]+'</span><b>'+a[1]+'</b></div>').join('')+
     (r.record.length?'<div class="lbl">Rap sheet</div>'+r.record.slice(0,8).map(e=>'<div class="slot"><span>Day '+e.day+': '+esc(e.what)+'</span><span class="small">'+esc(e.pen)+'</span></div>').join(''):'<div class="small">Squeaky clean. Suspiciously so.</div>')+

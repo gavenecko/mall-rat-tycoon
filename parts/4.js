@@ -1,6 +1,7 @@
 /* ================ DRAWING: FURNITURE & DECOR (box space) ================ */
 function pb(x,it,lw){x.fillStyle=fillOf(x,it);x.fill();x.strokeStyle='rgba(0,0,0,.45)';x.lineWidth=lw||1.2;x.stroke()}
 function drawFurn(x,it,X,Y,W,H){
+  if(it.surf){drawSurface(x,it,X,Y,W,H,W/4);return}if(it.ext){drawExtThumb(x,it,X,Y,W,H);return}if(HOME_DRAW[it.shape]){HOME_DRAW[it.shape](x,it,X,Y,W,H);return}
   const s=it.shape,u=Math.min(W,H),lw=Math.max(1,u/60);x.lineWidth=lw;x.lineCap='round';
   const dark=a=>{x.fillStyle='rgba(0,0,0,'+a+')';x.fill()};
   switch(s){

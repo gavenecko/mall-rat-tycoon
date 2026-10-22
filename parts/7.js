@@ -97,7 +97,7 @@ function endAuction(a){a.done=true;const it=ITEM[a.claim||a.id];
     else{S.owned[a.id]=(S.owned[a.id]||0)+1;notify('🦗 No bids on '+it.name+'. It came back home.')}}
   else if(a.high==='you'){S.orders.unshift({oid:S.oid++,id:a.id,src:'Fleabay',price:a.bid,day:S.day,arrive:S.day,status:'delivered'});S.stats3.won++;
     notify('🏆 You won '+it.name+' for '+money(a.bid)+'! It\'s on your doorstep.');toast('🏆 Won '+it.name+'!');sfx('level')}}
-function removeOne(id){S.owned[id]--;if(!S.owned[id]){delete S.owned[id];Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==id)}
+function removeOne(id){S.owned[id]--;if(!S.owned[id]){delete S.owned[id];if(S.home)homeClean(id);Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==id)}
   else{const pl=S.room.filter(q=>q.id===id);if(pl.length>S.owned[id])S.room.splice(S.room.indexOf(pl[0]),1)}if(S.rap)hotClamp(id)}
 function listItem(it,start){const hot=!it.fake&&hotTake(it.id);removeOne(it.id);hotClamp(it.id);S.flea.push({aid:S.oid++,id:it.id,hot:hot,seller:'you',bid:start,high:null,end:Date.now()+120000,claim:it.fake?it.real:null,npcMax:Math.round((it.fake?ITEM[it.real]:it).price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
   sfx('click');toast('🔨 Listed! Auction ends in 2:00');save();closeSheet();rerender()}
@@ -152,7 +152,7 @@ function buyClam(it){const p=priceOf(it),ship=S.crime.active?0:SHIP_FEE,tot=p+sh
     '<div class="small">Item '+money(p)+(ship?' + '+money(ship)+' shipping':'')+' · '+clamDeliver()+'</div>')}
 function clamDetail(it){const rt=rating(it);
   sheet('<div class="row" style="align-items:flex-start"><img src="'+thumb(it)+'" style="width:110px;border-radius:12px"><div style="flex:1"><b>'+esc(it.name)+'</b><div class="stars">'+starStr(rt.stars)+' <span class="small">'+rt.stars+' ('+rt.count.toLocaleString('en-US')+')</span></div><div class="pr" style="font-size:20px">'+money(priceOf(it))+'</div><div class="small">'+clamDeliver()+'</div></div></div>'+
-   '<button class="btn big" id="cbuy" style="background:#ffa41c;box-shadow:0 2px 0 #c77700">Buy now</button><div class="lbl">Customer reviews</div>'+
+   '<button class="btn big" id="cbuy" style="background:#ffa41c;box-shadow:0 2px 0 #c77700">Buy now</button><div class="lbl">'+svgI('me')+' Customer reviews</div>'+
    reviewsFor(it).map(r=>'<div class="slot" style="display:block"><b>'+r.who+'</b> <span class="stars">'+starStr(r.s)+'</span><br>'+esc(r.t)+'</div>').join(''));
   $('#cbuy').onclick=()=>buyClam(it)}
 function clamCard(it){const rt=rating(it),off=offOf(it),d=document.createElement('div');d.className='item';
@@ -166,7 +166,7 @@ function fillClam(){const g=$('#cgrid');if(!g)return;const q=clamQ.toLowerCase()
   g.innerHTML='';$('#ccount').textContent=r.length+' results';r.slice(0,60).forEach(i=>g.appendChild(clamCard(i)));
   if(!r.length)g.innerHTML='<div class="card">No results for "'+esc(clamQ)+'". Try "hoodie", "red", or "console".</div>'}
 function renderClam(v){
-  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#232f3e">clamazon<span style="color:#ff9900">.</span> <span class="small" style="color:#ccc">Everything. Eventually.</span></div>'+
+  v.insertAdjacentHTML('beforeend',''+brandHead('clam')+''+
    '<div class="card row sp" style="background:'+(S.crime.active?'#e3f2fd':'#fff')+'">'+(S.crime.active?'<div>📦 <b>Crime member</b><div class="small">Free instant delivery · renews Day '+S.crime.next+' ('+money(CRIME_FEE)+'/wk)</div></div><button class="btn alt" id="crime">Cancel</button>':
     '<div>📦 <b>Clamazon Crime</b><div class="small">'+money(CRIME_FEE)+'/week · FREE instant delivery · Crime Day deals</div></div><button class="btn" id="crime" style="background:#00a8e1;box-shadow:0 2px 0 #007aa3">Join</button>')+'</div>'+
    '<input type="search" id="cq" placeholder="🔍 Search Clamazon" value="'+esc(clamQ)+'"><div class="row sp" style="margin:6px 0"><span class="small" id="ccount"></span><select id="csort" style="padding:6px;border-radius:8px"><option value="rel">Featured</option><option value="lo">Price: low→high</option><option value="hi">Price: high→low</option><option value="stars">Avg. review</option></select></div><div id="ctabs"></div><div class="grid" id="cgrid"></div>');
@@ -180,7 +180,7 @@ function renderClam(v){
 }
 function renderFlea(v){
   const now=Date.now(),mine=S.flea.filter(a=>a.seller==='you'),theirs=S.flea.filter(a=>a.seller!=='you');
-  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:linear-gradient(90deg,#e53238,#0064d2,#f5af02,#86b817)">Fleabay 🔨 <span class="small" style="color:#fff">Bid. Win. Regret.</span></div>'+
+  v.insertAdjacentHTML('beforeend',''+brandHead('flea')+''+
     '<div class="card row sp"><div><b>Sell your stuff</b><div class="small">2-min auction · NPCs bid · 10% fee</div></div><button class="btn" id="list">+ List an item</button></div>');
   const row=a=>{const it=ITEM[a.claim||a.id],live=!a.done;const you=a.high==='you';
     return'<div class="card row" style="align-items:flex-start"><img src="'+thumb(it)+'" style="width:70px;border-radius:10px"><div style="flex:1"><b>'+esc(it.name)+'</b><div class="small">'+(a.seller==='you'?'Your listing':'Seller: '+esc(a.seller))+' · retail '+money(it.price)+'</div>'+
@@ -188,7 +188,7 @@ function renderFlea(v){
       '<div class="small">'+(live?'⏱ <b data-end="'+a.end+'">'+fmtLeft(a.end-now)+'</b> left':(a.seller==='you'?(a.high?'💸 Sold':'🦗 Unsold'):you?'🏆 You won!':'Ended'))+'</div></div>'+
       (live&&a.seller!=='you'?'<button class="btn" data-bid="'+a.aid+'" '+(you?'disabled':'')+'>'+(you?'Top bid':'Bid '+money(nextBid(a)))+'</button>':'')+'</div>'};
   if(mine.length)v.insertAdjacentHTML('beforeend','<div class="lbl">Your listings</div>'+mine.map(row).join(''));
-  v.insertAdjacentHTML('beforeend','<div class="lbl">Live auctions</div>'+theirs.filter(a=>!a.done).sort((a,b)=>a.end-b.end).map(row).join('')+(theirs.some(a=>a.done)?'<div class="lbl">Recently ended</div>'+theirs.filter(a=>a.done).map(row).join(''):''));
+  v.insertAdjacentHTML('beforeend','<div class="lbl">'+svgI('gavel')+' Live auctions</div>'+theirs.filter(a=>!a.done).sort((a,b)=>a.end-b.end).map(row).join('')+(theirs.some(a=>a.done)?'<div class="lbl">Recently ended</div>'+theirs.filter(a=>a.done).map(row).join(''):''));
   onAll(v,'[data-bid]',b=>playerBid(S.flea.filter(a=>a.aid===+b.dataset.bid)[0]));
   $('#list').onclick=()=>{const own=Object.keys(S.owned).filter(sellable).map(id=>ITEM[id]);
     sheet('<h3>🔨 List on Fleabay</h3>'+(own.length?own.map(it=>'<div class="slot"><span class="row" style="flex-wrap:nowrap"><img src="'+thumb(it)+'" style="width:44px;border-radius:8px"><span>'+esc(it.name)+'<br><span class="small">worth '+money(it.price)+'</span></span></span><button class="btn" data-l="'+it.id+'">List</button></div>').join(''):'<p>You don\'t own anything yet!</p>'));
@@ -198,12 +198,12 @@ function renderFlea(v){
 }
 function renderFb(v){
   if(S.fb.day!==S.day)fbRefresh();
-  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#1877f2">Facenook Marketplace 🏷️ <span class="small" style="color:#dbe7ff">New listings every day</span></div><div class="small" style="margin:0 4px 8px">Used goods, wild prices. Haggle! Some deals are too good to be true…</div><button class="btn" id="fbsell" style="width:100%;margin-bottom:8px;background:#42b72a;box-shadow:0 2px 0 #2d8a1c">📣 Sell something on Facenook</button><div class="grid" id="fbg"></div>');$('#fbsell').onclick=fbSell;
+  v.insertAdjacentHTML('beforeend',''+brandHead('fb')+'<div class="small" style="margin:0 4px 8px">Used goods, wild prices. Haggle! Some deals are too good to be true…</div><button class="btn" id="fbsell" style="width:100%;margin-bottom:8px;background:#42b72a;box-shadow:0 2px 0 #2d8a1c">📣 Sell something on Facenook</button><div class="grid" id="fbg"></div>');$('#fbsell').onclick=fbSell;
   S.fb.list.forEach(l=>{const it=ITEM[l.id],d=document.createElement('div');d.className='item';
     d.innerHTML='<img alt="" src="'+thumb(it)+'">'+(l.status!=='open'?'<span class="badge" style="background:#555">'+(l.status==='sold'?'SOLD':'👻 GHOSTED')+'</span>':'')+'<div class="nm">'+esc(it.name)+'</div><div><span class="was">'+money(it.price)+'</span><span class="pr">'+money(l.ask)+'</span></div><div class="small">'+l.face+' '+esc(l.seller)+'</div><button class="btn" style="background:#1877f2;box-shadow:0 2px 0 #0d5bc4">'+(l.status==='open'?'💬 Message':'View')+'</button>';
     d.querySelector('button').onclick=()=>openFb(l);$('#fbg').appendChild(d)})}
 function renderOrders(v){
-  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#6d4c41">🚚 Orders & tracking</div>');
+  v.insertAdjacentHTML('beforeend',''+brandHead('orders')+'');
   const pk=packagesReady().length;if(pk)v.insertAdjacentHTML('beforeend','<div class="card row sp" style="background:#fff8e1"><span>📦 <b>'+pk+'</b> package(s) on your doorstep</span><button class="btn green" id="ocol">Bring inside</button></div>');
   if(!S.orders.length)v.insertAdjacentHTML('beforeend','<div class="card">No orders yet. Clamazon is <i>right there</i>.</div>');
   S.orders.forEach(o=>{const it=ITEM[o.id],st=o.status==='collected'?4:o.status==='delivered'?3:S.day>=o.arrive-0?2:1;
@@ -211,7 +211,7 @@ function renderOrders(v){
       '<div class="small">'+(o.status==='collected'?'✅ Unboxed':o.status==='delivered'?'📦 Delivered to your doorstep':'🚚 Shipped · arrives Day '+o.arrive)+'</div><div class="steps">'+[1,2,3,4].map(i=>'<i class="'+(i<=st?'on':'')+'"></i>').join('')+'</div></div></div>')});
   if($('#ocol'))$('#ocol').onclick=collect}
 function renderWish(v){
-  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:#e91e63">💖 Wishlist</div><div class="small" style="margin:0 4px 8px">Tap 🤍 on any item to save it. We\'ll mail you when it goes on sale.</div><div class="grid" id="wg"></div>');
+  v.insertAdjacentHTML('beforeend',''+brandHead('wish')+'<div class="small" style="margin:0 4px 8px">Tap 🤍 on any item to save it. We\'ll mail you when it goes on sale.</div><div class="grid" id="wg"></div>');
   const ids=Object.keys(S.wish).filter(id=>ITEM[id]);if(!ids.length){$('#wg').innerHTML='<div class="card">Nothing yet. Go heart something pretty.</div>';return}
   const open=openStores().map(s=>s.id);
   ids.forEach(id=>{const it=ITEM[id],off=offOf(it),d=document.createElement('div');d.className='item';
@@ -220,7 +220,7 @@ function renderWish(v){
     onAll(d,'[data-a]',b=>{if(b.dataset.a==='wish'){toggleWish(it);rerender()}else if(it.store==='clamazon')buyClam(it);else buy(it)});$('#wg').appendChild(d)})}
 function renderWallet(v){
   const lim=cardLimit(),bal=S.card.bal,pct=Math.min(1,bal/lim);
-  v.insertAdjacentHTML('beforeend','<div class="ohead" style="background:linear-gradient(90deg,#424242,#9e9e9e)">💳 Mall Rat Card</div>'+
+  v.insertAdjacentHTML('beforeend',''+brandHead('wallet')+''+
    '<div class="card"><div class="slot"><span>💵 Cash</span><b>'+money(S.cash)+'</b></div><div class="slot"><span>💳 Card balance</span><b style="color:'+(bal?'#d32f2f':'#222')+'">'+money(bal)+'</b></div><div class="slot"><span>Credit limit (grows with shifts worked)</span><b>'+money(lim)+'</b></div>'+
    '<div class="bar"><div style="width:'+pct*100+'%;background:'+(pct>.6?'#e53935':'#ff9800')+'"></div></div><div class="small">Interest: 3% per in-game day, compounding. '+(bal?'Tomorrow you\'ll owe ~'+money(bal+Math.ceil(bal*CARD_RATE))+'.':'')+'</div>'+
    (pct>.6?'<p style="background:#ffebee;border-radius:10px;padding:8px">🫠 Gentle vibe check: that balance is getting chunky. Maybe a burger shift or two before the next haul?</p>':'')+

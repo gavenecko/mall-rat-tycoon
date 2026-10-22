@@ -10,7 +10,7 @@ const store={
   get(k){if(storageOK){try{return window.localStorage.getItem(k)}catch(e){}}return Object.prototype.hasOwnProperty.call(MEM,k)?MEM[k]:null},
   set(k,v){MEM[k]=v;if(storageOK){try{window.localStorage.setItem(k,v)}catch(e){}}}
 };
-function fresh(){return{v:3,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},dark:false,rap:{optin:false,lastSteal:{},hot:{},arrests:0,heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
+function fresh(){return{v:3,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},dark:false,home:{wall:null,floor:null,ext:{},yard:[],water:{},size:0,waters:0,remodels:0},rap:{optin:false,lastSteal:{},hot:{},arrests:0,heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
   shifts:0,earned:0,spent:0,dealsBought:0,ach:{},tutDone:false,muted:false,savedAt:0}}
 function normalize(o){
   if(!o||typeof o!=='object'||typeof o.cash!=='number'||isNaN(o.cash))throw new Error('Not a valid save');
@@ -20,7 +20,7 @@ function normalize(o){
   s.room=(s.room||[]).filter(p=>ITEM[p.id]&&s.owned[p.id]);
   const f=fresh();['crime','card','fb','stats3','rap'].forEach(k=>{s[k]=Object.assign({},f[k],s[k]||{})});
   s.orders=(s.orders||[]).filter(o=>ITEM[o.id]);s.flea=(s.flea||[]).filter(a=>ITEM[a.id]);s.fb.list=(s.fb.list||[]).filter(l=>ITEM[l.id]);
-  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});s.v=3;
+  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});homeFix(s);s.v=3;
   return s;
 }
 function load(){try{const raw=store.get(KEY_AUTO);return raw?normalize(JSON.parse(raw)):fresh()}catch(e){return fresh()}}
@@ -40,8 +40,8 @@ function checkDay(){const n=Math.floor((Date.now()-S.dayAt)/DAY_MS);if(n>0){S.da
 function nextDay(){S.day++;S.dayAt=Date.now();onNewDay();save()}
 function timeLeft(){const s=Math.max(0,Math.ceil((DAY_MS-(Date.now()-S.dayAt))/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function openStores(){
-  const open=shuffle(STORES,rng(S.day*7919+3)).slice(0,OPEN_COUNT);
-  if(!open.some(s=>s.tier[1]<=150)){open[OPEN_COUNT-1]=shuffle(STORES.filter(s=>s.tier[1]<=150),rng(S.day+1))[0]}
+  const POOL=STORES.filter(s=>!s.park),open=shuffle(POOL,rng(S.day*7919+3)).slice(0,OPEN_COUNT);
+  if(!open.some(s=>s.tier[1]<=150)){open[OPEN_COUNT-1]=shuffle(POOL.filter(s=>s.tier[1]<=150),rng(S.day+1))[0]}
   return open;
 }
 let DEAL_CACHE={day:-1,list:[]};
