@@ -357,7 +357,7 @@ const store={
   get(k){if(storageOK){try{return window.localStorage.getItem(k)}catch(e){}}return Object.prototype.hasOwnProperty.call(MEM,k)?MEM[k]:null},
   set(k,v){MEM[k]=v;if(storageOK){try{window.localStorage.setItem(k,v)}catch(e){}}}
 };
-function fresh(){return{v:3,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},dark:false,home:{wall:null,floor:null,ext:{},yard:[],water:{},size:0,waters:0,remodels:0},rap:{optin:false,lastSteal:{},hot:{},arrests:0,heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
+function fresh(){return{v:8,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},dark:false,home:{wall:null,floor:null,ext:{},yard:[],water:{},size:0,waters:0,remodels:0},rap:{optin:false,lastSteal:{},hot:{},arrests:0,heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
   shifts:0,earned:0,spent:0,dealsBought:0,ach:{},tutDone:false,muted:false,savedAt:0}}
 function normalize(o){
   if(!o||typeof o!=='object'||typeof o.cash!=='number'||isNaN(o.cash))throw new Error('Not a valid save');
@@ -367,11 +367,11 @@ function normalize(o){
   s.room=(s.room||[]).filter(p=>ITEM[p.id]&&s.owned[p.id]);
   const f=fresh();['crime','card','fb','stats3','rap'].forEach(k=>{s[k]=Object.assign({},f[k],s[k]||{})});
   s.orders=(s.orders||[]).filter(o=>ITEM[o.id]);s.flea=(s.flea||[]).filter(a=>ITEM[a.id]);s.fb.list=(s.fb.list||[]).filter(l=>ITEM[l.id]);
-  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});homeFix(s);s.awayFrom=s.savedAt||0;if(!s.gt){s.gt=Date.now();if(s.char&&s.day>=40&&!s.ttFixed)s.ttOffer=true;if(s.gt-(s.dayAt||0)>DAY_MS)s.dayAt=s.gt-Math.min(DAY_MS*.5,Math.max(0,DAY_MS-1))}s.v=3;
+  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});homeFix(s);s.awayFrom=s.savedAt||0;if(!s.gt){s.gt=Date.now();if(s.char&&s.day>=40&&!s.ttFixed)s.ttOffer=true;if(s.gt-(s.dayAt||0)>DAY_MS)s.dayAt=s.gt-Math.min(DAY_MS*.5,Math.max(0,DAY_MS-1))}if(typeof v8Fix==="function")v8Fix(s);s.v=8;
   return s;
 }
 function load(){try{const raw=store.get(KEY_AUTO);return raw?normalize(JSON.parse(raw)):fresh()}catch(e){return fresh()}}
-let S=load();
+let S=fresh();// real load happens in parts/12.js once every catalog (incl. v6 home + v8 drops) exists
 function save(){if(typeof clockTick==='function'&&S.gt)clockTick();S.savedAt=Date.now();checkAch();store.set(KEY_AUTO,JSON.stringify(S));hud()}
 const b64e=s=>btoa(unescape(encodeURIComponent(s)));
 const b64d=s=>decodeURIComponent(escape(atob(s)));
@@ -1055,7 +1055,7 @@ function renderClam(v){
    '<div class="card row sp" style="background:'+(S.crime.active?'#e3f2fd':'#fff')+'">'+(S.crime.active?'<div>📦 <b>Crime member</b><div class="small">Free instant delivery · renews Day '+S.crime.next+' ('+money(CRIME_FEE)+'/wk)</div></div><button class="btn alt" id="crime">Cancel</button>':
     '<div>📦 <b>Clamazon Crime</b><div class="small">'+money(CRIME_FEE)+'/week · FREE instant delivery · Crime Day deals</div></div><button class="btn" id="crime" style="background:#00a8e1;box-shadow:0 2px 0 #007aa3">Join</button>')+'</div>'+
    '<input type="search" id="cq" placeholder="🔍 Search Clamazon" value="'+esc(clamQ)+'"><div class="row sp" style="margin:6px 0"><span class="small" id="ccount"></span><select id="csort" style="padding:6px;border-radius:8px"><option value="rel">Featured</option><option value="lo">Price: low→high</option><option value="hi">Price: high→low</option><option value="stars">Avg. review</option></select></div><div id="ctabs"></div><div class="grid" id="cgrid"></div>');
-  const ct=$('#ctabs'),cats=['all'].concat(Object.keys(BASES));const t=document.createElement('div');t.className='tabs';
+  const ct=$('#ctabs'),cats=['all'].concat(CLAM_CATS());const t=document.createElement('div');t.className='tabs';
   cats.forEach(c=>{const b=document.createElement('button');b.textContent=c==='all'?'All':CAT_LABEL[c];b.className=c===clamCat?'on':'';b.onclick=()=>{clamCat=c;Array.prototype.forEach.call(t.children,x=>x.className='');b.className='on';fillClam()};t.appendChild(b)});ct.appendChild(t);
   $('#csort').value=clamSort;$('#csort').onchange=e=>{clamSort=e.target.value;fillClam()};
   $('#cq').oninput=e=>{clamQ=e.target.value;fillClam()};
@@ -1690,6 +1690,33 @@ function welcomeBack(){if(!S||!S.char)return;const away=Math.max(0,Date.now()-(S
 function timeFix(){const forgiven=S.card.bal+S.bnpl.reduce((a,p)=>a+(p.left||p.rem||0)*(p.amt||p.each||0),0);S.card.bal=0;S.bnpl=[];
   if(S.home){Object.keys(S.home.water).forEach(k=>S.home.water[k]=S.day)}S.rap.heat=0;if(S.crime&&S.crime.next<S.day)S.crime.next=S.day+7;
   S.ttOffer=false;S.ttFixed=true;notify('🕰️ Timeline repaired. Debts from the time glitch were forgiven.');save();hud();toast('✨ Timeline fixed!');burst&&burst(20);rerender()}
+/* ============================== v8 ==============================
+   Stage A: game-time shifts, pay rebalance (sim_v8.js), cashier backdrop, home goods online, load-order fix. */
+JBG_DRAW.register=function(g,W,H){const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#e8f1fb');gr.addColorStop(1,'#cfe0f5');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  // back shelves with products
+  for(let s=0;s<2;s++){const y=8+s*26;g.fillStyle='#b0bec5';g.fillRect(0,y+20,W,3);for(let i=3;i<W;i+=11){g.fillStyle=['#ef9a9a','#90caf9','#a5d6a7','#ffe082','#ce93d8','#ffab91'][(i+s*5)%6];g.globalAlpha=.6;const h=10+((i*7)%8);g.fillRect(i,y+20-h,8,h);g.globalAlpha=1}}
+  // big "CHECKOUT 3" sign
+  g.fillStyle='#1e63c4';rr(g,W*.62,4,W*.34,18,4);g.fill();g.fillStyle='#fff';g.font='bold 11px sans-serif';g.textAlign='center';g.fillText('CHECKOUT 3 · 10 ITEMS-ISH',W*.79,17);
+  // counter + conveyor belt
+  g.fillStyle='#78909c';g.fillRect(0,H-40,W,40);g.fillStyle='#37474f';g.fillRect(W*.32,H-46,W*.4,10);g.strokeStyle='rgba(255,255,255,.25)';g.lineWidth=1;for(let i=W*.32;i<W*.72;i+=8)line(g,i,H-46,i,H-36);
+  g.fillStyle='#546e7a';g.fillRect(0,H-40,W,4);
+  // register
+  g.fillStyle='#263238';rr(g,W*.72,H-74,W*.24,36,5);g.fill();g.fillStyle='#455a64';g.fillRect(W*.74,H-40,W*.2,8);
+  // candy rack + impulse buys
+  g.fillStyle='#8d6e63';g.fillRect(W*.02,H-40,W*.06,40);['#e53935','#fdd835','#43a047'].forEach((c,i)=>{g.fillStyle=c;g.fillRect(W*.025,H-36+i*11,W*.05,7)});
+  g.textAlign='left'};
+
+/* home goods (wallpaper, flooring, plants, outdoor) now ship from Clamazon too */
+(function(){const seen={};CLAM.forEach(i=>seen[i.id]=1);const r=rng(8088);
+  shuffle(ITEMS.filter(i=>(i.surf||i.cat==='plants'||i.cat==='outdoor')&&!i.rare&&!i.fake),r).slice(0,40).forEach(i=>{if(!seen[i.id]){CLAM.push(i);seen[i.id]=1}})})();
+const CLAM_CATS=()=>Object.keys(BASES).concat(['plants','outdoor','surface']);
+
+/* stage B hooks (no-ops until defined below) */
+function setPayMult(){return typeof brandSet==='function'&&brandSet()?brandSet().mult:1}
+function setBonusLine(){const b=typeof brandSet==='function'&&brandSet();return b?' · 👑 '+b.name+' set bonus ×'+b.mult:''}
+function v8Fix(s){}
+/* v8: final load (every catalog now exists, so owned v6 home items / v8 drops survive reload) */
+S=load();if(typeof syncRows==='function')syncRows();
 /* ============================== JOBS ==============================
    Each job: make(el, api) -> {tick(dt), bot()}. api.pay(base) / api.miss(msg).
    bot() performs one correct action (used by automated tests). */
@@ -1703,10 +1730,11 @@ const JOBS=[
  {id:'pizza',name:'Pizza Dash',emoji:'🍕',unlock:5,desc:'Toss the pizza when the right house is in the zone.',make:makePizza}
 ];
 const jobState=id=>S.jobs[id]||(S.jobs[id]={xp:0,shifts:0,best:0});
-const jobLevel=id=>1+Math.floor(Math.sqrt(jobState(id).xp/60));
-const jobMult=id=>1+.25*(jobLevel(id)-1);
+const LVL_K=40,PAY_K=1.15;// v8 balance (see sim_v8.js)
+const jobLevel=id=>1+Math.floor(Math.sqrt(jobState(id).xp/LVL_K));
+const jobMult=id=>Math.min(4,1+.3*(jobLevel(id)-1));
 let shift=null,lastResult=null;
-function startShift(job){sfx('start');shift={job:job,earned:0,count:0,end:Date.now()+SHIFT_MS,last:Date.now(),game:null};render()}
+function startShift(job){sfx('start');shift={job:job,earned:0,count:0,end:gnow()+SHIFT_MS,last:gnow(),game:null};render()}
 function endShift(){
   if(!shift)return;clearInterval(jobTick);jobTick=null;const s=shift;shift=null;if(s.job.cs){csEnd(s);return}const js=jobState(s.job.id),before=jobLevel(s.job.id);
   js.xp+=s.count*10+5;js.shifts++;js.best=Math.max(js.best,s.earned);S.shifts++;S.cash+=s.earned;S.earned+=s.earned;
@@ -1716,8 +1744,8 @@ function endShift(){
 function renderWork(v){
   if(shift)return runShift(v);
   if(lastResult){const r=lastResult;v.insertAdjacentHTML('beforeend','<div class="card center" style="border:3px solid #2bb34a"><div style="font-size:40px">'+r.job.emoji+'</div><b>Shift over!</b><div>'+r.count+' done · paid <b class="pr">'+money(r.earned)+'</b></div>'+(r.levelUp?'<div>⬆️ <b>'+r.job.name+' level '+r.levelUp+'!</b> Pay ×'+jobMult(r.job.id).toFixed(2)+'</div>':'')+'</div>')}
-  csCard(v);v.insertAdjacentHTML('beforeend','<div class="small" style="margin:0 4px 8px">Shifts are 45s. Pay = base × level bonus (+25% per job level). Total shifts: '+S.shifts+'</div>');
-  JOBS.forEach(j=>{const st=jobState(j.id),lv=jobLevel(j.id),locked=S.shifts<j.unlock||S.rap.cs>0,need=60*lv*lv,prev=60*(lv-1)*(lv-1);
+  csCard(v);v.insertAdjacentHTML('beforeend','<div class="small" style="margin:0 4px 8px">Shifts are 45s of game time (they pause if you leave the app). Pay = base × level bonus (+30% per job level, max ×4)'+setBonusLine()+'. Total shifts: '+S.shifts+'</div>');
+  JOBS.forEach(j=>{const st=jobState(j.id),lv=jobLevel(j.id),locked=S.shifts<j.unlock||S.rap.cs>0,need=LVL_K*lv*lv,prev=LVL_K*(lv-1)*(lv-1);
     const d=document.createElement('div');d.className='card'+(locked?' lock':'');
     d.innerHTML='<div class="row"><span style="font-size:40px">'+j.emoji+'</span><div style="flex:1"><b>'+j.name+'</b> '+(locked?'🔒':'<span class="small">Lv '+lv+' · pay ×'+jobMult(j.id).toFixed(2)+' · best '+money(st.best)+'</span>')+'<div class="small">'+j.desc+'</div>'+
       (locked?'<div class="small"><b>'+(S.rap.cs>0?'🚫 Finish community service first':'Unlocks after '+j.unlock+' total shifts')+'</b></div>':'<div class="bar"><div style="width:'+Math.min(100,(st.xp-prev)/(need-prev)*100)+'%;background:#ff4f9a"></div></div>')+'</div>'+
@@ -1729,10 +1757,10 @@ function runShift(v){
   const j=shift.job;
   v.innerHTML='<div class="card row sp jhead" style="padding:10px 14px;background:linear-gradient(120deg,'+(JOB_HEAD[j.id]||'#ff6f61,#ff3d81')+')"><b>'+j.emoji+' '+j.name+'</b><b>⏱ <span id="stime"></span></b><b>💰 <span id="searn"></span></b></div><div id="jarea"></div><button class="btn alt" id="quit" style="margin-top:10px;width:100%">Clock out early</button>';
   const api={
-    pay:base=>{if(!shift)return;shift.combo=(shift.combo||0)+1;burst(shift.combo>=5?14:8);if(shift.combo>=3&&shift.combo%1===0)comboText(shift.combo+'× COMBO!');if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*jobMult(j.id)*(1+Math.min(.5,Math.max(0,shift.combo-2)*.05))));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
+    pay:base=>{if(!shift)return;shift.combo=(shift.combo||0)+1;burst(shift.combo>=5?14:8);if(shift.combo>=3&&shift.combo%1===0)comboText(shift.combo+'× COMBO!');if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*PAY_K*setPayMult()*jobMult(j.id)*(1+Math.min(.5,Math.max(0,shift.combo-2)*.05))));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
     miss:msg=>{if(shift)shift.combo=0;toast(msg);sfx('bad');const a=$('#jarea');if(a){a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash');shake(a)}}
   };
-  function upd(){if(!shift)return;const now=Date.now(),dt=Math.min(.1,(now-shift.last)/1000);shift.last=now;
+  function upd(){if(!shift)return;const now=gnow(),dt=Math.min(.1,(now-shift.last)/1000);shift.last=now;
     if(now>=shift.end){endShift();render();return}
     if(shift.game&&shift.game.tick)shift.game.tick(dt);
     const t=$('#stime');if(t){t.textContent=Math.ceil((shift.end-now)/1000)+'s';$('#searn').textContent=money(shift.earned)}}
@@ -1768,13 +1796,16 @@ function makeBurger(el,api){
 function makeCashier(el,api){
   const DEN=[[1000,'$10','💵'],[500,'$5','💵'],[100,'$1','💵'],[25,'25¢','🪙'],[10,'10¢','🪙'],[5,'5¢','🪙']];
   const GOODS=['🧃 Juice','🧦 Socks','🍫 Candy bar','🧴 Lotion','📓 Notebook','🕯️ Candle','🧸 Teddy','🎧 Earbuds'];
-  el.innerHTML='<div class="card row"><span class="cust" id="cust"></span><div class="ticket" id="tk"></div></div><div class="bar"><div id="pat"></div></div>'+
+  el.innerHTML='<canvas id="cv"></canvas><div class="card row"><span class="cust" id="cust"></span><div class="ticket" id="tk"></div></div><div class="bar"><div id="pat"></div></div>'+
     '<div class="card center" style="font-size:18px;margin:6px 0">Change given: <b id="given">$0.00</b></div><div class="pad" id="pad" style="grid-template-columns:repeat(3,1fr)"></div>'+
     '<div class="row" style="margin-top:8px"><button class="btn alt" id="undo" style="flex:1">↩ Undo</button><button class="btn green" id="ok" style="flex:2">Give change ✔</button></div>';
+  const W=Math.min(window.innerWidth-24,420),H=120,x=setupCanvas(el.querySelector('#cv'),W,H);let good='';
+  function draw(){jobBg('register',x,W,H);x.font='30px sans-serif';x.textAlign='center';x.fillText($('#cust').textContent,W*.2,H-44);x.font='22px sans-serif';if(good)x.fillText(good.split(' ')[0],W*.55,H-30);
+    x.fillStyle='#1b5e20';rr(x,W*.74,H-66,W*.2,22,4);x.fill();x.fillStyle='#b9f6ca';x.font='bold 12px monospace';x.fillText(price?cents(price):'',W*.84,H-50);x.textAlign='left'}
   let price,paid,given,t0;const limit=15000;
   const sum=()=>given.reduce((a,b)=>a+b,0);
-  function next(){price=5*(20+rand(380));paid=[500,1000,2000].filter(v=>v>price)[0];given=[];t0=Date.now();$('#cust').textContent=pick(CUSTOMERS);
-    $('#tk').innerHTML=pick(GOODS)+' costs <b>'+cents(price)+'</b><br>Customer hands you <b>'+cents(paid)+'</b>';upd()}
+  function next(){price=5*(20+rand(380));paid=[500,1000,2000].filter(v=>v>price)[0];given=[];t0=Date.now();$('#cust').textContent=pick(CUSTOMERS);good=pick(GOODS);
+    $('#tk').innerHTML=good+' costs <b>'+cents(price)+'</b><br>Customer hands you <b>'+cents(paid)+'</b>';upd();draw()}
   function upd(){$('#given').textContent=cents(sum())}
   function done(){const ch=paid-price;if(sum()===ch)api.pay(4+Math.max(0,1-(Date.now()-t0)/limit)*6);else api.miss('❌ Wrong change! Needed '+cents(ch)+', gave '+cents(sum()));next()}
   DEN.forEach(d=>padBtn($('#pad'),'<b>'+d[2]+'</b>'+d[1],()=>{given.push(d[0]);sfx('click');upd()}));

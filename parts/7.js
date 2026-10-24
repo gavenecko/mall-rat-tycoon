@@ -170,7 +170,7 @@ function renderClam(v){
    '<div class="card row sp" style="background:'+(S.crime.active?'#e3f2fd':'#fff')+'">'+(S.crime.active?'<div>📦 <b>Crime member</b><div class="small">Free instant delivery · renews Day '+S.crime.next+' ('+money(CRIME_FEE)+'/wk)</div></div><button class="btn alt" id="crime">Cancel</button>':
     '<div>📦 <b>Clamazon Crime</b><div class="small">'+money(CRIME_FEE)+'/week · FREE instant delivery · Crime Day deals</div></div><button class="btn" id="crime" style="background:#00a8e1;box-shadow:0 2px 0 #007aa3">Join</button>')+'</div>'+
    '<input type="search" id="cq" placeholder="🔍 Search Clamazon" value="'+esc(clamQ)+'"><div class="row sp" style="margin:6px 0"><span class="small" id="ccount"></span><select id="csort" style="padding:6px;border-radius:8px"><option value="rel">Featured</option><option value="lo">Price: low→high</option><option value="hi">Price: high→low</option><option value="stars">Avg. review</option></select></div><div id="ctabs"></div><div class="grid" id="cgrid"></div>');
-  const ct=$('#ctabs'),cats=['all'].concat(Object.keys(BASES));const t=document.createElement('div');t.className='tabs';
+  const ct=$('#ctabs'),cats=['all'].concat(CLAM_CATS());const t=document.createElement('div');t.className='tabs';
   cats.forEach(c=>{const b=document.createElement('button');b.textContent=c==='all'?'All':CAT_LABEL[c];b.className=c===clamCat?'on':'';b.onclick=()=>{clamCat=c;Array.prototype.forEach.call(t.children,x=>x.className='');b.className='on';fillClam()};t.appendChild(b)});ct.appendChild(t);
   $('#csort').value=clamSort;$('#csort').onchange=e=>{clamSort=e.target.value;fillClam()};
   $('#cq').oninput=e=>{clamQ=e.target.value;fillClam()};

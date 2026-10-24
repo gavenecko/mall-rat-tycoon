@@ -11,10 +11,11 @@ const JOBS=[
  {id:'pizza',name:'Pizza Dash',emoji:'🍕',unlock:5,desc:'Toss the pizza when the right house is in the zone.',make:makePizza}
 ];
 const jobState=id=>S.jobs[id]||(S.jobs[id]={xp:0,shifts:0,best:0});
-const jobLevel=id=>1+Math.floor(Math.sqrt(jobState(id).xp/60));
-const jobMult=id=>1+.25*(jobLevel(id)-1);
+const LVL_K=40,PAY_K=1.15;// v8 balance (see sim_v8.js)
+const jobLevel=id=>1+Math.floor(Math.sqrt(jobState(id).xp/LVL_K));
+const jobMult=id=>Math.min(4,1+.3*(jobLevel(id)-1));
 let shift=null,lastResult=null;
-function startShift(job){sfx('start');shift={job:job,earned:0,count:0,end:Date.now()+SHIFT_MS,last:Date.now(),game:null};render()}
+function startShift(job){sfx('start');shift={job:job,earned:0,count:0,end:gnow()+SHIFT_MS,last:gnow(),game:null};render()}
 function endShift(){
   if(!shift)return;clearInterval(jobTick);jobTick=null;const s=shift;shift=null;if(s.job.cs){csEnd(s);return}const js=jobState(s.job.id),before=jobLevel(s.job.id);
   js.xp+=s.count*10+5;js.shifts++;js.best=Math.max(js.best,s.earned);S.shifts++;S.cash+=s.earned;S.earned+=s.earned;
@@ -24,8 +25,8 @@ function endShift(){
 function renderWork(v){
   if(shift)return runShift(v);
   if(lastResult){const r=lastResult;v.insertAdjacentHTML('beforeend','<div class="card center" style="border:3px solid #2bb34a"><div style="font-size:40px">'+r.job.emoji+'</div><b>Shift over!</b><div>'+r.count+' done · paid <b class="pr">'+money(r.earned)+'</b></div>'+(r.levelUp?'<div>⬆️ <b>'+r.job.name+' level '+r.levelUp+'!</b> Pay ×'+jobMult(r.job.id).toFixed(2)+'</div>':'')+'</div>')}
-  csCard(v);v.insertAdjacentHTML('beforeend','<div class="small" style="margin:0 4px 8px">Shifts are 45s. Pay = base × level bonus (+25% per job level). Total shifts: '+S.shifts+'</div>');
-  JOBS.forEach(j=>{const st=jobState(j.id),lv=jobLevel(j.id),locked=S.shifts<j.unlock||S.rap.cs>0,need=60*lv*lv,prev=60*(lv-1)*(lv-1);
+  csCard(v);v.insertAdjacentHTML('beforeend','<div class="small" style="margin:0 4px 8px">Shifts are 45s of game time (they pause if you leave the app). Pay = base × level bonus (+30% per job level, max ×4)'+setBonusLine()+'. Total shifts: '+S.shifts+'</div>');
+  JOBS.forEach(j=>{const st=jobState(j.id),lv=jobLevel(j.id),locked=S.shifts<j.unlock||S.rap.cs>0,need=LVL_K*lv*lv,prev=LVL_K*(lv-1)*(lv-1);
     const d=document.createElement('div');d.className='card'+(locked?' lock':'');
     d.innerHTML='<div class="row"><span style="font-size:40px">'+j.emoji+'</span><div style="flex:1"><b>'+j.name+'</b> '+(locked?'🔒':'<span class="small">Lv '+lv+' · pay ×'+jobMult(j.id).toFixed(2)+' · best '+money(st.best)+'</span>')+'<div class="small">'+j.desc+'</div>'+
       (locked?'<div class="small"><b>'+(S.rap.cs>0?'🚫 Finish community service first':'Unlocks after '+j.unlock+' total shifts')+'</b></div>':'<div class="bar"><div style="width:'+Math.min(100,(st.xp-prev)/(need-prev)*100)+'%;background:#ff4f9a"></div></div>')+'</div>'+
@@ -37,10 +38,10 @@ function runShift(v){
   const j=shift.job;
   v.innerHTML='<div class="card row sp jhead" style="padding:10px 14px;background:linear-gradient(120deg,'+(JOB_HEAD[j.id]||'#ff6f61,#ff3d81')+')"><b>'+j.emoji+' '+j.name+'</b><b>⏱ <span id="stime"></span></b><b>💰 <span id="searn"></span></b></div><div id="jarea"></div><button class="btn alt" id="quit" style="margin-top:10px;width:100%">Clock out early</button>';
   const api={
-    pay:base=>{if(!shift)return;shift.combo=(shift.combo||0)+1;burst(shift.combo>=5?14:8);if(shift.combo>=3&&shift.combo%1===0)comboText(shift.combo+'× COMBO!');if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*jobMult(j.id)*(1+Math.min(.5,Math.max(0,shift.combo-2)*.05))));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
+    pay:base=>{if(!shift)return;shift.combo=(shift.combo||0)+1;burst(shift.combo>=5?14:8);if(shift.combo>=3&&shift.combo%1===0)comboText(shift.combo+'× COMBO!');if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*PAY_K*setPayMult()*jobMult(j.id)*(1+Math.min(.5,Math.max(0,shift.combo-2)*.05))));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
     miss:msg=>{if(shift)shift.combo=0;toast(msg);sfx('bad');const a=$('#jarea');if(a){a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash');shake(a)}}
   };
-  function upd(){if(!shift)return;const now=Date.now(),dt=Math.min(.1,(now-shift.last)/1000);shift.last=now;
+  function upd(){if(!shift)return;const now=gnow(),dt=Math.min(.1,(now-shift.last)/1000);shift.last=now;
     if(now>=shift.end){endShift();render();return}
     if(shift.game&&shift.game.tick)shift.game.tick(dt);
     const t=$('#stime');if(t){t.textContent=Math.ceil((shift.end-now)/1000)+'s';$('#searn').textContent=money(shift.earned)}}
@@ -76,13 +77,16 @@ function makeBurger(el,api){
 function makeCashier(el,api){
   const DEN=[[1000,'$10','💵'],[500,'$5','💵'],[100,'$1','💵'],[25,'25¢','🪙'],[10,'10¢','🪙'],[5,'5¢','🪙']];
   const GOODS=['🧃 Juice','🧦 Socks','🍫 Candy bar','🧴 Lotion','📓 Notebook','🕯️ Candle','🧸 Teddy','🎧 Earbuds'];
-  el.innerHTML='<div class="card row"><span class="cust" id="cust"></span><div class="ticket" id="tk"></div></div><div class="bar"><div id="pat"></div></div>'+
+  el.innerHTML='<canvas id="cv"></canvas><div class="card row"><span class="cust" id="cust"></span><div class="ticket" id="tk"></div></div><div class="bar"><div id="pat"></div></div>'+
     '<div class="card center" style="font-size:18px;margin:6px 0">Change given: <b id="given">$0.00</b></div><div class="pad" id="pad" style="grid-template-columns:repeat(3,1fr)"></div>'+
     '<div class="row" style="margin-top:8px"><button class="btn alt" id="undo" style="flex:1">↩ Undo</button><button class="btn green" id="ok" style="flex:2">Give change ✔</button></div>';
+  const W=Math.min(window.innerWidth-24,420),H=120,x=setupCanvas(el.querySelector('#cv'),W,H);let good='';
+  function draw(){jobBg('register',x,W,H);x.font='30px sans-serif';x.textAlign='center';x.fillText($('#cust').textContent,W*.2,H-44);x.font='22px sans-serif';if(good)x.fillText(good.split(' ')[0],W*.55,H-30);
+    x.fillStyle='#1b5e20';rr(x,W*.74,H-66,W*.2,22,4);x.fill();x.fillStyle='#b9f6ca';x.font='bold 12px monospace';x.fillText(price?cents(price):'',W*.84,H-50);x.textAlign='left'}
   let price,paid,given,t0;const limit=15000;
   const sum=()=>given.reduce((a,b)=>a+b,0);
-  function next(){price=5*(20+rand(380));paid=[500,1000,2000].filter(v=>v>price)[0];given=[];t0=Date.now();$('#cust').textContent=pick(CUSTOMERS);
-    $('#tk').innerHTML=pick(GOODS)+' costs <b>'+cents(price)+'</b><br>Customer hands you <b>'+cents(paid)+'</b>';upd()}
+  function next(){price=5*(20+rand(380));paid=[500,1000,2000].filter(v=>v>price)[0];given=[];t0=Date.now();$('#cust').textContent=pick(CUSTOMERS);good=pick(GOODS);
+    $('#tk').innerHTML=good+' costs <b>'+cents(price)+'</b><br>Customer hands you <b>'+cents(paid)+'</b>';upd();draw()}
   function upd(){$('#given').textContent=cents(sum())}
   function done(){const ch=paid-price;if(sum()===ch)api.pay(4+Math.max(0,1-(Date.now()-t0)/limit)*6);else api.miss('❌ Wrong change! Needed '+cents(ch)+', gave '+cents(sum()));next()}
   DEN.forEach(d=>padBtn($('#pad'),'<b>'+d[2]+'</b>'+d[1],()=>{given.push(d[0]);sfx('click');upd()}));
