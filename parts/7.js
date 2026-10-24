@@ -76,7 +76,7 @@ function onNewDay(){
   S.orders.forEach(o=>{if(o.status==='shipping'&&S.day>=o.arrive){o.status='delivered';notify('📦 Delivered: '+ITEM[o.id].name+' is on your doorstep!')}});
   fbRefresh();
   Object.keys(S.wish).forEach(id=>{const it=ITEM[id];if(it&&offOf(it))notify('💖 Wishlist alert: '+it.name+' is '+offOf(it)+'% off today!')});
-  crimeNewDay();const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
+  crimeNewDay();v8NewDay();const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
 }
 
 /* ---------- Fleabay ---------- */
@@ -228,11 +228,11 @@ function renderWallet(v){
    '<div class="card"><div class="lbl" style="margin-top:0">🐢 Pay-in-4 plans</div>'+(S.bnpl.length?S.bnpl.map(b=>'<div class="slot"><span>'+esc(b.label)+'</span><b>'+money(b.amt)+' × '+b.left+' more days</b></div>').join(''):'<div class="small">None. Your future self thanks you.</div>')+'<div class="small">Missed payments go on your card + '+money(LATE_FEE)+' late fee.</div></div>');
   const pay=a=>{a=Math.min(a,S.cash,S.card.bal);if(a<=0)return;S.cash-=a;S.card.bal-=a;sfx('coin');toast('Paid '+money(a)+' toward your card ✨');save();rerender()};
   $('#payall').onclick=()=>pay(bal);$('#pay50').onclick=()=>pay(Math.ceil(bal/2))}
-const OTABS=[['clam','📦 Clamazon'],['flea','🔨 Fleabay'],['fb','🏷️ Facenook'],['orders','🚚 Orders'],['wish','💖 Wishlist'],['wallet','💳 Wallet']];
+const OTABS=[['clam','📦 Clamazon'],['flea','🔨 Fleabay'],['fb','🏷️ Facenook'],['hustle','💼 Hustle'],['stonks','📈 Stonks'],['orders','🚚 Orders'],['wish','💖 Wishlist'],['wallet','💳 Wallet']];
 function renderOnline(v){
   const t=document.createElement('div');t.className='tabs';
   OTABS.forEach(o=>{const b=document.createElement('button');b.textContent=o[1]+(o[0]==='orders'&&packagesReady().length?' ('+packagesReady().length+')':'');b.className=o[0]===onTab?'on':'';b.dataset.ot=o[0];b.onclick=()=>{onTab=o[0];sfx('click');render();window.scrollTo(0,0)};t.appendChild(b)});
-  v.appendChild(t);({clam:renderClam,flea:renderFlea,fb:renderFb,orders:renderOrders,wish:renderWish,wallet:renderWallet})[onTab](v);
+  v.appendChild(t);({clam:renderClam,flea:renderFlea,fb:renderFb,hustle:renderHustle,stonks:renderStonks,orders:renderOrders,wish:renderWish,wallet:renderWallet})[onTab](v);
 }
 ACH.push(['crime','Crime Pays 📦','Join Clamazon Crime',s=>s.crime.active],['won','Gavel Gremlin 🔨','Win a Fleabay auction',s=>s.stats3.won>0],
  ['flip','Flipper 💸','Sell an item on Fleabay',s=>s.stats3.flipped>0],['haggle','Haggle Hero 🤝','Buy something on Facenook',s=>s.stats3.haggled>0],

@@ -48,7 +48,7 @@ function openStores(){
 let DEAL_CACHE={day:-1,list:[]};
 function deals(){if(DEAL_CACHE.day!==S.day){const r=rng(S.day*104729+17);DEAL_CACHE={day:S.day,list:shuffle(ITEMS.filter(i=>!i.rare&&MALL_STORE[i.store]),r).slice(0,6).map(i=>({id:i.id,off:[20,30,40,50,60][Math.floor(r()*5)]}))}}return DEAL_CACHE.list}
 function dealOf(id){const d=deals().filter(x=>x.id===id)[0];return d?d.off:0}
-function offOf(it){return Math.max(dealOf(it.id),eventOff(it))}
+function offOf(it){return Math.max(dealOf(it.id),eventOff(it),typeof weeklyOff==='function'?weeklyOff(it):0)}
 function priceOf(it){const off=offOf(it);return off?Math.max(1,Math.round(it.price*(100-off)/100)):it.price}
 function stockLeft(it){return it.rare?Math.max(0,it.stock-(S.stock[it.id]||0)):Infinity}
 

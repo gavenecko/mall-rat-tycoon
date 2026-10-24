@@ -71,7 +71,7 @@ function renderMall(v){
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
     '<div class="lbl">'+svgI('flame')+' Daily Deals</div><div class="hs" id="deals"></div><div class="concourse"><div class="ctitle"><span>'+svgI('mall',18)+' Main Concourse</span><span class="small">'+open.length+' open</span></div><div class="fronts" id="stores"></div></div>';
   deals().forEach(d=>v.querySelector('#deals').appendChild(itemCard(ITEM[d.id],'shop')));
-  v.insertAdjacentHTML('afterbegin',eventBanner());v.querySelector('#deals').insertAdjacentHTML('beforebegin',dropCard());bindDrop();
+  v.insertAdjacentHTML('afterbegin',eventBanner());v.querySelector('#deals').insertAdjacentHTML('beforebegin',weekBanner()+dropCard());bindDrop();bindWeek();
   open.forEach(s=>{const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length,bn=isBanned(s.id);
     v.querySelector('#stores').insertAdjacentHTML('beforeend',storefront(s,{banned:bn,flag:bn?'🚫 BANNED':rare?'✨ LIMITED':''}));const d=v.querySelector('#stores').lastChild;
     d.onclick=()=>{if(isBanned(s.id)){sfx('bad');toast('🚫 Security remembers your face. Banned until Day '+S.rap.bans[s.id]);return}sfx('click');go('mall',s.id)}});
@@ -154,7 +154,7 @@ function renderMe(v){
   v.appendChild(top);
   const st=[['📅 Day',S.day],['💵 Cash',money(S.cash)],['🏦 Net worth',money(netWorth(S))],['👗 Closet value',money(closetValue(S))],['📦 Items owned',itemCount(S)],['💼 Shifts worked',S.shifts],['💰 Earned at jobs',money(S.earned)],['🛍️ Total spent',money(S.spent)]];
   v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">'+svgI('chart')+' Stats</div>'+st.map(s=>'<div class="slot"><span>'+s[0]+'</span><b>'+s[1]+'</b></div>').join('')+'</div>');
-  v.insertAdjacentHTML('beforeend',homeCard()+recordCard());collCard(v);
+  v.insertAdjacentHTML('beforeend',homeCard()+recordCard());collCard(v);titleCard(v);
   v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">'+svgI('trophy')+' Achievements ('+Object.keys(S.ach).length+'/'+ACH.length+'), +'+money(ACH_REWARD)+' each</div><div class="ach">'+ACH.map(a=>'<div class="'+(S.ach[a[0]]?'got':'')+'"><b>'+a[1]+'</b><br>'+a[2]+'</div>').join('')+'</div></div>');
   let sl='<div class="card" id="saves"><div class="lbl" style="margin-top:0">💾 Saves</div><div class="small">'+(storageOK?'✅ Autosave is ON (saves after every action).':'⚠️ This viewer blocks storage: autosave & slots last only until you close it. Use <b>Export</b> to keep progress!')+'</div>';
   for(let n=1;n<=3;n++){const m=slotMeta(n);sl+='<div class="slot"><span><b>Slot '+n+'</b><br><span class="small">'+(m?esc(m.char?m.char.name:'?')+' · Day '+m.day+' · '+money(m.cash)+' · '+new Date(m.savedAt).toLocaleString():'Empty')+'</span></span><span><button class="btn" data-save="'+n+'">Save</button> <button class="btn alt" data-load="'+n+'" '+(m?'':'disabled')+'>Load</button></span></div>'}
@@ -162,7 +162,7 @@ function renderMe(v){
     '<div class="row" style="margin:6px 0"><button class="btn" id="exp">Export code</button><button class="btn alt" id="copy">Copy</button></div><textarea id="code" placeholder="Your save code appears here, or paste one to import"></textarea>'+
     '<button class="btn green" id="imp" style="margin-top:6px">Import code</button></div>';
   v.insertAdjacentHTML('beforeend',sl);
-  v.insertAdjacentHTML('beforeend','<div class="card row"><button class="btn alt" id="snd">'+(S.muted?'🔇 Sound off':'🔊 Sound on')+'</button><button class="btn alt" id="tut">❓ Tutorial</button><button class="btn alt" id="reset" style="margin-left:auto">Reset game</button></div>');
+  v.insertAdjacentHTML('beforeend','<div class="card row"><button class="btn alt" id="snd">'+(S.muted?'🔇 Sound off':'🔊 Sound on')+'</button><button class="btn alt" id="mzk">'+(S.muzak?'🎶 Muzak on':'🎶 Muzak off')+'</button><button class="btn alt" id="tut">❓ Tutorial</button><button class="btn alt" id="reset" style="margin-left:auto">Reset game</button></div>');
   $('#edit').onclick=()=>{draft=null;go('create')};
   onAll(v,'[data-save]',b=>{S.savedAt=Date.now();store.set(slotKey(b.dataset.save),JSON.stringify(S));sfx('coin');toast('Saved to slot '+b.dataset.save);rerender()});
   onAll(v,'[data-load]',b=>{try{S=normalize(JSON.parse(store.get(slotKey(b.dataset.load))));save();sfx('level');toast('Loaded slot '+b.dataset.load);go('me')}catch(e){toast('Could not load: '+e.message)}});
@@ -170,7 +170,7 @@ function renderMe(v){
   $('#copy').onclick=()=>{const t=$('#code');if(!t.value)t.value=exportCode();t.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}
     try{if(navigator.clipboard)navigator.clipboard.writeText(t.value).then(()=>toast('Copied!'),()=>{})}catch(e){}toast(ok?'Copied!':'Long-press the text to copy it')};
   $('#imp').onclick=()=>{try{importCode($('#code').value);sfx('level');toast('Save imported! Welcome back, '+S.char.name);go('me')}catch(e){sfx('bad');toast('That code didn\'t work ('+e.message+')')}};
-  $('#snd').onclick=()=>{S.muted=!S.muted;save();sfx('click');rerender()};
+  $('#snd').onclick=()=>{S.muted=!S.muted;if(S.muted)muzakStop();else muzakStart();save();sfx('click');rerender()};$('#mzk').onclick=()=>{setMuzak(!S.muzak);rerender()};
   $('#tut').onclick=()=>showTut(0);
   $('#reset').onclick=e=>{const b=e.target;if(b.dataset.armed){S=fresh();S.gt=Date.now();S.dayAt=S.gt;save();draft=null;go('create')}else{b.dataset.armed=1;b.textContent='Tap again to WIPE';b.style.background='#d32f2f';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Reset game';b.style.background=''}},3000)}};
 }

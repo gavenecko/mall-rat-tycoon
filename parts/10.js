@@ -193,8 +193,8 @@ function renderOutside(v){
   $('#homein').onclick=()=>go('room');draw();list();
 }
 function timeOfDay(){const f=dayFrac();return f<.18?'Night':f<.3?'Sunrise':f<.7?'Daytime':f<.85?'Sunset':'Night'}
-function homeSeg(on){return'<div class="tabs" style="margin-bottom:10px"><button id="homein" class="'+(on==='in'?'on':'')+'">'+svgI('sofa',16)+' Inside</button><button id="homeout" class="'+(on==='out'?'on':'')+'">'+svgI('home',16)+' Outside</button><button id="homeup">'+svgI('up',16)+' Rooms</button></div>'}
-function bindSeg(){if($('#homeout'))$('#homeout').onclick=()=>{sfx('click');go('room','outside')};if($('#homein')&&!$('#yardcv'))$('#homein').onclick=()=>go('room');if($('#homeup'))$('#homeup').onclick=upgradeSheet}
+function homeSeg(on){return'<div class="tabs" style="margin-bottom:10px"><button id="homein" class="'+(on==='in'?'on':'')+'">'+svgI('sofa',16)+' Inside</button><button id="homeout" class="'+(on==='out'?'on':'')+'">'+svgI('home',16)+' Outside</button><button id="homeup">'+svgI('up',16)+' Rooms</button><button id="homeblock">🏘️ Block</button></div>'}
+function bindSeg(){if($('#homeout'))$('#homeout').onclick=()=>{sfx('click');go('room','outside')};if($('#homein')&&!$('#yardcv'))$('#homein').onclick=()=>go('room');if($('#homeup'))$('#homeup').onclick=upgradeSheet;if($('#homeblock'))$('#homeblock').onclick=neighborSheet}
 
 /* ---------- exterior + remodel sheets ---------- */
 function exteriorSheet(){const parts=Object.keys(EXT_DEF);
