@@ -7,9 +7,10 @@
    const p=sig.patio.split(',').map(Number);return{sig,sky:p[2]>p[0]&&p[2]>150,distinct:new Set(Object.values(sig)).size}});
  ok(d2.sky&&d2.distinct>=5,'patio outdoor sky + distinct room looks '+JSON.stringify(d2));
  await G(()=>{__game.go('room');window.scrollTo(0,0)});await sleep(300);await shot('patio');
- const d3=await G(async()=>{window.__forceDlBlock=1;fitCheck&&0;const c=document.createElement('canvas');c.width=c.height=20;photoSheet(c.toDataURL('image/png'),'test');document.querySelector('#dl').click();await new Promise(r=>setTimeout(r,100));const ov=!!document.querySelector('#phov img');return{ov,hint:/press and hold/i.test((document.querySelector('#phov')||{}).innerText||'')}});
- ok(d3.ov&&d3.hint,'fit-check save fallback overlay '+JSON.stringify(d3));
+ const d3=await G(async()=>{window.__forceDlBlock=1;const c=document.createElement('canvas');c.width=c.height=20;photoSheet(c.toDataURL('image/png'),'test');const h0=document.querySelector('#dlhelp').hidden;document.querySelector('#dl').click();await new Promise(r=>setTimeout(r,100));
+   const auto=!!document.querySelector('#phov');const h1=!document.querySelector('#dlhelp').hidden;document.querySelector('#dlhelp').click();const ov=!!document.querySelector('#phov img');return{h0,auto,h1,ov,hint:/press and hold/i.test((document.querySelector('#phov')||{}).innerText||'')}});
+ ok(d3.h0&&!d3.auto&&d3.h1&&d3.ov&&d3.hint,'fit-check: no auto overlay; "Didn\'t save?" button opens press-and-hold overlay '+JSON.stringify(d3));
  await G(()=>{const o=document.getElementById('phov');if(o)o.remove();closeSheet();window.__forceDlBlock=0;if(typeof fitCheck==='function'){const r=fitCheck();if(r&&r.then)return r}});await sleep(400);
- await G(()=>{window.__forceDlBlock=1;const b=document.querySelector('#dl');if(b)b.click()});await sleep(200);await shot('fitsave');
+ await G(()=>{window.__forceDlBlock=1;const b=document.querySelector('#dl');if(b)b.click();const h=document.querySelector('#dlhelp');if(h)h.click()});await sleep(200);await shot('fitsave');
  await G(()=>{const o=document.getElementById('phov');if(o)o.remove();closeSheet();window.__forceDlBlock=0});
 })()

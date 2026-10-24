@@ -71,7 +71,7 @@ function renderMall(v){
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
     '<div class="lbl">'+svgI('flame')+' Daily Deals</div><div class="hs" id="deals"></div><div class="concourse"><div class="ctitle"><span>'+svgI('mall',18)+' Main Concourse</span><span class="small">'+open.length+' open</span></div><div class="fronts" id="stores"></div></div>';
   deals().forEach(d=>v.querySelector('#deals').appendChild(itemCard(ITEM[d.id],'shop')));
-  v.insertAdjacentHTML('afterbegin',eventBanner());v.querySelector('#deals').insertAdjacentHTML('beforebegin',weekBanner()+dropCard());bindDrop();bindWeek();
+  v.insertAdjacentHTML('afterbegin',eventBanner());v.querySelector('#deals').insertAdjacentHTML('beforebegin',dailyCard()+weekBanner()+seasonCard()+petCard()+dropCard());bindDrop();bindV9();bindWeek();
   open.forEach(s=>{const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length,bn=isBanned(s.id);
     v.querySelector('#stores').insertAdjacentHTML('beforeend',storefront(s,{banned:bn,flag:bn?'🚫 BANNED':rare?'✨ LIMITED':''}));const d=v.querySelector('#stores').lastChild;
     d.onclick=()=>{if(isBanned(s.id)){sfx('bad');toast('🚫 Security remembers your face. Banned until Day '+S.rap.bans[s.id]);return}sfx('click');go('mall',s.id)}});
@@ -114,8 +114,9 @@ function renderRoom(v){
     lay('wall').concat(lay('rug')).forEach(o=>drawFurn(x,o.it,o.p.x*c,o.p.y*c,o.it.w*c,o.it.h*c));
     const objs=lay('floor').map(o=>({z:o.p.y+o.it.h,f:()=>{furnShadow(x,o.p.x*c,o.p.y*c,o.it.w*c,o.it.h*c);drawFurn(x,o.it,o.p.x*c,o.p.y*c,o.it.w*c,o.it.h*c)}}));
     objs.push({z:S.avatar.y+1.01,f:()=>{const sc=c*2.2/170;x.fillStyle='rgba(30,10,30,.22)';ell(x,(S.avatar.x+.5)*c,(S.avatar.y+.92)*c,c*.42,c*.12);x.fill();x.save();x.translate((S.avatar.x+.5)*c,(S.avatar.y+.92)*c-162*sc);x.scale(sc,sc);drawAvatar(x,S.char,S.equipped);x.restore()}});
+    {const po=petObj(x,c);if(po)objs.push(po)}
     objs.sort((a,b)=>a.z-b.z).forEach(o=>o.f());
-    x.drawImage(roomLight(c),0,0,c*COLS,c*ROWS);drawDoorstep(x,c);
+    x.drawImage(roomLight(c),0,0,c*COLS,c*ROWS);drawDoorstep(x,c);seasonFX(x,c);
     if(room.sel>=0){const p=S.room[room.sel],it=ITEM[p.id];x.strokeStyle='#ff1493';x.lineWidth=3;x.setLineDash([6,4]);x.strokeRect(p.x*c+2,p.y*c+2,it.w*c-4,it.h*c-4);x.setLineDash([])}
     const P=room.placing&&ITEM[room.placing];
     $('#hint').innerHTML=P?'Tap a spot to place <b>'+esc(P.name)+'</b> ('+P.w+'×'+P.h+(P.layer==='wall'?', goes on the wall':P.layer==='rug'?', rug: furniture can sit on it':'')+')':

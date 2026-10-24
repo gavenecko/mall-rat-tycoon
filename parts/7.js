@@ -76,7 +76,7 @@ function onNewDay(){
   S.orders.forEach(o=>{if(o.status==='shipping'&&S.day>=o.arrive){o.status='delivered';notify('📦 Delivered: '+ITEM[o.id].name+' is on your doorstep!')}});
   fbRefresh();
   Object.keys(S.wish).forEach(id=>{const it=ITEM[id];if(it&&offOf(it))notify('💖 Wishlist alert: '+it.name+' is '+offOf(it)+'% off today!')});
-  crimeNewDay();v8NewDay();const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
+  crimeNewDay();v8NewDay();v9NewDay();const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
 }
 
 /* ---------- Fleabay ---------- */

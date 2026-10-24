@@ -41,7 +41,7 @@ function switchRoom(k){if(k===S.home.cur||S.home.have.indexOf(k)<0)return;
   S.home.rooms[S.home.cur]={room:S.room,wall:S.home.wall,floor:S.home.floor};const t=S.home.rooms[k]||{room:[],wall:null,floor:null};delete S.home.rooms[k];
   S.room=t.room;S.home.wall=t.wall;S.home.floor=t.floor;S.home.cur=k;room.sel=-1;room.placing=null;syncRows();
   if(S.avatar.y>=ROWS)S.avatar.y=ROWS-1;sfx('whoosh');save();rerender()}
-function roomSwitcher(){if(S.home.have.length<2)return'';return'<div class="tabs" id="rsw" style="margin-bottom:8px">'+S.home.have.map(k=>{const d=roomDef(k);return'<button data-room="'+k+'" class="'+(k===S.home.cur?'on':'')+'">'+d.emoji+' '+d.name+'</button>'}).join('')+'</div>'}
+function roomSwitcher(){if(S.home.have.length<2)return'';return'<div class="tabs" id="rsw" style="margin-bottom:8px">'+S.home.have.map(k=>{const d=roomDef(k);return'<button data-room="'+k+'" title="'+d.name+'" class="'+(k===S.home.cur?'on':'')+'">'+d.emoji+' '+d.name.split(' ').pop()+'</button>'}).join('')+'</div>'}
 function bindSwitcher(){const r=$('#rsw');if(r)onAll(r,'[data-room]',b=>switchRoom(b.dataset.room))}
 function roomsSheet(){
   sheet('<h3>🏗️ Rooms &amp; upgrades</h3><div class="small">Each room is its own space with its own wallpaper, floor and furniture. Switch rooms from the tabs above your room.</div>'+
@@ -75,10 +75,11 @@ function fitCheck(){const W=720,H=960,c=document.createElement('canvas');c.width
   S.stats8.photos++;save();photoSheet(c.toDataURL('image/png'),'fit-check')}
 function roomPhoto(cv){const W=cv.width,H=cv.height,c=document.createElement('canvas');c.width=W;c.height=H+90;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H+90);x.drawImage(cv,0,0);
   x.fillStyle='#222';x.textAlign='center';x.font='bold 30px sans-serif';x.fillText(S.char.name+'\'s '+roomDef(S.home.cur).name+' · '+decorScore()+'/100 ✨',W/2,H+50);S.stats8.photos++;save();photoSheet(c.toDataURL('image/png'),'room')}
-function photoSheet(url,name){sheet('<h3>📸 Looking good</h3><img src="'+url+'" style="width:100%;border-radius:14px" alt="photo"><button class="btn big green" id="dl">⬇️ Save PNG</button><div class="small">If the download doesn\'t start (some phone viewers block it), long-press the picture and choose "Download image".</div>');
+function photoSheet(url,name){sheet('<h3>📸 Looking good</h3><img src="'+url+'" style="width:100%;border-radius:14px" alt="photo"><button class="btn big green" id="dl">⬇️ Save PNG</button><button class="btn alt" id="dlhelp" hidden style="width:100%;margin-top:6px">🤔 Didn\'t save? Show photo</button><div class="small">If the download doesn\'t start (some phone viewers block it), long-press the picture and choose "Download image".</div>');
   $('#dl').onclick=()=>{let ok=false;try{const a=document.createElement('a');let href=url;try{if(window.Blob&&window.URL&&URL.createObjectURL&&/^data:/.test(url)){const bs=atob(url.split(',')[1]),u=new Uint8Array(bs.length);for(let i=0;i<bs.length;i++)u[i]=bs.charCodeAt(i);href=URL.createObjectURL(new Blob([u],{type:'image/png'}));setTimeout(()=>{try{URL.revokeObjectURL(href)}catch(e){}},60000)}}catch(e){}
-    a.href=href;a.download='mall-rat-'+name+'-day'+S.day+'.png';document.body.appendChild(a);a.click();a.remove();ok=!dlBlocked()}catch(e){ok=false}
-    if(ok)toast('📸 Saved!');else photoOverlay(url)}}
+    a.href=href;a.download='mall-rat-'+name+'-day'+S.day+'.png';document.body.appendChild(a);a.click();a.remove();ok=!dlBlocked()}catch(e){photoOverlay(url);return}
+    const h=$('#dlhelp');if(h)h.hidden=false;if(ok)toast('📸 Download started');else toast('Your viewer may block downloads. Tap "Didn\'t save?" below.')};
+  $('#dlhelp').onclick=()=>photoOverlay(url)}
 function dlBlocked(){if(window.__forceDlBlock)return true;let f=false;try{f=window.self!==window.top}catch(e){f=true}let o='';try{o=String(window.origin||location.origin)}catch(e){}return f||o==='null'||/; wv\)/.test(navigator.userAgent)}
 function photoOverlay(url){const old=document.getElementById('phov');if(old)old.remove();const d=document.createElement('div');d.id='phov';d.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px';
   d.innerHTML='<div style="color:#fff;font-weight:800;font-size:18px;text-align:center">👆 Press and hold the photo to save it</div><img src="'+url+'" alt="photo" style="max-width:100%;max-height:72vh;border-radius:14px;-webkit-touch-callout:default;user-select:auto;pointer-events:auto"><div style="color:#ccc;font-size:13px;text-align:center">This viewer blocks downloads. Choose "Download image" / "Save image".</div><button class="btn big" id="phx">Done</button>';

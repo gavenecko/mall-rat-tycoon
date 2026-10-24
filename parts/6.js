@@ -8,7 +8,8 @@ const JOBS=[
  {id:'shelf',name:'Shelf Stocker',emoji:'📦',unlock:2,desc:'Toss each product into the bin of the same color. Fast!',make:makeShelf},
  {id:'barista',name:'Barista Brain',emoji:'☕',unlock:3,desc:'Memorize the drink, then build it from memory.',make:makeBarista},
  {id:'dog',name:'Dog Walker',emoji:'🐕',unlock:4,desc:'Steer the pup: grab bones, dodge puddles, cats & cones.',make:makeDog},
- {id:'pizza',name:'Pizza Dash',emoji:'🍕',unlock:5,desc:'Toss the pizza when the right house is in the zone.',make:makePizza}
+ {id:'pizza',name:'Pizza Dash',emoji:'🍕',unlock:5,desc:'Toss the pizza when the right house is in the zone.',make:makePizza},
+ {id:'shoot',name:'Influencer Photoshoot',emoji:'🤳',unlock:6,desc:'Match the client\'s filter + pose. Better drip = bigger pay.',make:makeShoot}
 ];
 const jobState=id=>S.jobs[id]||(S.jobs[id]={xp:0,shifts:0,best:0});
 const LVL_K=40,PAY_K=1.15;// v8 balance (see sim_v8.js)
