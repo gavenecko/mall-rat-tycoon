@@ -53,14 +53,14 @@ function stealAttempt(it){
   sheet('<h3>🤏 Five-finger discount?</h3><div class="small">'+esc(it.name)+' · security <b>'+lvl+'</b>. Tap GRAB while the camera looks away. Even then, there\'s a <b>'+Math.round(catchP(sec)*100)+'%</b> chance someone sees you. Caught = '+(3+R().offenses)+'× fine + court fee. One attempt per store per week. '+heatPill()+'</div><canvas id="stc"></canvas><div class="bar"><div id="stt"></div></div>'+
     '<button class="btn big" id="grab" style="background:#7b1fa2;box-shadow:0 2px 0 #4a148c">🤏 GRAB</button><button class="btn alt big" id="walk">😇 Never mind (buy it like a normal person)</button>');
   const W=Math.min(window.innerWidth-40,420),H=170,x=setupCanvas($('#stc'),W,H),img=new Image();img.src=thumb(it);
-  const t0=Date.now(),LIMIT=7000;let ang=0,done=false;
-  function draw(){const t=(Date.now()-t0)/1000;ang=Math.sin(t*speed)*1.15;const seen=Math.abs(ang)<half;
+  const t0=gnow(),LIMIT=7000;let ang=0,done=false;
+  function draw(){const t=(gnow()-t0)/1000;ang=Math.sin(t*speed)*1.15;const seen=Math.abs(ang)<half;
     x.fillStyle='#fff3e0';x.fillRect(0,0,W,H);x.fillStyle='#bcaaa4';x.fillRect(0,H-40,W,40);x.fillStyle='#8d6e63';x.fillRect(W/2-60,H-58,120,10);
     const cx=W/2,cy=14,len=H*1.4;x.fillStyle=seen?'rgba(244,67,54,.35)':'rgba(255,235,59,.3)';x.beginPath();x.moveTo(cx,cy);
     x.arc(cx,cy,len,Math.PI/2+ang-half,Math.PI/2+ang+half);x.closePath();x.fill();
     x.font='26px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('📹',cx,cy);
     if(img.complete)x.drawImage(img,cx-30,H-110,60,60);x.font='bold 13px sans-serif';x.fillStyle=seen?'#d32f2f':'#2e7d32';x.fillText(seen?'👁️ WATCHING':'✅ looking away',cx,H-18);
-    const p=1-(Date.now()-t0)/LIMIT;setBar($('#stt'),p);
+    const p=1-(gnow()-t0)/LIMIT;setBar($('#stt'),p);
     if(p<=0&&!done){done=true;clearInterval(stealIv);closeSheet();toast('😅 You lost your nerve. Probably for the best.')}}
   clearInterval(stealIv);stealIv=setInterval(draw,30);draw();
   $('#walk').onclick=()=>{closeSheet();buy(it)};

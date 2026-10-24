@@ -76,7 +76,13 @@ function fitCheck(){const W=720,H=960,c=document.createElement('canvas');c.width
 function roomPhoto(cv){const W=cv.width,H=cv.height,c=document.createElement('canvas');c.width=W;c.height=H+90;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H+90);x.drawImage(cv,0,0);
   x.fillStyle='#222';x.textAlign='center';x.font='bold 30px sans-serif';x.fillText(S.char.name+'\'s '+roomDef(S.home.cur).name+' · '+decorScore()+'/100 ✨',W/2,H+50);S.stats8.photos++;save();photoSheet(c.toDataURL('image/png'),'room')}
 function photoSheet(url,name){sheet('<h3>📸 Looking good</h3><img src="'+url+'" style="width:100%;border-radius:14px" alt="photo"><button class="btn big green" id="dl">⬇️ Save PNG</button><div class="small">If the download doesn\'t start (some phone viewers block it), long-press the picture and choose "Download image".</div>');
-  $('#dl').onclick=()=>{try{const a=document.createElement('a');a.href=url;a.download='mall-rat-'+name+'-day'+S.day+'.png';document.body.appendChild(a);a.click();a.remove();toast('📸 Saved!')}catch(e){toast('Long-press the picture to save it')}}}
+  $('#dl').onclick=()=>{let ok=false;try{const a=document.createElement('a');let href=url;try{if(window.Blob&&window.URL&&URL.createObjectURL&&/^data:/.test(url)){const bs=atob(url.split(',')[1]),u=new Uint8Array(bs.length);for(let i=0;i<bs.length;i++)u[i]=bs.charCodeAt(i);href=URL.createObjectURL(new Blob([u],{type:'image/png'}));setTimeout(()=>{try{URL.revokeObjectURL(href)}catch(e){}},60000)}}catch(e){}
+    a.href=href;a.download='mall-rat-'+name+'-day'+S.day+'.png';document.body.appendChild(a);a.click();a.remove();ok=!dlBlocked()}catch(e){ok=false}
+    if(ok)toast('📸 Saved!');else photoOverlay(url)}}
+function dlBlocked(){if(window.__forceDlBlock)return true;let f=false;try{f=window.self!==window.top}catch(e){f=true}let o='';try{o=String(window.origin||location.origin)}catch(e){}return f||o==='null'||/; wv\)/.test(navigator.userAgent)}
+function photoOverlay(url){const old=document.getElementById('phov');if(old)old.remove();const d=document.createElement('div');d.id='phov';d.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px';
+  d.innerHTML='<div style="color:#fff;font-weight:800;font-size:18px;text-align:center">👆 Press and hold the photo to save it</div><img src="'+url+'" alt="photo" style="max-width:100%;max-height:72vh;border-radius:14px;-webkit-touch-callout:default;user-select:auto;pointer-events:auto"><div style="color:#ccc;font-size:13px;text-align:center">This viewer blocks downloads. Choose "Download image" / "Save image".</div><button class="btn big" id="phx">Done</button>';
+  document.body.appendChild(d);d.querySelector('#phx').onclick=()=>d.remove()}
 
 /* ---- 7) collection log, limited drops, brand set bonuses ---- */
 const COLLAB_STORE={id:'collab',name:'Celebrity Collabs',tag:'Limited. Hyped. Overpriced. Perfect.',color:'#111111',emoji:'🌟',cats:['tops','hats','shoes','accessories','bottoms'],tier:[300,20000],drop:true};
@@ -287,3 +293,39 @@ Object.assign(SFX,{ding:[[1568,.08,'sine'],[2093,.18,'sine']],stonk:[[392,.06],[
 function v8NewDay(){const w=weekNo();if(S.nb.week<0)S.nb.week=w;if(w>S.nb.week){contestEnd(S.nb.week);S.nb.week=w;const d=weeklyDrop();notify('🌟 New collab drop: '+d.name+' ('+money(d.price)+', 5 made)')}
   const e=weekEvent();if(e&&dow()===4)notify(e.emoji+' '+e.name+' starts today! '+e.desc)}
 function v8Tick(){const a=mktTick(),b=hustleTick();if((a||b)&&screen==='online'&&(onTab==='stonks'||onTab==='hustle')&&!sheetOpen())rerender()}
+/* ---- v8.1 distinct room looks ---- */
+const ROOM_STYLE={
+ patioFull(x,W,H,wh,c,r){const dk=S.dark;
+  let g=x.createLinearGradient(0,0,0,wh);g.addColorStop(0,dk?'#1a2350':'#7ec8f5');g.addColorStop(1,dk?'#5a3d7a':'#cfeefe');x.fillStyle=g;x.fillRect(0,0,W,wh);
+  if(dk){x.fillStyle='#fff';for(let i=0;i<30;i++){x.globalAlpha=.4+r()*.6;x.fillRect(r()*W,r()*wh*.7,1.6,1.6)}x.globalAlpha=1;x.fillStyle='#fff6c8';x.beginPath();x.arc(W*.82,wh*.22,c*.35,0,7);x.fill()}
+  else{x.fillStyle='#ffe066';x.beginPath();x.arc(W*.84,wh*.2,c*.4,0,7);x.fill();x.fillStyle='rgba(255,255,255,.9)';for(let i=0;i<3;i++){const cx=W*(.12+i*.28),cy=wh*(.18+r()*.15);[0,1,2].forEach(j=>{x.beginPath();x.arc(cx+j*c*.3,cy-(j===1?c*.12:0),c*.22,0,7);x.fill()})}}
+  // distant hills + hedge greenery
+  x.fillStyle=dk?'#24384a':'#8fd19e';x.beginPath();x.moveTo(0,wh*.75);for(let i=0;i<=8;i++)x.quadraticCurveTo(W*(i/8-.06),wh*(.55+r()*.12),W*i/8,wh*.72);x.lineTo(W,wh);x.lineTo(0,wh);x.fill();
+  x.fillStyle=dk?'#1d3b2a':'#4caf50';for(let xx=0;xx<W+c;xx+=c*.45){x.beginPath();x.arc(xx,wh-c*.15,c*(.3+r()*.15),0,7);x.fill()}
+  x.fillStyle=dk?'#2e5a3c':'#66bb6a';for(let xx=c*.2;xx<W+c;xx+=c*.5){x.beginPath();x.arc(xx,wh-c*.05,c*.2,0,7);x.fill()}
+  // string lights
+  x.strokeStyle='rgba(60,40,30,.6)';x.lineWidth=1.2;x.beginPath();x.moveTo(0,c*.25);for(let i=1;i<=4;i++)x.quadraticCurveTo(W*(i-.5)/4,c*.75,W*i/4,c*.25);x.stroke();
+  for(let i=0;i<20;i++){const t=(i+.5)/20,seg=Math.floor(t*4),u=t*4-seg,bx=W*t,by=c*.25+(c*.5)*Math.sin(u*Math.PI)*.5*2*.5*2;x.fillStyle=dk?'rgba(255,220,120,.35)':'rgba(255,220,120,.25)';x.beginPath();x.arc(bx,by+3,7,0,7);x.fill();x.fillStyle=['#ffd54f','#ff8a80','#80d8ff','#b9f6ca'][i%4];x.beginPath();x.arc(bx,by+3,2.6,0,7);x.fill()}
+  // deck boards
+  const fy=wh;g=x.createLinearGradient(0,fy,0,H);g.addColorStop(0,dk?'#5b4030':'#c08a5a');g.addColorStop(1,dk?'#3b2a1f':'#8d5f3a');x.fillStyle=g;x.fillRect(0,fy,W,H-fy);
+  for(let xx=0;xx<W;xx+=c*.42){x.fillStyle='rgba(50,25,10,.25)';x.fillRect(xx,fy,1.5,H-fy);x.fillStyle='rgba(255,255,255,'+(.03+r()*.05)+')';x.fillRect(xx+2,fy,c*.42-3,H-fy)}
+  if(S.home.floor)drawSurface(x,ITEM[S.home.floor],0,fy,W,H-fy,c*.6);
+  // railing
+  x.fillStyle=dk?'#6d5240':'#e8d6c0';x.fillRect(0,fy-c*.7,W,c*.12);x.fillRect(0,fy-c*.12,W,c*.12);for(let xx=c*.1;xx<W;xx+=c*.3)x.fillRect(xx,fy-c*.6,c*.07,c*.5);
+  x.fillStyle='rgba(0,0,0,.12)';x.fillRect(0,fy-c*.58,W,2);
+  // planter pots
+  [[c*.35],[W-c*.35]].forEach(p=>{x.fillStyle='#b5651d';x.fillRect(p[0]-c*.2,fy-c*.35,c*.4,c*.35);x.fillStyle=dk?'#2e7d32':'#43a047';x.beginPath();x.arc(p[0],fy-c*.45,c*.25,0,7);x.fill()});
+  g=x.createLinearGradient(0,fy,0,fy+c*.5);g.addColorStop(0,'rgba(40,20,10,.25)');g.addColorStop(1,'rgba(40,20,10,0)');x.fillStyle=g;x.fillRect(0,fy,W,c*.5)},
+ kitchen(x,W,H,wh,c){x.fillStyle='#fff';for(let yy=wh-c*.9;yy<wh-c*.1;yy+=c*.2)for(let xx=((yy/(c*.2))|0)%2?0:c*.1;xx<W;xx+=c*.2){x.fillStyle='rgba(255,255,255,.55)';x.fillRect(xx+1,yy+1,c*.2-2,c*.2-2)}
+  x.fillStyle=S.dark?'#5b6b7a':'#90a4ae';x.fillRect(0,wh-c*.95,W,4);for(let xx=0;xx<W;xx+=c*.6){for(let yy=0;yy<c*.12;yy+=c*.06)x.fillStyle=((xx/(c*.6)+yy)|0)%2?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)'}
+  x.fillStyle='rgba(0,0,0,.06)';for(let xx=0;xx<W;xx+=c*.5)for(let yy=wh;yy<H;yy+=c*.5)if(((xx+yy)/(c*.5))%2<1)x.fillRect(xx,yy,c*.5,c*.5)},
+ closet(x,W,H,wh,c){x.fillStyle=S.dark?'#8d7a9e':'#c9a27a';x.fillRect(c*.2,c*.55,W-c*.4,4);x.fillStyle='rgba(0,0,0,.15)';for(let xx=c*.4;xx<W-c*.4;xx+=c*.35){x.fillRect(xx,c*.55,1.2,c*.25)}
+  x.fillStyle=S.dark?'rgba(255,255,255,.12)':'rgba(255,255,255,.55)';x.fillRect(W*.4,c*.95,W*.2,wh-c*1.2);x.strokeStyle='#d4af37';x.lineWidth=3;x.strokeRect(W*.4,c*.95,W*.2,wh-c*1.2)},
+ theater(x,W,H,wh,c){x.fillStyle='rgba(20,0,20,.55)';x.fillRect(0,0,W,H);x.fillStyle='#8b0000';for(let xx=0;xx<c*.9;xx+=c*.15){x.fillStyle=(xx/(c*.15))%2?'#9b1020':'#7a0010';x.fillRect(xx,0,c*.15,wh);x.fillRect(W-xx-c*.15,0,c*.15,wh)}
+  x.fillStyle='#111';x.fillRect(W*.22,c*.35,W*.56,wh-c*.8);x.fillStyle='rgba(120,180,255,.25)';x.fillRect(W*.22+4,c*.35+4,W*.56-8,wh-c*.8-8);
+  for(let xx=c*.2;xx<W;xx+=c*.5){x.fillStyle='#ffd54f';x.beginPath();x.arc(xx,wh-4,2.5,0,7);x.fill()}},
+ penthouse(x,W,H,wh,c,r){const wx=W*.12,ww=W*.76,wy=c*.3,wh2=wh-c*.7;let g=x.createLinearGradient(0,wy,0,wy+wh2);g.addColorStop(0,S.dark?'#0b1030':'#ffb07c');g.addColorStop(1,S.dark?'#2b2050':'#ffe0b2');x.fillStyle=g;x.fillRect(wx,wy,ww,wh2);
+  for(let xx=wx;xx<wx+ww;){const bw=c*(.25+r()*.35),bh=wh2*(.3+r()*.6);x.fillStyle=S.dark?'#1c1c34':'#5d4a6a';x.fillRect(xx,wy+wh2-bh,bw,bh);x.fillStyle=S.dark?'#ffe082':'rgba(255,255,255,.35)';for(let yy=wy+wh2-bh+4;yy<wy+wh2-4;yy+=7)for(let k=xx+3;k<xx+bw-3;k+=6)if(r()<.5)x.fillRect(k,yy,2,3);xx+=bw+1}
+  x.strokeStyle=S.dark?'#ccc':'#333';x.lineWidth=3;x.strokeRect(wx,wy,ww,wh2);for(let i=1;i<4;i++){x.beginPath();x.moveTo(wx+ww*i/4,wy);x.lineTo(wx+ww*i/4,wy+wh2);x.stroke()}
+  x.fillStyle='rgba(255,255,255,.08)';x.fillRect(0,wh,W,H-wh)}
+};

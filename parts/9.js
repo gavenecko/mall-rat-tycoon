@@ -75,6 +75,7 @@ setInterval(()=>{if(document.hidden||RM)return;const cs=document.querySelectorAl
 const ROOMC={};
 function roomBg(c){const k='bg'+c+(S.dark?'d':'')+ROWS+S.home.wall+S.home.floor+S.home.cur;const PL=roomDef(S.home.cur).pal||['#f3d3e4','#fde8f1','#d9b48a','#b98d62'];if(ROOMC[k])return ROOMC[k];const d=window.devicePixelRatio||1,W=c*COLS,H=c*ROWS,cv=document.createElement('canvas');cv.width=W*d;cv.height=H*d;const x=cv.getContext('2d');x.scale(d,d);
   const wh=WALL*c,r=rng(7);
+  if(typeof ROOM_STYLE!=='undefined'&&ROOM_STYLE[S.home.cur+'Full']){ROOM_STYLE[S.home.cur+'Full'](x,W,H,wh,c,r);return ROOMC[k]=cv}
   // wallpaper: base gradient + soft stripes + tiny motifs
   let g=x.createLinearGradient(0,0,0,wh);g.addColorStop(0,S.dark?'#3a2b4a':PL[0]);g.addColorStop(1,S.dark?'#4a3858':PL[1]);x.fillStyle=g;x.fillRect(0,0,W,wh);
   for(let i=0;i<W;i+=c*.5){x.fillStyle=(i/(c*.5))%2?'rgba(255,255,255,.18)':'rgba(255,255,255,0)';x.fillRect(i,0,c*.5,wh)}
@@ -92,6 +93,7 @@ function roomBg(c){const k='bg'+c+(S.dark?'d':'')+ROWS+S.home.wall+S.home.floor+
   // baseboard + floor contact shadow
   x.fillStyle=S.dark?'#6d5b7a':'#ffffff';x.fillRect(0,fy-7,W,7);x.fillStyle='rgba(0,0,0,.10)';x.fillRect(0,fy-7,W,1.5);
   g=x.createLinearGradient(0,fy,0,fy+c*.6);g.addColorStop(0,'rgba(40,20,10,.22)');g.addColorStop(1,'rgba(40,20,10,0)');x.fillStyle=g;x.fillRect(0,fy,W,c*.6);
+  if(typeof ROOM_STYLE!=='undefined'&&ROOM_STYLE[S.home.cur])ROOM_STYLE[S.home.cur](x,W,H,wh,c,r);
   return ROOMC[k]=cv}
 function roomLight(c){const k='l'+c+(S.dark?'d':'')+ROWS;if(ROOMC[k])return ROOMC[k];const d=window.devicePixelRatio||1,W=c*COLS,H=c*ROWS,cv=document.createElement('canvas');cv.width=W*d;cv.height=H*d;const x=cv.getContext('2d');x.scale(d,d);
   let g=x.createRadialGradient(W*.2,H*.15,10,W*.2,H*.15,W*.9);g.addColorStop(0,S.dark?'rgba(255,200,120,.10)':'rgba(255,240,200,.22)');g.addColorStop(1,'rgba(255,240,200,0)');x.fillStyle=g;x.fillRect(0,0,W,H);

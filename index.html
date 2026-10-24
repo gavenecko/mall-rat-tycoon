@@ -1179,14 +1179,14 @@ function stealAttempt(it){
   sheet('<h3>🤏 Five-finger discount?</h3><div class="small">'+esc(it.name)+' · security <b>'+lvl+'</b>. Tap GRAB while the camera looks away. Even then, there\'s a <b>'+Math.round(catchP(sec)*100)+'%</b> chance someone sees you. Caught = '+(3+R().offenses)+'× fine + court fee. One attempt per store per week. '+heatPill()+'</div><canvas id="stc"></canvas><div class="bar"><div id="stt"></div></div>'+
     '<button class="btn big" id="grab" style="background:#7b1fa2;box-shadow:0 2px 0 #4a148c">🤏 GRAB</button><button class="btn alt big" id="walk">😇 Never mind (buy it like a normal person)</button>');
   const W=Math.min(window.innerWidth-40,420),H=170,x=setupCanvas($('#stc'),W,H),img=new Image();img.src=thumb(it);
-  const t0=Date.now(),LIMIT=7000;let ang=0,done=false;
-  function draw(){const t=(Date.now()-t0)/1000;ang=Math.sin(t*speed)*1.15;const seen=Math.abs(ang)<half;
+  const t0=gnow(),LIMIT=7000;let ang=0,done=false;
+  function draw(){const t=(gnow()-t0)/1000;ang=Math.sin(t*speed)*1.15;const seen=Math.abs(ang)<half;
     x.fillStyle='#fff3e0';x.fillRect(0,0,W,H);x.fillStyle='#bcaaa4';x.fillRect(0,H-40,W,40);x.fillStyle='#8d6e63';x.fillRect(W/2-60,H-58,120,10);
     const cx=W/2,cy=14,len=H*1.4;x.fillStyle=seen?'rgba(244,67,54,.35)':'rgba(255,235,59,.3)';x.beginPath();x.moveTo(cx,cy);
     x.arc(cx,cy,len,Math.PI/2+ang-half,Math.PI/2+ang+half);x.closePath();x.fill();
     x.font='26px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('📹',cx,cy);
     if(img.complete)x.drawImage(img,cx-30,H-110,60,60);x.font='bold 13px sans-serif';x.fillStyle=seen?'#d32f2f':'#2e7d32';x.fillText(seen?'👁️ WATCHING':'✅ looking away',cx,H-18);
-    const p=1-(Date.now()-t0)/LIMIT;setBar($('#stt'),p);
+    const p=1-(gnow()-t0)/LIMIT;setBar($('#stt'),p);
     if(p<=0&&!done){done=true;clearInterval(stealIv);closeSheet();toast('😅 You lost your nerve. Probably for the best.')}}
   clearInterval(stealIv);stealIv=setInterval(draw,30);draw();
   $('#walk').onclick=()=>{closeSheet();buy(it)};
@@ -1372,6 +1372,7 @@ setInterval(()=>{if(document.hidden||RM)return;const cs=document.querySelectorAl
 const ROOMC={};
 function roomBg(c){const k='bg'+c+(S.dark?'d':'')+ROWS+S.home.wall+S.home.floor+S.home.cur;const PL=roomDef(S.home.cur).pal||['#f3d3e4','#fde8f1','#d9b48a','#b98d62'];if(ROOMC[k])return ROOMC[k];const d=window.devicePixelRatio||1,W=c*COLS,H=c*ROWS,cv=document.createElement('canvas');cv.width=W*d;cv.height=H*d;const x=cv.getContext('2d');x.scale(d,d);
   const wh=WALL*c,r=rng(7);
+  if(typeof ROOM_STYLE!=='undefined'&&ROOM_STYLE[S.home.cur+'Full']){ROOM_STYLE[S.home.cur+'Full'](x,W,H,wh,c,r);return ROOMC[k]=cv}
   // wallpaper: base gradient + soft stripes + tiny motifs
   let g=x.createLinearGradient(0,0,0,wh);g.addColorStop(0,S.dark?'#3a2b4a':PL[0]);g.addColorStop(1,S.dark?'#4a3858':PL[1]);x.fillStyle=g;x.fillRect(0,0,W,wh);
   for(let i=0;i<W;i+=c*.5){x.fillStyle=(i/(c*.5))%2?'rgba(255,255,255,.18)':'rgba(255,255,255,0)';x.fillRect(i,0,c*.5,wh)}
@@ -1389,6 +1390,7 @@ function roomBg(c){const k='bg'+c+(S.dark?'d':'')+ROWS+S.home.wall+S.home.floor+
   // baseboard + floor contact shadow
   x.fillStyle=S.dark?'#6d5b7a':'#ffffff';x.fillRect(0,fy-7,W,7);x.fillStyle='rgba(0,0,0,.10)';x.fillRect(0,fy-7,W,1.5);
   g=x.createLinearGradient(0,fy,0,fy+c*.6);g.addColorStop(0,'rgba(40,20,10,.22)');g.addColorStop(1,'rgba(40,20,10,0)');x.fillStyle=g;x.fillRect(0,fy,W,c*.6);
+  if(typeof ROOM_STYLE!=='undefined'&&ROOM_STYLE[S.home.cur])ROOM_STYLE[S.home.cur](x,W,H,wh,c,r);
   return ROOMC[k]=cv}
 function roomLight(c){const k='l'+c+(S.dark?'d':'')+ROWS;if(ROOMC[k])return ROOMC[k];const d=window.devicePixelRatio||1,W=c*COLS,H=c*ROWS,cv=document.createElement('canvas');cv.width=W*d;cv.height=H*d;const x=cv.getContext('2d');x.scale(d,d);
   let g=x.createRadialGradient(W*.2,H*.15,10,W*.2,H*.15,W*.9);g.addColorStop(0,S.dark?'rgba(255,200,120,.10)':'rgba(255,240,200,.22)');g.addColorStop(1,'rgba(255,240,200,0)');x.fillStyle=g;x.fillRect(0,0,W,H);
@@ -1770,7 +1772,13 @@ function fitCheck(){const W=720,H=960,c=document.createElement('canvas');c.width
 function roomPhoto(cv){const W=cv.width,H=cv.height,c=document.createElement('canvas');c.width=W;c.height=H+90;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H+90);x.drawImage(cv,0,0);
   x.fillStyle='#222';x.textAlign='center';x.font='bold 30px sans-serif';x.fillText(S.char.name+'\'s '+roomDef(S.home.cur).name+' · '+decorScore()+'/100 ✨',W/2,H+50);S.stats8.photos++;save();photoSheet(c.toDataURL('image/png'),'room')}
 function photoSheet(url,name){sheet('<h3>📸 Looking good</h3><img src="'+url+'" style="width:100%;border-radius:14px" alt="photo"><button class="btn big green" id="dl">⬇️ Save PNG</button><div class="small">If the download doesn\'t start (some phone viewers block it), long-press the picture and choose "Download image".</div>');
-  $('#dl').onclick=()=>{try{const a=document.createElement('a');a.href=url;a.download='mall-rat-'+name+'-day'+S.day+'.png';document.body.appendChild(a);a.click();a.remove();toast('📸 Saved!')}catch(e){toast('Long-press the picture to save it')}}}
+  $('#dl').onclick=()=>{let ok=false;try{const a=document.createElement('a');let href=url;try{if(window.Blob&&window.URL&&URL.createObjectURL&&/^data:/.test(url)){const bs=atob(url.split(',')[1]),u=new Uint8Array(bs.length);for(let i=0;i<bs.length;i++)u[i]=bs.charCodeAt(i);href=URL.createObjectURL(new Blob([u],{type:'image/png'}));setTimeout(()=>{try{URL.revokeObjectURL(href)}catch(e){}},60000)}}catch(e){}
+    a.href=href;a.download='mall-rat-'+name+'-day'+S.day+'.png';document.body.appendChild(a);a.click();a.remove();ok=!dlBlocked()}catch(e){ok=false}
+    if(ok)toast('📸 Saved!');else photoOverlay(url)}}
+function dlBlocked(){if(window.__forceDlBlock)return true;let f=false;try{f=window.self!==window.top}catch(e){f=true}let o='';try{o=String(window.origin||location.origin)}catch(e){}return f||o==='null'||/; wv\)/.test(navigator.userAgent)}
+function photoOverlay(url){const old=document.getElementById('phov');if(old)old.remove();const d=document.createElement('div');d.id='phov';d.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px';
+  d.innerHTML='<div style="color:#fff;font-weight:800;font-size:18px;text-align:center">👆 Press and hold the photo to save it</div><img src="'+url+'" alt="photo" style="max-width:100%;max-height:72vh;border-radius:14px;-webkit-touch-callout:default;user-select:auto;pointer-events:auto"><div style="color:#ccc;font-size:13px;text-align:center">This viewer blocks downloads. Choose "Download image" / "Save image".</div><button class="btn big" id="phx">Done</button>';
+  document.body.appendChild(d);d.querySelector('#phx').onclick=()=>d.remove()}
 
 /* ---- 7) collection log, limited drops, brand set bonuses ---- */
 const COLLAB_STORE={id:'collab',name:'Celebrity Collabs',tag:'Limited. Hyped. Overpriced. Perfect.',color:'#111111',emoji:'🌟',cats:['tops','hats','shoes','accessories','bottoms'],tier:[300,20000],drop:true};
@@ -1981,6 +1989,42 @@ Object.assign(SFX,{ding:[[1568,.08,'sine'],[2093,.18,'sine']],stonk:[[392,.06],[
 function v8NewDay(){const w=weekNo();if(S.nb.week<0)S.nb.week=w;if(w>S.nb.week){contestEnd(S.nb.week);S.nb.week=w;const d=weeklyDrop();notify('🌟 New collab drop: '+d.name+' ('+money(d.price)+', 5 made)')}
   const e=weekEvent();if(e&&dow()===4)notify(e.emoji+' '+e.name+' starts today! '+e.desc)}
 function v8Tick(){const a=mktTick(),b=hustleTick();if((a||b)&&screen==='online'&&(onTab==='stonks'||onTab==='hustle')&&!sheetOpen())rerender()}
+/* ---- v8.1 distinct room looks ---- */
+const ROOM_STYLE={
+ patioFull(x,W,H,wh,c,r){const dk=S.dark;
+  let g=x.createLinearGradient(0,0,0,wh);g.addColorStop(0,dk?'#1a2350':'#7ec8f5');g.addColorStop(1,dk?'#5a3d7a':'#cfeefe');x.fillStyle=g;x.fillRect(0,0,W,wh);
+  if(dk){x.fillStyle='#fff';for(let i=0;i<30;i++){x.globalAlpha=.4+r()*.6;x.fillRect(r()*W,r()*wh*.7,1.6,1.6)}x.globalAlpha=1;x.fillStyle='#fff6c8';x.beginPath();x.arc(W*.82,wh*.22,c*.35,0,7);x.fill()}
+  else{x.fillStyle='#ffe066';x.beginPath();x.arc(W*.84,wh*.2,c*.4,0,7);x.fill();x.fillStyle='rgba(255,255,255,.9)';for(let i=0;i<3;i++){const cx=W*(.12+i*.28),cy=wh*(.18+r()*.15);[0,1,2].forEach(j=>{x.beginPath();x.arc(cx+j*c*.3,cy-(j===1?c*.12:0),c*.22,0,7);x.fill()})}}
+  // distant hills + hedge greenery
+  x.fillStyle=dk?'#24384a':'#8fd19e';x.beginPath();x.moveTo(0,wh*.75);for(let i=0;i<=8;i++)x.quadraticCurveTo(W*(i/8-.06),wh*(.55+r()*.12),W*i/8,wh*.72);x.lineTo(W,wh);x.lineTo(0,wh);x.fill();
+  x.fillStyle=dk?'#1d3b2a':'#4caf50';for(let xx=0;xx<W+c;xx+=c*.45){x.beginPath();x.arc(xx,wh-c*.15,c*(.3+r()*.15),0,7);x.fill()}
+  x.fillStyle=dk?'#2e5a3c':'#66bb6a';for(let xx=c*.2;xx<W+c;xx+=c*.5){x.beginPath();x.arc(xx,wh-c*.05,c*.2,0,7);x.fill()}
+  // string lights
+  x.strokeStyle='rgba(60,40,30,.6)';x.lineWidth=1.2;x.beginPath();x.moveTo(0,c*.25);for(let i=1;i<=4;i++)x.quadraticCurveTo(W*(i-.5)/4,c*.75,W*i/4,c*.25);x.stroke();
+  for(let i=0;i<20;i++){const t=(i+.5)/20,seg=Math.floor(t*4),u=t*4-seg,bx=W*t,by=c*.25+(c*.5)*Math.sin(u*Math.PI)*.5*2*.5*2;x.fillStyle=dk?'rgba(255,220,120,.35)':'rgba(255,220,120,.25)';x.beginPath();x.arc(bx,by+3,7,0,7);x.fill();x.fillStyle=['#ffd54f','#ff8a80','#80d8ff','#b9f6ca'][i%4];x.beginPath();x.arc(bx,by+3,2.6,0,7);x.fill()}
+  // deck boards
+  const fy=wh;g=x.createLinearGradient(0,fy,0,H);g.addColorStop(0,dk?'#5b4030':'#c08a5a');g.addColorStop(1,dk?'#3b2a1f':'#8d5f3a');x.fillStyle=g;x.fillRect(0,fy,W,H-fy);
+  for(let xx=0;xx<W;xx+=c*.42){x.fillStyle='rgba(50,25,10,.25)';x.fillRect(xx,fy,1.5,H-fy);x.fillStyle='rgba(255,255,255,'+(.03+r()*.05)+')';x.fillRect(xx+2,fy,c*.42-3,H-fy)}
+  if(S.home.floor)drawSurface(x,ITEM[S.home.floor],0,fy,W,H-fy,c*.6);
+  // railing
+  x.fillStyle=dk?'#6d5240':'#e8d6c0';x.fillRect(0,fy-c*.7,W,c*.12);x.fillRect(0,fy-c*.12,W,c*.12);for(let xx=c*.1;xx<W;xx+=c*.3)x.fillRect(xx,fy-c*.6,c*.07,c*.5);
+  x.fillStyle='rgba(0,0,0,.12)';x.fillRect(0,fy-c*.58,W,2);
+  // planter pots
+  [[c*.35],[W-c*.35]].forEach(p=>{x.fillStyle='#b5651d';x.fillRect(p[0]-c*.2,fy-c*.35,c*.4,c*.35);x.fillStyle=dk?'#2e7d32':'#43a047';x.beginPath();x.arc(p[0],fy-c*.45,c*.25,0,7);x.fill()});
+  g=x.createLinearGradient(0,fy,0,fy+c*.5);g.addColorStop(0,'rgba(40,20,10,.25)');g.addColorStop(1,'rgba(40,20,10,0)');x.fillStyle=g;x.fillRect(0,fy,W,c*.5)},
+ kitchen(x,W,H,wh,c){x.fillStyle='#fff';for(let yy=wh-c*.9;yy<wh-c*.1;yy+=c*.2)for(let xx=((yy/(c*.2))|0)%2?0:c*.1;xx<W;xx+=c*.2){x.fillStyle='rgba(255,255,255,.55)';x.fillRect(xx+1,yy+1,c*.2-2,c*.2-2)}
+  x.fillStyle=S.dark?'#5b6b7a':'#90a4ae';x.fillRect(0,wh-c*.95,W,4);for(let xx=0;xx<W;xx+=c*.6){for(let yy=0;yy<c*.12;yy+=c*.06)x.fillStyle=((xx/(c*.6)+yy)|0)%2?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)'}
+  x.fillStyle='rgba(0,0,0,.06)';for(let xx=0;xx<W;xx+=c*.5)for(let yy=wh;yy<H;yy+=c*.5)if(((xx+yy)/(c*.5))%2<1)x.fillRect(xx,yy,c*.5,c*.5)},
+ closet(x,W,H,wh,c){x.fillStyle=S.dark?'#8d7a9e':'#c9a27a';x.fillRect(c*.2,c*.55,W-c*.4,4);x.fillStyle='rgba(0,0,0,.15)';for(let xx=c*.4;xx<W-c*.4;xx+=c*.35){x.fillRect(xx,c*.55,1.2,c*.25)}
+  x.fillStyle=S.dark?'rgba(255,255,255,.12)':'rgba(255,255,255,.55)';x.fillRect(W*.4,c*.95,W*.2,wh-c*1.2);x.strokeStyle='#d4af37';x.lineWidth=3;x.strokeRect(W*.4,c*.95,W*.2,wh-c*1.2)},
+ theater(x,W,H,wh,c){x.fillStyle='rgba(20,0,20,.55)';x.fillRect(0,0,W,H);x.fillStyle='#8b0000';for(let xx=0;xx<c*.9;xx+=c*.15){x.fillStyle=(xx/(c*.15))%2?'#9b1020':'#7a0010';x.fillRect(xx,0,c*.15,wh);x.fillRect(W-xx-c*.15,0,c*.15,wh)}
+  x.fillStyle='#111';x.fillRect(W*.22,c*.35,W*.56,wh-c*.8);x.fillStyle='rgba(120,180,255,.25)';x.fillRect(W*.22+4,c*.35+4,W*.56-8,wh-c*.8-8);
+  for(let xx=c*.2;xx<W;xx+=c*.5){x.fillStyle='#ffd54f';x.beginPath();x.arc(xx,wh-4,2.5,0,7);x.fill()}},
+ penthouse(x,W,H,wh,c,r){const wx=W*.12,ww=W*.76,wy=c*.3,wh2=wh-c*.7;let g=x.createLinearGradient(0,wy,0,wy+wh2);g.addColorStop(0,S.dark?'#0b1030':'#ffb07c');g.addColorStop(1,S.dark?'#2b2050':'#ffe0b2');x.fillStyle=g;x.fillRect(wx,wy,ww,wh2);
+  for(let xx=wx;xx<wx+ww;){const bw=c*(.25+r()*.35),bh=wh2*(.3+r()*.6);x.fillStyle=S.dark?'#1c1c34':'#5d4a6a';x.fillRect(xx,wy+wh2-bh,bw,bh);x.fillStyle=S.dark?'#ffe082':'rgba(255,255,255,.35)';for(let yy=wy+wh2-bh+4;yy<wy+wh2-4;yy+=7)for(let k=xx+3;k<xx+bw-3;k+=6)if(r()<.5)x.fillRect(k,yy,2,3);xx+=bw+1}
+  x.strokeStyle=S.dark?'#ccc':'#333';x.lineWidth=3;x.strokeRect(wx,wy,ww,wh2);for(let i=1;i<4;i++){x.beginPath();x.moveTo(wx+ww*i/4,wy);x.lineTo(wx+ww*i/4,wy+wh2);x.stroke()}
+  x.fillStyle='rgba(255,255,255,.08)';x.fillRect(0,wh,W,H-wh)}
+};
 /* v8: final load (every catalog now exists, so owned v6 home items / v8 drops survive reload) */
 S=load();if(typeof syncRows==='function')syncRows();
 /* ============================== JOBS ==============================
@@ -2045,7 +2089,7 @@ function makeBurger(el,api){
   const W=Math.min(window.innerWidth-24,420),H=150,x=setupCanvas(el.querySelector('#cv'),W,H);
   let order,stack,t0,limit,round=0;
   function next(){round++;const n=Math.min(2+Math.floor(round/2),6),mid=[];for(let i=0;i<n;i++)mid.push(ING[1+rand(ING.length-1)][0]);
-    order=['bun'].concat(mid,['bun']);stack=[];limit=5000+order.length*1300;t0=Date.now();$('#cust').textContent=pick(CUSTOMERS);draw()}
+    order=['bun'].concat(mid,['bun']);stack=[];limit=5000+order.length*1300;t0=gnow();$('#cust').textContent=pick(CUSTOMERS);draw()}
   function draw(){$('#tk').innerHTML='<b>Order</b> (bottom → top):<br>'+order.map((o,i)=>'<span style="font-size:22px;opacity:'+(i<stack.length?.25:1)+'">'+E(o)[1]+'</span>').join(' ');
     jobBg('kitchen',x,W,H);x.fillStyle='#ddd';ell(x,W/2,H-10,95,10);x.fill();
     stack.forEach((s,i)=>{const y=H-20-i*14;x.fillStyle=E(s)[2];
@@ -2053,10 +2097,10 @@ function makeBurger(el,api){
       else if(s==='cheese'){poly(x,[W/2-74,y-4,W/2+74,y-4,W/2+60,y+6,W/2-60,y+6]);x.fill()}
       else{rr(x,W/2-74,y-6,148,12,6);x.fill()}})}
   function tap(k){if(stack.length>=order.length)return;const want=order[stack.length];if(k!==want){api.miss('❌ Wrong topping! Customer stormed off');next();return}
-    stack.push(k);sfx('click');draw();if(stack.length===order.length){api.pay(3+order.length*1.2+Math.max(0,1-(Date.now()-t0)/limit)*5);next()}}
+    stack.push(k);sfx('click');draw();if(stack.length===order.length){api.pay(3+order.length*1.2+Math.max(0,1-(gnow()-t0)/limit)*5);next()}}
   ING.forEach(g=>padBtn($('#pad'),'<b>'+g[1]+'</b>'+g[0],()=>tap(g[0])));
   next();
-  return{tick(){const p=1-(Date.now()-t0)/limit;if(p<=0){api.miss('😤 Too slow! Customer left');next();return}setBar($('#pat'),p)},bot(){tap(order[stack.length])}};
+  return{tick(){const p=1-(gnow()-t0)/limit;if(p<=0){api.miss('😤 Too slow! Customer left');next();return}setBar($('#pat'),p)},bot(){tap(order[stack.length])}};
 }
 /* --- Cashier Chaos --- */
 function makeCashier(el,api){
@@ -2070,14 +2114,14 @@ function makeCashier(el,api){
     x.fillStyle='#1b5e20';rr(x,W*.74,H-66,W*.2,22,4);x.fill();x.fillStyle='#b9f6ca';x.font='bold 12px monospace';x.fillText(price?cents(price):'',W*.84,H-50);x.textAlign='left'}
   let price,paid,given,t0;const limit=15000;
   const sum=()=>given.reduce((a,b)=>a+b,0);
-  function next(){price=5*(20+rand(380));paid=[500,1000,2000].filter(v=>v>price)[0];given=[];t0=Date.now();$('#cust').textContent=pick(CUSTOMERS);good=pick(GOODS);
+  function next(){price=5*(20+rand(380));paid=[500,1000,2000].filter(v=>v>price)[0];given=[];t0=gnow();$('#cust').textContent=pick(CUSTOMERS);good=pick(GOODS);
     $('#tk').innerHTML=good+' costs <b>'+cents(price)+'</b><br>Customer hands you <b>'+cents(paid)+'</b>';upd();draw()}
   function upd(){$('#given').textContent=cents(sum())}
-  function done(){const ch=paid-price;if(sum()===ch)api.pay(4+Math.max(0,1-(Date.now()-t0)/limit)*6);else api.miss('❌ Wrong change! Needed '+cents(ch)+', gave '+cents(sum()));next()}
+  function done(){const ch=paid-price;if(sum()===ch)api.pay(4+Math.max(0,1-(gnow()-t0)/limit)*6);else api.miss('❌ Wrong change! Needed '+cents(ch)+', gave '+cents(sum()));next()}
   DEN.forEach(d=>padBtn($('#pad'),'<b>'+d[2]+'</b>'+d[1],()=>{given.push(d[0]);sfx('click');upd()}));
   $('#undo').onclick=()=>{given.pop();upd()};$('#ok').onclick=done;
   next();
-  return{tick(){const p=1-(Date.now()-t0)/limit;if(p<=0){api.miss('😤 Customer gave up waiting');next();return}setBar($('#pat'),p)},
+  return{tick(){const p=1-(gnow()-t0)/limit;if(p<=0){api.miss('😤 Customer gave up waiting');next();return}setBar($('#pat'),p)},
     bot(){const rem=paid-price-sum();if(rem===0)done();else{given.push(DEN.filter(d=>d[0]<=rem)[0][0]);upd()}}};
 }
 /* --- Shelf Stocker --- */
@@ -2087,15 +2131,15 @@ function makeShelf(el,api){
   el.innerHTML='<div class="bar"><div id="pat"></div></div><canvas id="cv"></canvas><div class="pad" id="pad" style="grid-template-columns:1fr 1fr"></div>';
   const W=Math.min(window.innerWidth-24,420),H=170,x=setupCanvas(el.querySelector('#cv'),W,H);
   let bins,target,t0,limit,n=0,streak=0;
-  function next(){bins=shuffle(C).slice(0,4);target=pick(bins);const prod=pick(P);n++;limit=Math.max(1400,3600-n*90);t0=Date.now();
+  function next(){bins=shuffle(C).slice(0,4);target=pick(bins);const prod=pick(P);n++;limit=Math.max(1400,3600-n*90);t0=gnow();
     jobBg('aisle',x,W,H);
     rr(x,W/2-50,22,100,124,10);x.fillStyle=target[1];x.fill();x.strokeStyle='rgba(0,0,0,.4)';x.lineWidth=2;x.stroke();
     rr(x,W/2-40,62,80,36,6);x.fillStyle='#fff';x.fill();x.fillStyle='#222';x.font='bold 18px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(prod,W/2,80);
     const pad=$('#pad');pad.innerHTML='';
     bins.forEach((c,i)=>padBtn(pad,'<b>🗑️</b>'+c[0]+' bin',()=>tap(i),'background:'+c[1]+';color:'+(lum(c[1])>.6?'#222':'#fff')+';padding:18px 4px'))}
-  function tap(i){if(bins[i]===target){streak++;api.pay(2+Math.min(streak,10)*.3+Math.max(0,1-(Date.now()-t0)/limit)*2)}else{streak=0;api.miss('❌ That\'s the '+bins[i][0]+' bin!')}next()}
+  function tap(i){if(bins[i]===target){streak++;api.pay(2+Math.min(streak,10)*.3+Math.max(0,1-(gnow()-t0)/limit)*2)}else{streak=0;api.miss('❌ That\'s the '+bins[i][0]+' bin!')}next()}
   next();
-  return{tick(){const p=1-(Date.now()-t0)/limit;if(p<=0){streak=0;api.miss('📦 Dropped it!');next();return}setBar($('#pat'),p)},bot(){tap(bins.indexOf(target))}};
+  return{tick(){const p=1-(gnow()-t0)/limit;if(p<=0){streak=0;api.miss('📦 Dropped it!');next();return}setBar($('#pat'),p)},bot(){tap(bins.indexOf(target))}};
 }
 /* --- Barista Brain --- */
 function makeBarista(el,api){
@@ -2104,18 +2148,18 @@ function makeBarista(el,api){
   el.innerHTML='<div class="card row"><span class="cust" id="cust"></span><div class="ticket" id="tk"></div></div><div class="bar"><div id="pat"></div></div><canvas id="cv"></canvas><div class="pad" id="pad"></div>';
   const W=Math.min(window.innerWidth-24,420),H=150,x=setupCanvas(el.querySelector('#cv'),W,H);
   let recipe,made,phase,t0,showUntil,limit,n=0;
-  function next(){n++;const len=Math.min(3+Math.floor(n/3),6);recipe=[];for(let i=0;i<len;i++)recipe.push(pick(ING)[0]);made=[];phase='show';showUntil=Date.now()+1500+len*450;limit=5000+len*1500;
+  function next(){n++;const len=Math.min(3+Math.floor(n/3),6);recipe=[];for(let i=0;i<len;i++)recipe.push(pick(ING)[0]);made=[];phase='show';showUntil=gnow()+1500+len*450;limit=5000+len*1500;
     $('#cust').textContent=pick(CUSTOMERS);draw()}
   function draw(){$('#tk').innerHTML=phase==='show'?'<b>Memorize!</b> 👀<br>'+recipe.map(r=>'<span style="font-size:22px">'+E(r)[1]+'</span>').join(' '):'<b>Make it!</b> (in order)<br>'+recipe.map((r,i)=>'<span style="font-size:22px">'+(i<made.length?E(r)[1]:'❓')+'</span>').join(' ');
     jobBg('cafe',x,W,H);const cx=W/2,top=20,bot=H-12,hw=50,per=(bot-top-6)/recipe.length;
     made.forEach((m,i)=>{x.fillStyle=E(m)[2];const y2=bot-i*per,y1=y2-per;poly(x,[cx-hw+4,y1,cx+hw-4,y1,cx+hw-8,y2,cx-hw+8,y2]);x.fill()});
     x.strokeStyle='#555';x.lineWidth=3;x.beginPath();x.moveTo(cx-hw,top);x.lineTo(cx-hw+6,bot);x.lineTo(cx+hw-6,bot);x.lineTo(cx+hw,top);x.stroke();x.beginPath();x.arc(cx+hw+8,(top+bot)/2,14,-1.3,1.3);x.stroke()}
-  function tap(k){if(phase==='show'){phase='make';t0=Date.now()}
+  function tap(k){if(phase==='show'){phase='make';t0=gnow()}
     if(k!==recipe[made.length]){api.miss('❌ That\'s not the recipe!');next();return}made.push(k);sfx('click');draw();
-    if(made.length===recipe.length){api.pay(4+recipe.length*1.4+Math.max(0,1-(Date.now()-t0)/limit)*5);next()}}
+    if(made.length===recipe.length){api.pay(4+recipe.length*1.4+Math.max(0,1-(gnow()-t0)/limit)*5);next()}}
   ING.forEach(g=>padBtn($('#pad'),'<b>'+g[1]+'</b>'+g[0],()=>tap(g[0])));
   next();
-  return{tick(){const now=Date.now();if(phase==='show'){setBar($('#pat'),1);if(now>=showUntil){phase='make';t0=now;draw()}return}
+  return{tick(){const now=gnow();if(phase==='show'){setBar($('#pat'),1);if(now>=showUntil){phase='make';t0=now;draw()}return}
       const p=1-(now-t0)/limit;if(p<=0){api.miss('😤 Drink took too long!');next();return}setBar($('#pat'),p)},
     bot(){tap(recipe[made.length])}};
 }
@@ -2151,7 +2195,7 @@ function makePizza(el,api){
   function toss(){fly=.35;const h=houses.filter(q=>Math.abs(q.x-zone)<34&&!q.done)[0];
     if(h&&h===target){h.done=1;api.pay(6+speed/30);newTarget()}else api.miss(h?'🏠 Wrong house! That was #'+h.num:'🍕 Pizza on the sidewalk!')}
   $('#toss').addEventListener('pointerdown',e=>{e.preventDefault();toss()});
-  function draw(){jobBg('street',x,W,H);x.fillStyle='#9e9e9e';x.fillRect(0,H-50,W,50);x.fillStyle='#fff';const off=(Date.now()/12)%40;for(let i=-40;i<W+40;i+=40)x.fillRect(i-off,H-27,20,4);
+  function draw(){jobBg('street',x,W,H);x.fillStyle='#9e9e9e';x.fillRect(0,H-50,W,50);x.fillStyle='#fff';const off=(gnow()/12)%40;for(let i=-40;i<W+40;i+=40)x.fillRect(i-off,H-27,20,4);
     x.fillStyle='rgba(255,235,59,.35)';x.fillRect(zone-34,0,68,H-50);x.strokeStyle='#fbc02d';x.lineWidth=2;x.strokeRect(zone-34,1,68,H-52);
     houses.forEach(h=>{x.fillStyle=h.c;x.fillRect(h.x-30,70,60,90);x.fillStyle='#8d6e63';poly(x,[h.x-36,72,h.x+36,72,h.x,38]);x.fill();x.fillStyle='#5d4037';x.fillRect(h.x-8,128,16,32);
       x.fillStyle=h===target?'#d32f2f':'#fff';rr(x,h.x-16,82,32,22,5);x.fill();x.fillStyle=h===target?'#fff':'#222';x.font='bold 15px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(h.num,h.x,93);

@@ -60,7 +60,7 @@ function makeBurger(el,api){
   const W=Math.min(window.innerWidth-24,420),H=150,x=setupCanvas(el.querySelector('#cv'),W,H);
   let order,stack,t0,limit,round=0;
   function next(){round++;const n=Math.min(2+Math.floor(round/2),6),mid=[];for(let i=0;i<n;i++)mid.push(ING[1+rand(ING.length-1)][0]);
-    order=['bun'].concat(mid,['bun']);stack=[];limit=5000+order.length*1300;t0=Date.now();$('#cust').textContent=pick(CUSTOMERS);draw()}
+    order=['bun'].concat(mid,['bun']);stack=[];limit=5000+order.length*1300;t0=gnow();$('#cust').textContent=pick(CUSTOMERS);draw()}
   function draw(){$('#tk').innerHTML='<b>Order</b> (bottom → top):<br>'+order.map((o,i)=>'<span style="font-size:22px;opacity:'+(i<stack.length?.25:1)+'">'+E(o)[1]+'</span>').join(' ');
     jobBg('kitchen',x,W,H);x.fillStyle='#ddd';ell(x,W/2,H-10,95,10);x.fill();
     stack.forEach((s,i)=>{const y=H-20-i*14;x.fillStyle=E(s)[2];
@@ -68,10 +68,10 @@ function makeBurger(el,api){
       else if(s==='cheese'){poly(x,[W/2-74,y-4,W/2+74,y-4,W/2+60,y+6,W/2-60,y+6]);x.fill()}
       else{rr(x,W/2-74,y-6,148,12,6);x.fill()}})}
   function tap(k){if(stack.length>=order.length)return;const want=order[stack.length];if(k!==want){api.miss('❌ Wrong topping! Customer stormed off');next();return}
-    stack.push(k);sfx('click');draw();if(stack.length===order.length){api.pay(3+order.length*1.2+Math.max(0,1-(Date.now()-t0)/limit)*5);next()}}
+    stack.push(k);sfx('click');draw();if(stack.length===order.length){api.pay(3+order.length*1.2+Math.max(0,1-(gnow()-t0)/limit)*5);next()}}
   ING.forEach(g=>padBtn($('#pad'),'<b>'+g[1]+'</b>'+g[0],()=>tap(g[0])));
   next();
-  return{tick(){const p=1-(Date.now()-t0)/limit;if(p<=0){api.miss('😤 Too slow! Customer left');next();return}setBar($('#pat'),p)},bot(){tap(order[stack.length])}};
+  return{tick(){const p=1-(gnow()-t0)/limit;if(p<=0){api.miss('😤 Too slow! Customer left');next();return}setBar($('#pat'),p)},bot(){tap(order[stack.length])}};
 }
 /* --- Cashier Chaos --- */
 function makeCashier(el,api){
@@ -85,14 +85,14 @@ function makeCashier(el,api){
     x.fillStyle='#1b5e20';rr(x,W*.74,H-66,W*.2,22,4);x.fill();x.fillStyle='#b9f6ca';x.font='bold 12px monospace';x.fillText(price?cents(price):'',W*.84,H-50);x.textAlign='left'}
   let price,paid,given,t0;const limit=15000;
   const sum=()=>given.reduce((a,b)=>a+b,0);
-  function next(){price=5*(20+rand(380));paid=[500,1000,2000].filter(v=>v>price)[0];given=[];t0=Date.now();$('#cust').textContent=pick(CUSTOMERS);good=pick(GOODS);
+  function next(){price=5*(20+rand(380));paid=[500,1000,2000].filter(v=>v>price)[0];given=[];t0=gnow();$('#cust').textContent=pick(CUSTOMERS);good=pick(GOODS);
     $('#tk').innerHTML=good+' costs <b>'+cents(price)+'</b><br>Customer hands you <b>'+cents(paid)+'</b>';upd();draw()}
   function upd(){$('#given').textContent=cents(sum())}
-  function done(){const ch=paid-price;if(sum()===ch)api.pay(4+Math.max(0,1-(Date.now()-t0)/limit)*6);else api.miss('❌ Wrong change! Needed '+cents(ch)+', gave '+cents(sum()));next()}
+  function done(){const ch=paid-price;if(sum()===ch)api.pay(4+Math.max(0,1-(gnow()-t0)/limit)*6);else api.miss('❌ Wrong change! Needed '+cents(ch)+', gave '+cents(sum()));next()}
   DEN.forEach(d=>padBtn($('#pad'),'<b>'+d[2]+'</b>'+d[1],()=>{given.push(d[0]);sfx('click');upd()}));
   $('#undo').onclick=()=>{given.pop();upd()};$('#ok').onclick=done;
   next();
-  return{tick(){const p=1-(Date.now()-t0)/limit;if(p<=0){api.miss('😤 Customer gave up waiting');next();return}setBar($('#pat'),p)},
+  return{tick(){const p=1-(gnow()-t0)/limit;if(p<=0){api.miss('😤 Customer gave up waiting');next();return}setBar($('#pat'),p)},
     bot(){const rem=paid-price-sum();if(rem===0)done();else{given.push(DEN.filter(d=>d[0]<=rem)[0][0]);upd()}}};
 }
 /* --- Shelf Stocker --- */
@@ -102,15 +102,15 @@ function makeShelf(el,api){
   el.innerHTML='<div class="bar"><div id="pat"></div></div><canvas id="cv"></canvas><div class="pad" id="pad" style="grid-template-columns:1fr 1fr"></div>';
   const W=Math.min(window.innerWidth-24,420),H=170,x=setupCanvas(el.querySelector('#cv'),W,H);
   let bins,target,t0,limit,n=0,streak=0;
-  function next(){bins=shuffle(C).slice(0,4);target=pick(bins);const prod=pick(P);n++;limit=Math.max(1400,3600-n*90);t0=Date.now();
+  function next(){bins=shuffle(C).slice(0,4);target=pick(bins);const prod=pick(P);n++;limit=Math.max(1400,3600-n*90);t0=gnow();
     jobBg('aisle',x,W,H);
     rr(x,W/2-50,22,100,124,10);x.fillStyle=target[1];x.fill();x.strokeStyle='rgba(0,0,0,.4)';x.lineWidth=2;x.stroke();
     rr(x,W/2-40,62,80,36,6);x.fillStyle='#fff';x.fill();x.fillStyle='#222';x.font='bold 18px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(prod,W/2,80);
     const pad=$('#pad');pad.innerHTML='';
     bins.forEach((c,i)=>padBtn(pad,'<b>🗑️</b>'+c[0]+' bin',()=>tap(i),'background:'+c[1]+';color:'+(lum(c[1])>.6?'#222':'#fff')+';padding:18px 4px'))}
-  function tap(i){if(bins[i]===target){streak++;api.pay(2+Math.min(streak,10)*.3+Math.max(0,1-(Date.now()-t0)/limit)*2)}else{streak=0;api.miss('❌ That\'s the '+bins[i][0]+' bin!')}next()}
+  function tap(i){if(bins[i]===target){streak++;api.pay(2+Math.min(streak,10)*.3+Math.max(0,1-(gnow()-t0)/limit)*2)}else{streak=0;api.miss('❌ That\'s the '+bins[i][0]+' bin!')}next()}
   next();
-  return{tick(){const p=1-(Date.now()-t0)/limit;if(p<=0){streak=0;api.miss('📦 Dropped it!');next();return}setBar($('#pat'),p)},bot(){tap(bins.indexOf(target))}};
+  return{tick(){const p=1-(gnow()-t0)/limit;if(p<=0){streak=0;api.miss('📦 Dropped it!');next();return}setBar($('#pat'),p)},bot(){tap(bins.indexOf(target))}};
 }
 /* --- Barista Brain --- */
 function makeBarista(el,api){
@@ -119,18 +119,18 @@ function makeBarista(el,api){
   el.innerHTML='<div class="card row"><span class="cust" id="cust"></span><div class="ticket" id="tk"></div></div><div class="bar"><div id="pat"></div></div><canvas id="cv"></canvas><div class="pad" id="pad"></div>';
   const W=Math.min(window.innerWidth-24,420),H=150,x=setupCanvas(el.querySelector('#cv'),W,H);
   let recipe,made,phase,t0,showUntil,limit,n=0;
-  function next(){n++;const len=Math.min(3+Math.floor(n/3),6);recipe=[];for(let i=0;i<len;i++)recipe.push(pick(ING)[0]);made=[];phase='show';showUntil=Date.now()+1500+len*450;limit=5000+len*1500;
+  function next(){n++;const len=Math.min(3+Math.floor(n/3),6);recipe=[];for(let i=0;i<len;i++)recipe.push(pick(ING)[0]);made=[];phase='show';showUntil=gnow()+1500+len*450;limit=5000+len*1500;
     $('#cust').textContent=pick(CUSTOMERS);draw()}
   function draw(){$('#tk').innerHTML=phase==='show'?'<b>Memorize!</b> 👀<br>'+recipe.map(r=>'<span style="font-size:22px">'+E(r)[1]+'</span>').join(' '):'<b>Make it!</b> (in order)<br>'+recipe.map((r,i)=>'<span style="font-size:22px">'+(i<made.length?E(r)[1]:'❓')+'</span>').join(' ');
     jobBg('cafe',x,W,H);const cx=W/2,top=20,bot=H-12,hw=50,per=(bot-top-6)/recipe.length;
     made.forEach((m,i)=>{x.fillStyle=E(m)[2];const y2=bot-i*per,y1=y2-per;poly(x,[cx-hw+4,y1,cx+hw-4,y1,cx+hw-8,y2,cx-hw+8,y2]);x.fill()});
     x.strokeStyle='#555';x.lineWidth=3;x.beginPath();x.moveTo(cx-hw,top);x.lineTo(cx-hw+6,bot);x.lineTo(cx+hw-6,bot);x.lineTo(cx+hw,top);x.stroke();x.beginPath();x.arc(cx+hw+8,(top+bot)/2,14,-1.3,1.3);x.stroke()}
-  function tap(k){if(phase==='show'){phase='make';t0=Date.now()}
+  function tap(k){if(phase==='show'){phase='make';t0=gnow()}
     if(k!==recipe[made.length]){api.miss('❌ That\'s not the recipe!');next();return}made.push(k);sfx('click');draw();
-    if(made.length===recipe.length){api.pay(4+recipe.length*1.4+Math.max(0,1-(Date.now()-t0)/limit)*5);next()}}
+    if(made.length===recipe.length){api.pay(4+recipe.length*1.4+Math.max(0,1-(gnow()-t0)/limit)*5);next()}}
   ING.forEach(g=>padBtn($('#pad'),'<b>'+g[1]+'</b>'+g[0],()=>tap(g[0])));
   next();
-  return{tick(){const now=Date.now();if(phase==='show'){setBar($('#pat'),1);if(now>=showUntil){phase='make';t0=now;draw()}return}
+  return{tick(){const now=gnow();if(phase==='show'){setBar($('#pat'),1);if(now>=showUntil){phase='make';t0=now;draw()}return}
       const p=1-(now-t0)/limit;if(p<=0){api.miss('😤 Drink took too long!');next();return}setBar($('#pat'),p)},
     bot(){tap(recipe[made.length])}};
 }
@@ -166,7 +166,7 @@ function makePizza(el,api){
   function toss(){fly=.35;const h=houses.filter(q=>Math.abs(q.x-zone)<34&&!q.done)[0];
     if(h&&h===target){h.done=1;api.pay(6+speed/30);newTarget()}else api.miss(h?'🏠 Wrong house! That was #'+h.num:'🍕 Pizza on the sidewalk!')}
   $('#toss').addEventListener('pointerdown',e=>{e.preventDefault();toss()});
-  function draw(){jobBg('street',x,W,H);x.fillStyle='#9e9e9e';x.fillRect(0,H-50,W,50);x.fillStyle='#fff';const off=(Date.now()/12)%40;for(let i=-40;i<W+40;i+=40)x.fillRect(i-off,H-27,20,4);
+  function draw(){jobBg('street',x,W,H);x.fillStyle='#9e9e9e';x.fillRect(0,H-50,W,50);x.fillStyle='#fff';const off=(gnow()/12)%40;for(let i=-40;i<W+40;i+=40)x.fillRect(i-off,H-27,20,4);
     x.fillStyle='rgba(255,235,59,.35)';x.fillRect(zone-34,0,68,H-50);x.strokeStyle='#fbc02d';x.lineWidth=2;x.strokeRect(zone-34,1,68,H-52);
     houses.forEach(h=>{x.fillStyle=h.c;x.fillRect(h.x-30,70,60,90);x.fillStyle='#8d6e63';poly(x,[h.x-36,72,h.x+36,72,h.x,38]);x.fill();x.fillStyle='#5d4037';x.fillRect(h.x-8,128,16,32);
       x.fillStyle=h===target?'#d32f2f':'#fff';rr(x,h.x-16,82,32,22,5);x.fill();x.fillStyle=h===target?'#fff':'#222';x.font='bold 15px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(h.num,h.x,93);

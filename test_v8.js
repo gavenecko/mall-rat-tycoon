@@ -21,12 +21,13 @@ for(const [mode,W,H] of [['file',360,800],['file',412,915],['sandbox',360,800],[
  await G(()=>{onTab='clam';clamCat='surface';__game.go('online')});await sleep(200);ok(await G(()=>document.querySelectorAll('#cgrid .item').length>0),'Clamazon surface tab lists items');
  if(STAGE>='B'&&fs.existsSync('parts/test_b.js'))await eval(fs.readFileSync('parts/test_b.js','utf8'));
  if(STAGE>='C'&&fs.existsSync('parts/test_c.js'))await eval(fs.readFileSync('parts/test_c.js','utf8'));
+ await eval(fs.readFileSync('parts/test_d.js','utf8'));
  ok(errs.length===0,'no console errors '+errs.join('|'));await p.close()}
 // home item survives reload (v6 load-order bug)
 {const p=await b.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));await p.goto('file://'+process.cwd()+'/index.html');await p.evaluate(()=>localStorage.clear());await p.reload();await p.fill('#nm','R');await p.click('#done');
  await p.evaluate(()=>{const g=__game;const h=g.ITEMS.filter(i=>i.id.startsWith('h6'))[0];g.S.owned[h.id]=1;g.save()});await p.reload();await sleep(500);ok(await p.evaluate(()=>Object.keys(__game.S.owned).some(k=>k.startsWith('h6'))),'home item survives reload');await p.close()}
 // migrations v2..v7 + MRT2/MRT3 import
-for(const n of ['v2','v3','v41','v5','v6','v7']){let p=await b.newPage();await p.addInitScript(INIT);const errs=[];p.on('pageerror',e=>errs.push(e.message));await p.goto('file:///tmp/'+n+'.html');await p.evaluate(()=>localStorage.clear());await p.reload();await p.fill('#nm','Old');await p.click('#done');await sleep(200);
+for(const n of ['v2','v3','v41','v5','v6','v7','v8']){let p=await b.newPage();await p.addInitScript(INIT);const errs=[];p.on('pageerror',e=>errs.push(e.message));await p.goto('file:///tmp/'+n+'.html');await p.evaluate(()=>localStorage.clear());await p.reload();await p.fill('#nm','Old');await p.click('#done');await sleep(200);
  const sv=await p.evaluate(()=>{const g=__game;g.S.cash=99999;[5,60].forEach(i=>g.buy(g.ITEMS[i].id));g.S.cash=321;return JSON.stringify(g.S)});
  await p.close();p=await b.newPage();await p.addInitScript(INIT);p.on('pageerror',e=>errs.push(e.message));await p.addInitScript(s=>{if(!sessionStorage.inj){localStorage.clear();localStorage.setItem('mrt2_auto',s);sessionStorage.inj=1}},sv);await p.goto('file://'+process.cwd()+'/index.html');await sleep(1000);
  const r=await p.evaluate(()=>({v:__game.S.v,own:Object.keys(__game.S.owned).length,nm:__game.S.char.name}));
