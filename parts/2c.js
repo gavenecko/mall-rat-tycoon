@@ -10,8 +10,9 @@ const store={
   get(k){if(storageOK){try{return window.localStorage.getItem(k)}catch(e){}}return Object.prototype.hasOwnProperty.call(MEM,k)?MEM[k]:null},
   set(k,v){MEM[k]=v;if(storageOK){try{window.localStorage.setItem(k,v)}catch(e){}}}
 };
-function fresh(){return{v:8,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},dark:false,home:{wall:null,floor:null,ext:{},yard:[],water:{},size:0,waters:0,remodels:0},rap:{optin:false,lastSteal:{},hot:{},arrests:0,heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
-  shifts:0,earned:0,spent:0,dealsBought:0,ach:{},tutDone:false,muted:false,savedAt:0}}
+function fresh(){return v8Init({v:8,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},dark:false,home:{wall:null,floor:null,ext:{},yard:[],water:{},size:0,waters:0,remodels:0},rap:{optin:false,lastSteal:{},hot:{},arrests:0,heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
+  shifts:0,earned:0,spent:0,dealsBought:0,ach:{},tutDone:false,muted:false,savedAt:0})}
+function v8Init(o){if(typeof v8Fix==='function')v8Fix(o);return o}
 function normalize(o){
   if(!o||typeof o!=='object'||typeof o.cash!=='number'||isNaN(o.cash))throw new Error('Not a valid save');
   const s=Object.assign(fresh(),o);
@@ -25,7 +26,7 @@ function normalize(o){
 }
 function load(){try{const raw=store.get(KEY_AUTO);return raw?normalize(JSON.parse(raw)):fresh()}catch(e){return fresh()}}
 let S=fresh();// real load happens in parts/12.js once every catalog (incl. v6 home + v8 drops) exists
-function save(){if(typeof clockTick==='function'&&S.gt)clockTick();S.savedAt=Date.now();checkAch();store.set(KEY_AUTO,JSON.stringify(S));hud()}
+function save(){if(typeof clockTick==='function'&&S.gt)clockTick();S.savedAt=Date.now();if(typeof v8Save==='function')v8Save();checkAch();store.set(KEY_AUTO,JSON.stringify(S));hud()}
 const b64e=s=>btoa(unescape(encodeURIComponent(s)));
 const b64d=s=>decodeURIComponent(escape(atob(s)));
 function exportCode(){return 'MRT3:'+b64e(JSON.stringify(S))}
@@ -40,7 +41,7 @@ function checkDay(){const g=gnow(),n=Math.floor((g-S.dayAt)/DAY_MS);if(n>0){if(n
 function nextDay(){S.day++;S.dayAt=gnow();onNewDay();save()}
 function timeLeft(){const s=Math.max(0,Math.ceil((DAY_MS-(gnow()-S.dayAt))/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function openStores(){
-  const POOL=STORES.filter(s=>!s.park),open=shuffle(POOL,rng(S.day*7919+3)).slice(0,OPEN_COUNT);
+  const POOL=STORES.filter(s=>!s.park&&!s.drop),open=shuffle(POOL,rng(S.day*7919+3)).slice(0,OPEN_COUNT);
   if(!open.some(s=>s.tier[1]<=150)){open[OPEN_COUNT-1]=shuffle(POOL.filter(s=>s.tier[1]<=150),rng(S.day+1))[0]}
   return open;
 }
@@ -72,7 +73,7 @@ function checkAch(){ACH.forEach(a=>{if(!S.ach[a[0]]&&S.char&&a[3](S)){S.ach[a[0]
 
 /* ============================== SOUND ============================== */
 let AC=null;
-const SFX={click:[[660,.05]],buy:[[523,.08],[659,.08],[784,.12]],coin:[[988,.06],[1319,.1]],bad:[[160,.18,'sawtooth']],level:[[523,.1],[659,.1],[784,.1],[1047,.2]],start:[[440,.08],[880,.12]]};
+const SFX={whoosh:[[300,.05,'triangle'],[600,.08,'triangle']],click:[[660,.05]],buy:[[523,.08],[659,.08],[784,.12]],coin:[[988,.06],[1319,.1]],bad:[[160,.18,'sawtooth']],level:[[523,.1],[659,.1],[784,.1],[1047,.2]],start:[[440,.08],[880,.12]]};
 function sfx(n){if(S.muted)return;try{if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;AC=new C()}if(AC.state==='suspended')AC.resume();
   let t=AC.currentTime;(SFX[n]||SFX.click).forEach(s=>{const o=AC.createOscillator(),g=AC.createGain();o.type=s[2]||'square';o.frequency.value=s[0];g.gain.setValueAtTime(.06,t);g.gain.exponentialRampToValueAtTime(.001,t+s[1]);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+s[1]+.02);t+=s[1]*.85})}catch(e){}}
 

@@ -193,7 +193,7 @@ function renderOutside(v){
   $('#homein').onclick=()=>go('room');draw();list();
 }
 function timeOfDay(){const f=dayFrac();return f<.18?'Night':f<.3?'Sunrise':f<.7?'Daytime':f<.85?'Sunset':'Night'}
-function homeSeg(on){return'<div class="tabs" style="margin-bottom:10px"><button id="homein" class="'+(on==='in'?'on':'')+'">'+svgI('sofa',16)+' Inside</button><button id="homeout" class="'+(on==='out'?'on':'')+'">'+svgI('home',16)+' Outside</button><button id="homeup">'+svgI('up',16)+' Upgrades</button></div>'}
+function homeSeg(on){return'<div class="tabs" style="margin-bottom:10px"><button id="homein" class="'+(on==='in'?'on':'')+'">'+svgI('sofa',16)+' Inside</button><button id="homeout" class="'+(on==='out'?'on':'')+'">'+svgI('home',16)+' Outside</button><button id="homeup">'+svgI('up',16)+' Rooms</button></div>'}
 function bindSeg(){if($('#homeout'))$('#homeout').onclick=()=>{sfx('click');go('room','outside')};if($('#homein')&&!$('#yardcv'))$('#homein').onclick=()=>go('room');if($('#homeup'))$('#homeup').onclick=upgradeSheet}
 
 /* ---------- exterior + remodel sheets ---------- */
@@ -208,17 +208,18 @@ function remodelSheet(){const own=k=>Object.keys(S.owned).map(id=>ITEM[id]).filt
   sheet('<h3>🎨 Remodel</h3><div class="small">Wallpapers & flooring you own. Swap any time, free.</div>'+row('wall')+row('floor'));
   onAll($('#sheet'),'[data-s]',b=>{S.home[b.dataset.s]=b.dataset.i||null;S.home.remodels++;sfx('buy');burst(12);save();remodelSheet();if(screen==='room')rerender()})}
 function defaultSurfThumb(k){const c=document.createElement('canvas');c.width=c.height=120;const x=c.getContext('2d');drawSurface(x,{shape:k==='wall'?'wdots':'wood',color:k==='wall'?'#f3d3e4':'#d9b48a'},0,0,120,120,30);return c.toDataURL()}
-function upgradeSheet(){const U=[[1,25000,'Expansion: +2 rows of floor space'],[2,120000,'Grand expansion: +2 more rows'],[3,450000,'Mansion wing: +2 rows & marble bragging rights']];
+function upgradeSheet(){return roomsSheet()}
+function oldUpgradeSheet(){const U=[[1,25000,'Expansion: +2 rows of floor space'],[2,120000,'Grand expansion: +2 more rows'],[3,450000,'Mansion wing: +2 rows & marble bragging rights']];
   sheet('<h3>⬆️ House upgrades</h3><div class="small">Late-game money sinks. Your room grows downward.</div>'+U.map(u=>'<div class="slot"><span>'+u[2]+'<br><span class="small">'+money(u[1])+'</span></span>'+(S.home.size>=u[0]?'<b>✅ Owned</b>':S.home.size===u[0]-1?'<button class="btn" data-u="'+u[0]+'">Buy</button>':'<span class="small">🔒</span>')+'</div>').join(''));
   onAll($('#sheet'),'[data-u]',b=>{const u=U[+b.dataset.u-1];openPay(u[2],u[1],()=>{S.home.size=u[0];syncRows();sfx('level');burst(24);toast('🏗️ Construction complete!');save();rerender()})})}
-function syncRows(){ROWS=10+2*(S.home?S.home.size:0)}
+function syncRows(){ROWS=(!S.home||!S.home.cur||S.home.cur==='bed')?10+2*(S.home?S.home.size:0):roomDef(S.home.cur).rows||10}
 function waterAll(){let n=0;const ids={};S.room.concat(S.home.yard).forEach(p=>{const it=ITEM[p.id];if(it&&it.plant)ids[it.id]=1});Object.keys(ids).forEach(id=>{S.home.water[id]=S.day;n++});
   if(n){S.home.waters++;sfx('coin');burst(10,['#4fc3f7','#81d4fa','#b3e5fc']);toast('💧 Watered '+n+' plant type'+(n>1?'s':'')+'. They look perkier!')}else toast('No placed plants to water');save()}
 /* ---------- scores ---------- */
 function curbAppeal(){let s=0;const ext=Object.keys(S.home.ext).length;s+=ext*5;const yi=S.home.yard.map(p=>ITEM[p.id]);
   s+=Math.min(30,yi.length*4);s+=Math.min(20,Math.round(yi.reduce((a,i)=>a+Math.log10(1+i.price),0)*1.5));const pl=yi.filter(i=>i.plant);s+=Math.min(10,pl.filter(i=>!wiltOf(i)).length*3)-pl.filter(i=>wiltOf(i)).length*2;
   return Math.max(0,Math.min(100,s))}
-function houseValue(){const base=180000+[0,25000,120000,450000][S.home.size||0]*1.1;const fixtures=S.room.concat(S.home.yard).reduce((a,p)=>a+ITEM[p.id].price*.5,0)+Object.keys(S.home.ext).reduce((a,k)=>a+ITEM[S.home.ext[k]].price*.8,0)+(S.home.wall?ITEM[S.home.wall].price:0)+(S.home.floor?ITEM[S.home.floor].price:0);
+function houseValue(){const base=180000+[0,25000,120000,450000][S.home.size||0]*1.1+roomsValue();const fixtures=S.room.concat(S.home.yard).reduce((a,p)=>a+ITEM[p.id].price*.5,0)+Object.keys(S.home.ext).reduce((a,k)=>a+ITEM[S.home.ext[k]].price*.8,0)+(S.home.wall?ITEM[S.home.wall].price:0)+(S.home.floor?ITEM[S.home.floor].price:0);
   return Math.round((base+fixtures)*(1+curbAppeal()/250))}
 function homeCard(){return'<div class="card"><div class="lbl" style="margin-top:0">'+svgI('home')+' Home</div><div class="slot"><span>House value</span><b>'+money(houseValue())+'</b></div><div class="slot"><span>Curb appeal</span><b>'+curbAppeal()+'/100</b></div><div class="bar"><div style="width:'+curbAppeal()+'%"></div></div><div class="slot"><span>Upgrades</span><b>'+(S.home.size||0)+'/3</b></div><div class="slot"><span>Plants watered</span><b>'+S.home.waters+'×</b></div></div>'}
 function homeClean(id){if(S.owned[id])return;S.home.yard=S.home.yard.filter(p=>p.id!==id);if(S.home.wall===id)S.home.wall=null;if(S.home.floor===id)S.home.floor=null;Object.keys(S.home.ext).forEach(k=>{if(S.home.ext[k]===id)delete S.home.ext[k]})}

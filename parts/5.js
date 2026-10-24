@@ -71,7 +71,7 @@ function renderMall(v){
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
     '<div class="lbl">'+svgI('flame')+' Daily Deals</div><div class="hs" id="deals"></div><div class="concourse"><div class="ctitle"><span>'+svgI('mall',18)+' Main Concourse</span><span class="small">'+open.length+' open</span></div><div class="fronts" id="stores"></div></div>';
   deals().forEach(d=>v.querySelector('#deals').appendChild(itemCard(ITEM[d.id],'shop')));
-  v.insertAdjacentHTML('afterbegin',eventBanner());
+  v.insertAdjacentHTML('afterbegin',eventBanner());v.querySelector('#deals').insertAdjacentHTML('beforebegin',dropCard());bindDrop();
   open.forEach(s=>{const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length,bn=isBanned(s.id);
     v.querySelector('#stores').insertAdjacentHTML('beforeend',storefront(s,{banned:bn,flag:bn?'🚫 BANNED':rare?'✨ LIMITED':''}));const d=v.querySelector('#stores').lastChild;
     d.onclick=()=>{if(isBanned(s.id)){sfx('bad');toast('🚫 Security remembers your face. Banned until Day '+S.rap.bans[s.id]);return}sfx('click');go('mall',s.id)}});
@@ -85,7 +85,7 @@ function renderCloset(v){
   const top=document.createElement('div');top.className='card center';
   const av=avatarCanvas(200,250);av.classList.add('idle');top.appendChild(av);
   top.insertAdjacentHTML('beforeend','<div style="font-weight:800;margin-top:4px">'+esc(S.char.name)+'</div><div class="small">Outfit: <b>'+money(SLOTS.reduce((t,k)=>t+(S.equipped[k]?ITEM[S.equipped[k]].price:0),0))+'</b> · Closet: <b>'+money(closetValue(S))+'</b> · Net worth: <b>'+money(netWorth(S))+'</b></div>');
-  v.appendChild(top);v.appendChild(tabsBar(['all'].concat(SLOTS,ROOM_CATS,['plants','outdoor','surface','exterior']),rerender));
+  v.appendChild(top);outfitCard(v);v.appendChild(tabsBar(['all'].concat(SLOTS,ROOM_CATS,['plants','outdoor','surface','exterior']),rerender));
   const mine=Object.keys(S.owned).map(id=>ITEM[id]).filter(i=>filter==='all'||i.cat===filter).sort((a,b)=>(a.slot?0:1)-(b.slot?0:1)||b.price-a.price);
   if(!mine.length){v.insertAdjacentHTML('beforeend','<div class="card">Nothing here yet. Hit the 🏬 Mall!</div>');return}
   const g=document.createElement('div');g.className='grid';mine.forEach(i=>g.appendChild(itemCard(i,'closet')));v.appendChild(g);
@@ -102,7 +102,7 @@ function fits(id,X,Y,ignore){const it=ITEM[id];
 function renderRoom(v){
   if(sub==='outside')return renderOutside(v);syncRows();
   const placeable=Object.keys(S.owned).map(id=>ITEM[id]).filter(i=>!i.slot&&INDOOR(i.cat));
-  v.innerHTML=homeSeg('in')+'<div class="card small" id="hint"></div>';bindSeg();
+  v.innerHTML=homeSeg('in')+roomSwitcher()+'<div class="card small" id="hint"></div>';bindSeg();bindSwitcher();
   const c=Math.floor(Math.min(window.innerWidth-24,560)/COLS),cv=document.createElement('canvas'),x=setupCanvas(cv,c*COLS,c*ROWS);v.appendChild(cv);
   v.insertAdjacentHTML('beforeend','<div class="row" style="margin-top:8px" id="ctl"></div><div class="lbl">'+svgI('sofa')+' Your furniture & decor</div><div class="grid" id="plist"></div>');
   function draw(){
@@ -120,23 +120,23 @@ function renderRoom(v){
     const P=room.placing&&ITEM[room.placing];
     $('#hint').innerHTML=P?'Tap a spot to place <b>'+esc(P.name)+'</b> ('+P.w+'×'+P.h+(P.layer==='wall'?', goes on the wall':P.layer==='rug'?', rug: furniture can sit on it':'')+')':
       room.sel>=0?'Tap a new spot to move <b>'+esc(ITEM[S.room[room.sel].id].name)+'</b>, or remove it.':'Tap furniture to move it · tap the floor to walk · 💤 Sleep starts a new day';
-    const ctl=$('#ctl');const pk=packagesReady().length;ctl.innerHTML=(pk?'<button class="btn green" id="collect">📦 Bring in '+pk+' package'+(pk>1?'s':'')+'</button>':'')+(room.sel>=0?'<button class="btn" id="rm">Remove</button>':'')+(room.placing||room.sel>=0?'<button class="btn alt" id="cx">Cancel</button>':'')+'<button class="btn" id="remodel">🎨 Remodel</button><button class="btn alt" id="sleep" style="margin-left:auto">💤 Sleep (next day)</button>';
+    const ctl=$('#ctl');const pk=packagesReady().length;ctl.innerHTML=(pk?'<button class="btn green" id="collect">📦 Bring in '+pk+' package'+(pk>1?'s':'')+'</button>':'')+(room.sel>=0?'<button class="btn" id="rm">Remove</button>':'')+(room.placing||room.sel>=0?'<button class="btn alt" id="cx">Cancel</button>':'')+'<button class="btn" id="remodel">🎨 Remodel</button><button class="btn alt" id="rphoto" aria-label="Room photo">📸</button><button class="btn alt" id="sleep" style="margin-left:auto">💤 Sleep (next day)</button>';
     if($('#collect'))$('#collect').onclick=()=>{collect()};
     if($('#rm'))$('#rm').onclick=()=>{S.room.splice(room.sel,1);room.sel=-1;sfx('click');save();draw();list()};
     if($('#cx'))$('#cx').onclick=()=>{room.sel=-1;room.placing=null;draw();list()};
-    $('#remodel').onclick=remodelSheet;
+    $('#remodel').onclick=remodelSheet;$('#rphoto').onclick=()=>roomPhoto(cv);
     $('#sleep').onclick=()=>{nextDay();sfx('level');toast('☀️ Good morning! Day '+S.day+': new stores & deals');draw()};
   }
   function list(){const pl=$('#plist');pl.innerHTML='';
     if(!placeable.length){pl.innerHTML='<div class="card">No furniture yet. Try Ikeya, Targit, Thrift Shift or Wally\'s Mart!</div>';return}
-    placeable.forEach(it=>{const left=S.owned[it.id]-S.room.filter(p=>p.id===it.id).length;const b=document.createElement('div');b.className='item';
+    placeable.forEach(it=>{const left=S.owned[it.id]-placedCount(it.id);const b=document.createElement('div');b.className='item';
       b.innerHTML='<img alt="" src="'+thumb(it)+'"><div class="nm">'+esc(it.name)+'</div><div class="small">'+it.w+'×'+it.h+(it.layer==='wall'?' wall':'')+' · '+left+' to place</div><button class="btn" '+(left?'':'disabled')+'>'+(room.placing===it.id?'Placing…':'Place')+'</button>';
       b.querySelector('button').onclick=()=>{room.placing=it.id;room.sel=-1;sfx('click');draw();list();window.scrollTo(0,0)};pl.appendChild(b)})}
   cv.addEventListener('pointerdown',e=>{
     const r=cv.getBoundingClientRect(),gx=Math.floor((e.clientX-r.left)/c),gy=Math.floor((e.clientY-r.top)/c);
     const hits=S.room.map((p,i)=>i).filter(i=>{const p=S.room[i],it=ITEM[p.id];return gx>=p.x&&gx<p.x+it.w&&gy>=p.y&&gy<p.y+it.h}).sort((a,b)=>(ITEM[S.room[a].id].layer==='rug')-(ITEM[S.room[b].id].layer==='rug'));
     if(room.placing){const it=ITEM[room.placing];
-      if(fits(room.placing,gx,gy,-1)){S.room.push({id:room.placing,x:gx,y:gy});sfx('buy');if(S.room.filter(p=>p.id===room.placing).length>=S.owned[room.placing])room.placing=null;save()}
+      if(fits(room.placing,gx,gy,-1)){S.room.push({id:room.placing,x:gx,y:gy});sfx('buy');if(placedCount(room.placing)>=S.owned[room.placing])room.placing=null;save()}
       else{sfx('bad');toast(it.layer==='wall'&&gy>=WALL?'Wall decor goes on the wall (top area)':it.layer!=='wall'&&gy<WALL?'Put that on the floor':'Doesn\'t fit there')}}
     else if(room.sel>=0&&hits.indexOf(room.sel)<0){
       if(fits(S.room[room.sel].id,gx,gy,room.sel)){S.room[room.sel].x=gx;S.room[room.sel].y=gy;room.sel=-1;sfx('click');save()}else{sfx('bad');toast('Doesn\'t fit there')}}
@@ -154,7 +154,7 @@ function renderMe(v){
   v.appendChild(top);
   const st=[['📅 Day',S.day],['💵 Cash',money(S.cash)],['🏦 Net worth',money(netWorth(S))],['👗 Closet value',money(closetValue(S))],['📦 Items owned',itemCount(S)],['💼 Shifts worked',S.shifts],['💰 Earned at jobs',money(S.earned)],['🛍️ Total spent',money(S.spent)]];
   v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">'+svgI('chart')+' Stats</div>'+st.map(s=>'<div class="slot"><span>'+s[0]+'</span><b>'+s[1]+'</b></div>').join('')+'</div>');
-  v.insertAdjacentHTML('beforeend',homeCard()+recordCard());
+  v.insertAdjacentHTML('beforeend',homeCard()+recordCard());collCard(v);
   v.insertAdjacentHTML('beforeend','<div class="card"><div class="lbl" style="margin-top:0">'+svgI('trophy')+' Achievements ('+Object.keys(S.ach).length+'/'+ACH.length+'), +'+money(ACH_REWARD)+' each</div><div class="ach">'+ACH.map(a=>'<div class="'+(S.ach[a[0]]?'got':'')+'"><b>'+a[1]+'</b><br>'+a[2]+'</div>').join('')+'</div></div>');
   let sl='<div class="card" id="saves"><div class="lbl" style="margin-top:0">💾 Saves</div><div class="small">'+(storageOK?'✅ Autosave is ON (saves after every action).':'⚠️ This viewer blocks storage: autosave & slots last only until you close it. Use <b>Export</b> to keep progress!')+'</div>';
   for(let n=1;n<=3;n++){const m=slotMeta(n);sl+='<div class="slot"><span><b>Slot '+n+'</b><br><span class="small">'+(m?esc(m.char?m.char.name:'?')+' · Day '+m.day+' · '+money(m.cash)+' · '+new Date(m.savedAt).toLocaleString():'Empty')+'</span></span><span><button class="btn" data-save="'+n+'">Save</button> <button class="btn alt" data-load="'+n+'" '+(m?'':'disabled')+'>Load</button></span></div>'}

@@ -73,17 +73,17 @@ setInterval(()=>{if(document.hidden||RM)return;const cs=document.querySelectorAl
 
 /* ---- room art (cached per tile size + theme) ---- */
 const ROOMC={};
-function roomBg(c){const k='bg'+c+(S.dark?'d':'')+ROWS+S.home.wall+S.home.floor;if(ROOMC[k])return ROOMC[k];const d=window.devicePixelRatio||1,W=c*COLS,H=c*ROWS,cv=document.createElement('canvas');cv.width=W*d;cv.height=H*d;const x=cv.getContext('2d');x.scale(d,d);
+function roomBg(c){const k='bg'+c+(S.dark?'d':'')+ROWS+S.home.wall+S.home.floor+S.home.cur;const PL=roomDef(S.home.cur).pal||['#f3d3e4','#fde8f1','#d9b48a','#b98d62'];if(ROOMC[k])return ROOMC[k];const d=window.devicePixelRatio||1,W=c*COLS,H=c*ROWS,cv=document.createElement('canvas');cv.width=W*d;cv.height=H*d;const x=cv.getContext('2d');x.scale(d,d);
   const wh=WALL*c,r=rng(7);
   // wallpaper: base gradient + soft stripes + tiny motifs
-  let g=x.createLinearGradient(0,0,0,wh);g.addColorStop(0,S.dark?'#3a2b4a':'#f3d3e4');g.addColorStop(1,S.dark?'#4a3858':'#fde8f1');x.fillStyle=g;x.fillRect(0,0,W,wh);
+  let g=x.createLinearGradient(0,0,0,wh);g.addColorStop(0,S.dark?'#3a2b4a':PL[0]);g.addColorStop(1,S.dark?'#4a3858':PL[1]);x.fillStyle=g;x.fillRect(0,0,W,wh);
   for(let i=0;i<W;i+=c*.5){x.fillStyle=(i/(c*.5))%2?'rgba(255,255,255,.18)':'rgba(255,255,255,0)';x.fillRect(i,0,c*.5,wh)}
   x.fillStyle=S.dark?'rgba(255,255,255,.07)':'rgba(194,24,91,.10)';for(let yy=c*.4;yy<wh-c*.3;yy+=c*.55)for(let xx=(yy/(c*.55))%2?c*.25:c*.5;xx<W;xx+=c*.5){x.save();x.translate(xx,yy);x.rotate(Math.PI/4);x.fillRect(-2.5,-2.5,5,5);x.restore()}
   if(S.home.wall)drawSurface(x,ITEM[S.home.wall],0,0,W,wh,c*.5);
   // crown molding
   x.fillStyle=S.dark?'#5c4a6c':'#fff';x.fillRect(0,0,W,6);x.fillStyle='rgba(0,0,0,.08)';x.fillRect(0,6,W,2);
   // floor planks
-  const fy=wh;g=x.createLinearGradient(0,fy,0,H);g.addColorStop(0,S.dark?'#5a4130':'#d9b48a');g.addColorStop(1,S.dark?'#3e2c20':'#b98d62');x.fillStyle=g;x.fillRect(0,fy,W,H-fy);
+  const fy=wh;g=x.createLinearGradient(0,fy,0,H);g.addColorStop(0,S.dark?'#5a4130':PL[2]);g.addColorStop(1,S.dark?'#3e2c20':PL[3]);x.fillStyle=g;x.fillRect(0,fy,W,H-fy);
   const ph=c*.5;for(let y=fy,row=0;y<H;y+=ph,row++){let xx=-(row%3)*c*.7;while(xx<W){const len=c*(1.6+r()*1.4);x.fillStyle='rgba('+(r()<.5?'255,255,255':'0,0,0')+','+(.03+r()*.06)+')';x.fillRect(xx,y,len,ph);
       x.strokeStyle='rgba(60,30,10,.10)';x.lineWidth=1;for(let k=0;k<2;k++){const gy=y+ph*(.3+r()*.4);x.beginPath();x.moveTo(xx+4,gy);x.bezierCurveTo(xx+len*.3,gy-2,xx+len*.6,gy+2,xx+len-4,gy);x.stroke()}
       x.fillStyle='rgba(60,30,10,.22)';x.fillRect(xx,y,1.2,ph);xx+=len}
