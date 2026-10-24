@@ -367,12 +367,12 @@ function normalize(o){
   s.room=(s.room||[]).filter(p=>ITEM[p.id]&&s.owned[p.id]);
   const f=fresh();['crime','card','fb','stats3','rap'].forEach(k=>{s[k]=Object.assign({},f[k],s[k]||{})});
   s.orders=(s.orders||[]).filter(o=>ITEM[o.id]);s.flea=(s.flea||[]).filter(a=>ITEM[a.id]);s.fb.list=(s.fb.list||[]).filter(l=>ITEM[l.id]);
-  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});homeFix(s);s.v=3;
+  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});homeFix(s);s.awayFrom=s.savedAt||0;if(!s.gt){s.gt=Date.now();if(s.char&&s.day>=40&&!s.ttFixed)s.ttOffer=true;if(s.gt-(s.dayAt||0)>DAY_MS)s.dayAt=s.gt-Math.min(DAY_MS*.5,Math.max(0,DAY_MS-1))}s.v=3;
   return s;
 }
 function load(){try{const raw=store.get(KEY_AUTO);return raw?normalize(JSON.parse(raw)):fresh()}catch(e){return fresh()}}
 let S=load();
-function save(){S.savedAt=Date.now();checkAch();store.set(KEY_AUTO,JSON.stringify(S));hud()}
+function save(){if(typeof clockTick==='function'&&S.gt)clockTick();S.savedAt=Date.now();checkAch();store.set(KEY_AUTO,JSON.stringify(S));hud()}
 const b64e=s=>btoa(unescape(encodeURIComponent(s)));
 const b64d=s=>decodeURIComponent(escape(atob(s)));
 function exportCode(){return 'MRT3:'+b64e(JSON.stringify(S))}
@@ -383,9 +383,9 @@ const closetValue=s=>Object.keys(s.owned).reduce((t,id)=>t+(ITEM[id]?ITEM[id].pr
 const netWorth=s=>s.cash+closetValue(s);
 
 /* ======================= DAYS / ROTATION / DEALS ======================= */
-function checkDay(){const n=Math.floor((Date.now()-S.dayAt)/DAY_MS);if(n>0){S.dayAt+=n*DAY_MS;for(let i=0;i<Math.min(n,60);i++){S.day++;onNewDay()}if(n>60)S.day+=n-60;save();return true}return false}
-function nextDay(){S.day++;S.dayAt=Date.now();onNewDay();save()}
-function timeLeft(){const s=Math.max(0,Math.ceil((DAY_MS-(Date.now()-S.dayAt))/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function checkDay(){const g=gnow(),n=Math.floor((g-S.dayAt)/DAY_MS);if(n>0){if(n>3){S.dayAt=g}else S.dayAt+=n*DAY_MS;for(let i=0;i<Math.min(n,3);i++){S.day++;onNewDay()}save();return true}return false}
+function nextDay(){S.day++;S.dayAt=gnow();onNewDay();save()}
+function timeLeft(){const s=Math.max(0,Math.ceil((DAY_MS-(gnow()-S.dayAt))/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function openStores(){
   const POOL=STORES.filter(s=>!s.park),open=shuffle(POOL,rng(S.day*7919+3)).slice(0,OPEN_COUNT);
   if(!open.some(s=>s.tier[1]<=150)){open[OPEN_COUNT-1]=shuffle(POOL.filter(s=>s.tier[1]<=150),rng(S.day+1))[0]}
@@ -842,7 +842,7 @@ function renderMe(v){
   $('#imp').onclick=()=>{try{importCode($('#code').value);sfx('level');toast('Save imported! Welcome back, '+S.char.name);go('me')}catch(e){sfx('bad');toast('That code didn\'t work ('+e.message+')')}};
   $('#snd').onclick=()=>{S.muted=!S.muted;save();sfx('click');rerender()};
   $('#tut').onclick=()=>showTut(0);
-  $('#reset').onclick=e=>{const b=e.target;if(b.dataset.armed){S=fresh();S.dayAt=Date.now();save();draft=null;go('create')}else{b.dataset.armed=1;b.textContent='Tap again to WIPE';b.style.background='#d32f2f';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Reset game';b.style.background=''}},3000)}};
+  $('#reset').onclick=e=>{const b=e.target;if(b.dataset.armed){S=fresh();S.gt=Date.now();S.dayAt=S.gt;save();draft=null;go('create')}else{b.dataset.armed=1;b.textContent='Tap again to WIPE';b.style.background='#d32f2f';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Reset game';b.style.background=''}},3000)}};
 }
 
 /* ---------- CHARACTER CREATOR ---------- */
@@ -968,12 +968,12 @@ function onNewDay(){
 const inc=a=>Math.max(1,Math.round(a.bid*.06));
 const nextBid=a=>a.high?a.bid+inc(a):a.bid;
 function fmtLeft(ms){const s=Math.max(0,Math.ceil(ms/1000));return s?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):'ended'}
-function fleaRefill(){const now=Date.now(),pool=ITEMS.filter(i=>MALL_STORE[i.store]&&!i.rare);
+function fleaRefill(){const now=gnow(),pool=ITEMS.filter(i=>MALL_STORE[i.store]&&!i.rare);
   while(S.flea.filter(a=>!a.done&&a.seller!=='you').length<5){const it=pick(pool),st=Math.max(1,Math.round(it.price*.15));
     S.flea.push({aid:S.oid++,id:it.id,seller:pick(NPC),bid:st,high:null,end:now+(60+rand(180))*1000,npcMax:Math.round(it.price*(.45+Math.random()*.5)),escrow:0,done:false,bids:0})}}
 function playerBid(a){if(a.done||a.high==='you'||a.seller==='you')return;const amt=nextBid(a);
   if(S.cash<amt){toast('You need '+money(amt)+' cash to back that bid');sfx('bad');return}
-  S.cash-=amt;a.bid=amt;a.high='you';a.escrow=amt;a.bids++;if(a.end-Date.now()<10000)a.end=Date.now()+10000;sfx('coin');toast('🙌 You\'re the high bidder!');save();rerender()}
+  S.cash-=amt;a.bid=amt;a.high='you';a.escrow=amt;a.bids++;if(a.end-gnow()<10000)a.end=gnow()+10000;sfx('coin');toast('🙌 You\'re the high bidder!');save();rerender()}
 function npcBid(a){const amt=nextBid(a);if(amt>a.npcMax)return false;
   if(a.high==='you'){S.cash+=a.escrow;a.escrow=0;notify('😤 Outbid on '+ITEM[a.id].name+' (now '+money(amt)+')');toast('😤 Outbid on '+ITEM[a.id].name+'!');sfx('bad')}
   a.bid=amt;a.high=pick(NPC.filter(n=>n!==a.seller&&n!==a.high));a.bids++;return true}
@@ -984,10 +984,10 @@ function endAuction(a){a.done=true;const it=ITEM[a.claim||a.id];
     notify('🏆 You won '+it.name+' for '+money(a.bid)+'! It\'s on your doorstep.');toast('🏆 Won '+it.name+'!');sfx('level')}}
 function removeOne(id){S.owned[id]--;if(!S.owned[id]){delete S.owned[id];if(S.home)homeClean(id);Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==id)}
   else{const pl=S.room.filter(q=>q.id===id);if(pl.length>S.owned[id])S.room.splice(S.room.indexOf(pl[0]),1)}if(S.rap)hotClamp(id)}
-function listItem(it,start){const hot=!it.fake&&hotTake(it.id);removeOne(it.id);hotClamp(it.id);S.flea.push({aid:S.oid++,id:it.id,hot:hot,seller:'you',bid:start,high:null,end:Date.now()+120000,claim:it.fake?it.real:null,npcMax:Math.round((it.fake?ITEM[it.real]:it).price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
+function listItem(it,start){const hot=!it.fake&&hotTake(it.id);removeOne(it.id);hotClamp(it.id);S.flea.push({aid:S.oid++,id:it.id,hot:hot,seller:'you',bid:start,high:null,end:gnow()+120000,claim:it.fake?it.real:null,npcMax:Math.round((it.fake?ITEM[it.real]:it).price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
   sfx('click');toast('🔨 Listed! Auction ends in 2:00');save();closeSheet();rerender()}
 function onlineTick(){
-  const now=Date.now();let ch=false;
+  const now=gnow();let ch=false;
   S.flea.forEach(a=>{if(a.done)return;if(now>=a.end){endAuction(a);ch=true;return}
     const p=(a.end-now)<15000?.3:.07;if((a.high==='you'||!a.high||a.seller==='you')&&Math.random()<p&&npcBid(a))ch=true});
   const before=S.flea.length;S.flea=S.flea.filter(a=>!a.done||now-a.end<300000);if(S.flea.length!==before)ch=true;
@@ -1064,7 +1064,7 @@ function renderClam(v){
   fillClam();
 }
 function renderFlea(v){
-  const now=Date.now(),mine=S.flea.filter(a=>a.seller==='you'),theirs=S.flea.filter(a=>a.seller!=='you');
+  const now=gnow(),mine=S.flea.filter(a=>a.seller==='you'),theirs=S.flea.filter(a=>a.seller!=='you');
   v.insertAdjacentHTML('beforeend',''+brandHead('flea')+''+
     '<div class="card row sp"><div><b>Sell your stuff</b><div class="small">2-min auction · NPCs bid · 10% fee</div></div><button class="btn" id="list">+ List an item</button></div>');
   const row=a=>{const it=ITEM[a.claim||a.id],live=!a.done;const you=a.high==='you';
@@ -1527,7 +1527,7 @@ function extPart(k){const id=S.home.ext[k];const it=id&&ITEM[id];return it?{colo
 function skyAt(f){// f: 0..1 through the in-game day
   const P=[[0,'#1a237e','#3949ab',.55],[.18,'#ff8a65','#ffe0b2',.15],[.3,'#4fc3f7','#e1f5fe',0],[.7,'#4fc3f7','#e1f5fe',0],[.82,'#ff7043','#ffcc80',.2],[.92,'#283593','#5c6bc0',.5],[1,'#1a237e','#3949ab',.55]];
   for(let i=1;i<P.length;i++)if(f<=P[i][0])return P[i-1];return P[0]}
-function dayFrac(){return (Math.min(1,Math.max(0,(Date.now()-S.dayAt)/DAY_MS))+.35)%1}// each in-game day starts mid-morning
+function dayFrac(){return (Math.min(1,Math.max(0,(gnow()-S.dayAt)/DAY_MS))+.35)%1}// each in-game day starts mid-morning
 const YROWS=6,HROWS=4;
 function drawHouse(x,c){const W=c*COLS,gy=HROWS*c,sid=extPart('siding'),roof=extPart('roof'),door=extPart('door'),win=extPart('windows'),lights=extPart('lights');
   const hx=W*.14,hw=W*.72,hy=gy-c*2.3,hh=c*2.3;
@@ -1661,6 +1661,35 @@ function drawExtThumb(x,it,X,Y,W,H){const sv=S.home.ext;S.home.ext={};S.home.ext
   const g=x.createLinearGradient(0,Y,0,Y+H);g.addColorStop(0,'#bbdefb');g.addColorStop(1,'#e3f2fd');x.fillStyle=g;x.fillRect(X,Y,W,H);
   x.translate(X+W/2-c*COLS/2,Y+H*.62-HROWS*c);x.fillStyle='#8bc34a';x.fillRect(-W,HROWS*c,W*4,H);
   const _f=dayFrac;try{const hp=drawHouse(x,c);if(it.ext==='path')drawPath(x,c,hp.dx,hp.dw,hp.gy);if(it.ext==='fence'){x.translate(0,-(YROWS-1.4)*c);drawFence(x,c)}if(it.ext==='mailbox'){x.translate(-c*1.2,-(YROWS-1.8)*c);drawMailbox(x,c)}}finally{S.home.ext=sv;x.restore()}}
+/* ============================== v7 GAME CLOCK ==============================
+   S.gt = accumulated game time (ms, epoch-like so old timestamps stay valid). It only advances while the page is visible,
+   via a 1s heartbeat; any gap > 15s between beats (sleep/background) is ignored. All day/auction timers use gnow(). */
+const CLOCK={last:Date.now(),on:!document.hidden,awayShown:false};
+const BEAT_MAX=15000,AWAY_MIN=30*60000,AWAY_CAP=24*3600000;
+function gnow(){if(!S.gt)S.gt=Date.now();return S.gt+(CLOCK.on?Math.max(0,Math.min(Date.now()-CLOCK.last,BEAT_MAX)):0)}
+function clockTick(){const n=Date.now(),d=n-CLOCK.last;if(CLOCK.on&&S.gt&&d>0&&d<=BEAT_MAX)S.gt+=d;CLOCK.last=n}
+function clockPause(){if(!CLOCK.on)return;clockTick();CLOCK.on=false;if(S&&S.char)try{save()}catch(e){}}
+function clockResume(){if(CLOCK.on)return;S.awayFrom=S.savedAt;CLOCK.last=Date.now();CLOCK.on=true;welcomeBack()}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)clockPause();else clockResume()});
+window.addEventListener('pagehide',clockPause);
+window.addEventListener('pageshow',()=>{if(!document.hidden)clockResume()});
+
+/* ---- welcome back: small capped reward, optional one-time time-travel fix ---- */
+function awayReward(ms){let lv=1;try{lv=Math.max.apply(0,JOBS.map(j=>jobLevel(j.id)))}catch(e){}
+  const cap=Math.min(150,50+25*(lv-1));return Math.max(5,Math.round(cap*Math.min(1,ms/AWAY_CAP)))}
+function welcomeBack(){if(!S||!S.char)return;const away=Math.max(0,Date.now()-(S.awayFrom||S.savedAt||Date.now()));S.awayFrom=0;
+  const fix=!!S.ttOffer,gift=away>=AWAY_MIN&&(S.lastBonusAt||0)<Date.now()-AWAY_MIN;if(!gift&&!fix)return;
+  const cash=gift?awayReward(away):0,hrs=away/3600000,pkg=gift&&hrs>=4;
+  let pkgItem=null;if(pkg){const pool=ITEMS.filter(i=>MALL_STORE[i.store]&&!i.rare&&i.price<=60);pkgItem=pool[Math.floor(Math.random()*pool.length)]}
+  if(gift){S.cash+=cash;S.lastBonusAt=Date.now();if(pkgItem)S.orders.unshift({oid:S.oid++,id:pkgItem.id,src:'Mystery',price:0,day:S.day,arrive:S.day,status:'delivered'});save();hud()}
+  const t=hrs>=1?Math.floor(Math.min(hrs,99))+' hour'+(Math.floor(hrs)===1?'':'s'):Math.round(away/60000)+' minutes';
+  sheet('<h3>👋 Welcome back, '+String(S.char.name).replace(/[<>&]/g,'')+'!</h3>'+(gift?'<p>You were away for <b>'+t+'</b>. The mall waited for you: no days passed, nothing piled up.</p><div class="card center" style="font-size:20px">💸 <b>+'+money(cash)+'</b> pocket money'+(pkgItem?'<div class="small" style="margin-top:6px">📦 Plus a free mystery package is on your doorstep!</div>':'')+'</div>':'')+
+    (fix?'<div class="card" style="border:2px solid var(--brand2)"><b>🕰️ Time-travel fix</b><div class="small">An old version let real-world time pile up in-game days while you were gone. Tap to forgive card interest &amp; pay-in-4 debt, revive your plants, cool off Heat and restore your Crime membership. Your day counter stays as is.</div><button class="btn big" id="ttfix">✨ Fix my timeline</button></div>':'')+
+    '<button class="btn alt big" id="wbok">Let\'s shop</button>');
+  $('#wbok').onclick=closeSheet;if($('#ttfix'))$('#ttfix').onclick=()=>{timeFix();closeSheet()}}
+function timeFix(){const forgiven=S.card.bal+S.bnpl.reduce((a,p)=>a+(p.left||p.rem||0)*(p.amt||p.each||0),0);S.card.bal=0;S.bnpl=[];
+  if(S.home){Object.keys(S.home.water).forEach(k=>S.home.water[k]=S.day)}S.rap.heat=0;if(S.crime&&S.crime.next<S.day)S.crime.next=S.day+7;
+  S.ttOffer=false;S.ttFixed=true;notify('🕰️ Timeline repaired. Debts from the time glitch were forgiven.');save();hud();toast('✨ Timeline fixed!');burst&&burst(20);rerender()}
 /* ============================== JOBS ==============================
    Each job: make(el, api) -> {tick(dt), bot()}. api.pay(base) / api.miss(msg).
    bot() performs one correct action (used by automated tests). */
@@ -1846,9 +1875,10 @@ function boot(){
     if(!storageOK){const b=$('#banner');b.hidden=false;b.innerHTML='⚠️ This viewer blocks saving. Progress lasts only while it\'s open. Go to <b>⭐ Me → Export code</b> to keep it!'}
     $('#more').onclick=()=>{sfx('click');openMore()};
     $('#mail').onclick=()=>{sfx('click');openMail()};
-    setInterval(()=>{if(!S.char)return;onlineTick();if(checkDay()){toast('☀️ Day '+S.day+'! Stores rotated & new deals');sfx('level');if(screen==='mall'&&!shift)rerender()}
+    setInterval(()=>{clockTick();if(!S.char||!CLOCK.on)return;onlineTick();if(checkDay()){toast('☀️ Day '+S.day+'! Stores rotated & new deals');sfx('level');if(screen==='mall'&&!shift)rerender()}
       Array.prototype.forEach.call(document.querySelectorAll('.cd'),e=>{e.textContent=timeLeft()})},1000);
     screen=S.char?'mall':'create';nav();render();
+    if(S.char)setTimeout(welcomeBack,600);
   }catch(e){showError(e)}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

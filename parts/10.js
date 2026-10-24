@@ -99,7 +99,7 @@ function extPart(k){const id=S.home.ext[k];const it=id&&ITEM[id];return it?{colo
 function skyAt(f){// f: 0..1 through the in-game day
   const P=[[0,'#1a237e','#3949ab',.55],[.18,'#ff8a65','#ffe0b2',.15],[.3,'#4fc3f7','#e1f5fe',0],[.7,'#4fc3f7','#e1f5fe',0],[.82,'#ff7043','#ffcc80',.2],[.92,'#283593','#5c6bc0',.5],[1,'#1a237e','#3949ab',.55]];
   for(let i=1;i<P.length;i++)if(f<=P[i][0])return P[i-1];return P[0]}
-function dayFrac(){return (Math.min(1,Math.max(0,(Date.now()-S.dayAt)/DAY_MS))+.35)%1}// each in-game day starts mid-morning
+function dayFrac(){return (Math.min(1,Math.max(0,(gnow()-S.dayAt)/DAY_MS))+.35)%1}// each in-game day starts mid-morning
 const YROWS=6,HROWS=4;
 function drawHouse(x,c){const W=c*COLS,gy=HROWS*c,sid=extPart('siding'),roof=extPart('roof'),door=extPart('door'),win=extPart('windows'),lights=extPart('lights');
   const hx=W*.14,hw=W*.72,hy=gy-c*2.3,hh=c*2.3;

@@ -83,12 +83,12 @@ function onNewDay(){
 const inc=a=>Math.max(1,Math.round(a.bid*.06));
 const nextBid=a=>a.high?a.bid+inc(a):a.bid;
 function fmtLeft(ms){const s=Math.max(0,Math.ceil(ms/1000));return s?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):'ended'}
-function fleaRefill(){const now=Date.now(),pool=ITEMS.filter(i=>MALL_STORE[i.store]&&!i.rare);
+function fleaRefill(){const now=gnow(),pool=ITEMS.filter(i=>MALL_STORE[i.store]&&!i.rare);
   while(S.flea.filter(a=>!a.done&&a.seller!=='you').length<5){const it=pick(pool),st=Math.max(1,Math.round(it.price*.15));
     S.flea.push({aid:S.oid++,id:it.id,seller:pick(NPC),bid:st,high:null,end:now+(60+rand(180))*1000,npcMax:Math.round(it.price*(.45+Math.random()*.5)),escrow:0,done:false,bids:0})}}
 function playerBid(a){if(a.done||a.high==='you'||a.seller==='you')return;const amt=nextBid(a);
   if(S.cash<amt){toast('You need '+money(amt)+' cash to back that bid');sfx('bad');return}
-  S.cash-=amt;a.bid=amt;a.high='you';a.escrow=amt;a.bids++;if(a.end-Date.now()<10000)a.end=Date.now()+10000;sfx('coin');toast('🙌 You\'re the high bidder!');save();rerender()}
+  S.cash-=amt;a.bid=amt;a.high='you';a.escrow=amt;a.bids++;if(a.end-gnow()<10000)a.end=gnow()+10000;sfx('coin');toast('🙌 You\'re the high bidder!');save();rerender()}
 function npcBid(a){const amt=nextBid(a);if(amt>a.npcMax)return false;
   if(a.high==='you'){S.cash+=a.escrow;a.escrow=0;notify('😤 Outbid on '+ITEM[a.id].name+' (now '+money(amt)+')');toast('😤 Outbid on '+ITEM[a.id].name+'!');sfx('bad')}
   a.bid=amt;a.high=pick(NPC.filter(n=>n!==a.seller&&n!==a.high));a.bids++;return true}
@@ -99,10 +99,10 @@ function endAuction(a){a.done=true;const it=ITEM[a.claim||a.id];
     notify('🏆 You won '+it.name+' for '+money(a.bid)+'! It\'s on your doorstep.');toast('🏆 Won '+it.name+'!');sfx('level')}}
 function removeOne(id){S.owned[id]--;if(!S.owned[id]){delete S.owned[id];if(S.home)homeClean(id);Object.keys(S.equipped).forEach(k=>{if(S.equipped[k]===id)delete S.equipped[k]});S.room=S.room.filter(q=>q.id!==id)}
   else{const pl=S.room.filter(q=>q.id===id);if(pl.length>S.owned[id])S.room.splice(S.room.indexOf(pl[0]),1)}if(S.rap)hotClamp(id)}
-function listItem(it,start){const hot=!it.fake&&hotTake(it.id);removeOne(it.id);hotClamp(it.id);S.flea.push({aid:S.oid++,id:it.id,hot:hot,seller:'you',bid:start,high:null,end:Date.now()+120000,claim:it.fake?it.real:null,npcMax:Math.round((it.fake?ITEM[it.real]:it).price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
+function listItem(it,start){const hot=!it.fake&&hotTake(it.id);removeOne(it.id);hotClamp(it.id);S.flea.push({aid:S.oid++,id:it.id,hot:hot,seller:'you',bid:start,high:null,end:gnow()+120000,claim:it.fake?it.real:null,npcMax:Math.round((it.fake?ITEM[it.real]:it).price*(.35+Math.random()*.55)),escrow:0,done:false,bids:0});
   sfx('click');toast('🔨 Listed! Auction ends in 2:00');save();closeSheet();rerender()}
 function onlineTick(){
-  const now=Date.now();let ch=false;
+  const now=gnow();let ch=false;
   S.flea.forEach(a=>{if(a.done)return;if(now>=a.end){endAuction(a);ch=true;return}
     const p=(a.end-now)<15000?.3:.07;if((a.high==='you'||!a.high||a.seller==='you')&&Math.random()<p&&npcBid(a))ch=true});
   const before=S.flea.length;S.flea=S.flea.filter(a=>!a.done||now-a.end<300000);if(S.flea.length!==before)ch=true;
@@ -179,7 +179,7 @@ function renderClam(v){
   fillClam();
 }
 function renderFlea(v){
-  const now=Date.now(),mine=S.flea.filter(a=>a.seller==='you'),theirs=S.flea.filter(a=>a.seller!=='you');
+  const now=gnow(),mine=S.flea.filter(a=>a.seller==='you'),theirs=S.flea.filter(a=>a.seller!=='you');
   v.insertAdjacentHTML('beforeend',''+brandHead('flea')+''+
     '<div class="card row sp"><div><b>Sell your stuff</b><div class="small">2-min auction · NPCs bid · 10% fee</div></div><button class="btn" id="list">+ List an item</button></div>');
   const row=a=>{const it=ITEM[a.claim||a.id],live=!a.done;const you=a.high==='you';

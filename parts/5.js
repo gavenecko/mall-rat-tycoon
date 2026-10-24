@@ -172,7 +172,7 @@ function renderMe(v){
   $('#imp').onclick=()=>{try{importCode($('#code').value);sfx('level');toast('Save imported! Welcome back, '+S.char.name);go('me')}catch(e){sfx('bad');toast('That code didn\'t work ('+e.message+')')}};
   $('#snd').onclick=()=>{S.muted=!S.muted;save();sfx('click');rerender()};
   $('#tut').onclick=()=>showTut(0);
-  $('#reset').onclick=e=>{const b=e.target;if(b.dataset.armed){S=fresh();S.dayAt=Date.now();save();draft=null;go('create')}else{b.dataset.armed=1;b.textContent='Tap again to WIPE';b.style.background='#d32f2f';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Reset game';b.style.background=''}},3000)}};
+  $('#reset').onclick=e=>{const b=e.target;if(b.dataset.armed){S=fresh();S.gt=Date.now();S.dayAt=S.gt;save();draft=null;go('create')}else{b.dataset.armed=1;b.textContent='Tap again to WIPE';b.style.background='#d32f2f';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Reset game';b.style.background=''}},3000)}};
 }
 
 /* ---------- CHARACTER CREATOR ---------- */

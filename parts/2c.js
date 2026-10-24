@@ -20,12 +20,12 @@ function normalize(o){
   s.room=(s.room||[]).filter(p=>ITEM[p.id]&&s.owned[p.id]);
   const f=fresh();['crime','card','fb','stats3','rap'].forEach(k=>{s[k]=Object.assign({},f[k],s[k]||{})});
   s.orders=(s.orders||[]).filter(o=>ITEM[o.id]);s.flea=(s.flea||[]).filter(a=>ITEM[a.id]);s.fb.list=(s.fb.list||[]).filter(l=>ITEM[l.id]);
-  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});homeFix(s);s.v=3;
+  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});homeFix(s);s.awayFrom=s.savedAt||0;if(!s.gt){s.gt=Date.now();if(s.char&&s.day>=40&&!s.ttFixed)s.ttOffer=true;if(s.gt-(s.dayAt||0)>DAY_MS)s.dayAt=s.gt-Math.min(DAY_MS*.5,Math.max(0,DAY_MS-1))}s.v=3;
   return s;
 }
 function load(){try{const raw=store.get(KEY_AUTO);return raw?normalize(JSON.parse(raw)):fresh()}catch(e){return fresh()}}
 let S=load();
-function save(){S.savedAt=Date.now();checkAch();store.set(KEY_AUTO,JSON.stringify(S));hud()}
+function save(){if(typeof clockTick==='function'&&S.gt)clockTick();S.savedAt=Date.now();checkAch();store.set(KEY_AUTO,JSON.stringify(S));hud()}
 const b64e=s=>btoa(unescape(encodeURIComponent(s)));
 const b64d=s=>decodeURIComponent(escape(atob(s)));
 function exportCode(){return 'MRT3:'+b64e(JSON.stringify(S))}
@@ -36,9 +36,9 @@ const closetValue=s=>Object.keys(s.owned).reduce((t,id)=>t+(ITEM[id]?ITEM[id].pr
 const netWorth=s=>s.cash+closetValue(s);
 
 /* ======================= DAYS / ROTATION / DEALS ======================= */
-function checkDay(){const n=Math.floor((Date.now()-S.dayAt)/DAY_MS);if(n>0){S.dayAt+=n*DAY_MS;for(let i=0;i<Math.min(n,60);i++){S.day++;onNewDay()}if(n>60)S.day+=n-60;save();return true}return false}
-function nextDay(){S.day++;S.dayAt=Date.now();onNewDay();save()}
-function timeLeft(){const s=Math.max(0,Math.ceil((DAY_MS-(Date.now()-S.dayAt))/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function checkDay(){const g=gnow(),n=Math.floor((g-S.dayAt)/DAY_MS);if(n>0){if(n>3){S.dayAt=g}else S.dayAt+=n*DAY_MS;for(let i=0;i<Math.min(n,3);i++){S.day++;onNewDay()}save();return true}return false}
+function nextDay(){S.day++;S.dayAt=gnow();onNewDay();save()}
+function timeLeft(){const s=Math.max(0,Math.ceil((DAY_MS-(gnow()-S.dayAt))/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function openStores(){
   const POOL=STORES.filter(s=>!s.park),open=shuffle(POOL,rng(S.day*7919+3)).slice(0,OPEN_COUNT);
   if(!open.some(s=>s.tier[1]<=150)){open[OPEN_COUNT-1]=shuffle(POOL.filter(s=>s.tier[1]<=150),rng(S.day+1))[0]}

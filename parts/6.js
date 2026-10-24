@@ -183,9 +183,10 @@ function boot(){
     if(!storageOK){const b=$('#banner');b.hidden=false;b.innerHTML='⚠️ This viewer blocks saving. Progress lasts only while it\'s open. Go to <b>⭐ Me → Export code</b> to keep it!'}
     $('#more').onclick=()=>{sfx('click');openMore()};
     $('#mail').onclick=()=>{sfx('click');openMail()};
-    setInterval(()=>{if(!S.char)return;onlineTick();if(checkDay()){toast('☀️ Day '+S.day+'! Stores rotated & new deals');sfx('level');if(screen==='mall'&&!shift)rerender()}
+    setInterval(()=>{clockTick();if(!S.char||!CLOCK.on)return;onlineTick();if(checkDay()){toast('☀️ Day '+S.day+'! Stores rotated & new deals');sfx('level');if(screen==='mall'&&!shift)rerender()}
       Array.prototype.forEach.call(document.querySelectorAll('.cd'),e=>{e.textContent=timeLeft()})},1000);
     screen=S.char?'mall':'create';nav();render();
+    if(S.char)setTimeout(welcomeBack,600);
   }catch(e){showError(e)}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
