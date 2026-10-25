@@ -71,7 +71,7 @@ function renderMall(v){
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
     '<div class="lbl">'+svgI('flame')+' Daily Deals</div><div class="hs" id="deals"></div><div class="concourse"><div class="ctitle"><span>'+svgI('mall',18)+' Main Concourse</span><span class="small">'+open.length+' open</span></div><div class="fronts" id="stores"></div></div>';
   deals().forEach(d=>v.querySelector('#deals').appendChild(itemCard(ITEM[d.id],'shop')));
-  v.insertAdjacentHTML('afterbegin',eventBanner());v.querySelector('#deals').insertAdjacentHTML('beforebegin',dailyCard()+weekBanner()+seasonCard()+petCard()+dropCard());bindDrop();bindV9();bindWeek();
+  v.insertAdjacentHTML('afterbegin',eventBanner());v.querySelector('#deals').insertAdjacentHTML('beforebegin',dailyCard()+weekBanner()+seasonCard()+petCard()+trendCard()+barberCard()+dropCard());bindDrop();bindV9();bindV11();bindWeek();
   open.forEach(s=>{const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length,bn=isBanned(s.id);
     v.querySelector('#stores').insertAdjacentHTML('beforeend',storefront(s,{banned:bn,flag:bn?'🚫 BANNED':rare?'✨ LIMITED':''}));const d=v.querySelector('#stores').lastChild;
     d.onclick=()=>{if(isBanned(s.id)){sfx('bad');toast('🚫 Security remembers your face. Banned until Day '+S.rap.bans[s.id]);return}sfx('click');go('mall',s.id)}});
@@ -104,7 +104,7 @@ function renderRoom(v){
   const placeable=Object.keys(S.owned).map(id=>ITEM[id]).filter(i=>!i.slot&&INDOOR(i.cat));
   v.innerHTML=homeSeg('in')+roomSwitcher()+'<div class="card small" id="hint"></div>';bindSeg();bindSwitcher();
   const c=Math.floor(Math.min(window.innerWidth-24,560)/COLS),cv=document.createElement('canvas'),x=setupCanvas(cv,c*COLS,c*ROWS);v.appendChild(cv);
-  v.insertAdjacentHTML('beforeend','<div class="row" style="margin-top:8px" id="ctl"></div><div class="lbl">'+svgI('sofa')+' Your furniture & decor</div><div class="grid" id="plist"></div>');
+  v.insertAdjacentHTML('beforeend','<div class="row" style="margin-top:8px" id="ctl"></div>'+emoteBar()+'<div class="lbl">'+svgI('sofa')+' Your furniture & decor</div><div class="grid" id="plist"></div>');
   function draw(){
     x.clearRect(0,0,c*COLS,c*ROWS);
     x.drawImage(roomBg(c),0,0,c*COLS,c*ROWS);
@@ -145,7 +145,7 @@ function renderRoom(v){
     else if(gy>=WALL){S.avatar={x:gx,y:gy};room.sel=-1;save()}
     draw();list();
   });
-  draw();list();petLoop(draw,cv,c);
+  draw();list();petLoop(draw,cv,c);bindEmotes(draw);
 }
 
 /* ---------- ME: stats, achievements, saves ---------- */
@@ -178,21 +178,21 @@ function renderMe(v){
 
 /* ---------- CHARACTER CREATOR ---------- */
 let draft=null;
-function defaultChar(g){const d=GENDERS[g];return{name:'',gender:g,body:d.body,skin:SKINS[1],hair:d.hair,hairColor:HAIR_COLORS[1][1]}}
+function defaultChar(g){const d=GENDERS[g];return{name:'',gender:g,body:d.body,skin:SKINS[1],hair:d.hair,hairColor:HAIR_COLORS[1][1],beard:'none',beardColor:null,lip:''}}
 function renderCreate(v){
   if(!draft)draft=S.char?Object.assign({},S.char):defaultChar('female');
   v.innerHTML='<div class="card center"><h2 style="margin:4px 0">'+(S.char?'Edit your look':'Create your Mall Rat')+'</h2><div id="pv"></div></div>'+
    '<div class="card"><div class="lbl" style="margin-top:0">Name</div><input type="text" id="nm" maxlength="14" placeholder="Shopper">'+
    '<div class="lbl">Gender</div><div class="chips" id="g"></div><div class="lbl">Body</div><div class="chips" id="bd"></div>'+
-   '<div class="lbl">Skin tone</div><div class="sws" id="sk"></div><div class="lbl">Hair style</div><div class="chips" id="hs"></div><div class="lbl">Hair color</div><div class="sws" id="hc"></div>'+
+   '<div class="lbl">Skin tone</div><div class="sws" id="sk"></div><div class="lbl">Hair style</div><div class="chips" id="hs"></div><div class="lbl">Hair color</div><div class="sws" id="hc"></div><div class="lbl">Facial hair</div><div class="chips" id="fh"></div><div class="lbl">Facial hair color</div><div class="sws" id="fc"></div>'+
    '<p class="small">Every item fits every body. Gender just sets your starting look.</p><button class="btn big" id="done">'+(S.char?'Save look ✔':'Let\'s go shopping! 🛍️')+'</button>'+(S.char?'<button class="btn alt big" id="cancel" style="margin-top:8px">Cancel</button>':'')+'</div>';
   const nm=$('#nm');nm.value=draft.name;nm.oninput=()=>{draft.name=nm.value};
   function opts(){
     const chip=(id,obj,key,lab)=>{$(id).innerHTML=Object.keys(obj).map(k=>'<button class="chip '+(draft[key]===k?'on':'')+'" data-k="'+k+'">'+(lab?lab(obj[k]):obj[k])+'</button>').join('');
-      onAll($(id),'button',b=>{if(key==='gender'){draft=Object.assign(defaultChar(b.dataset.k),{name:draft.name,skin:draft.skin,hairColor:draft.hairColor})}else draft[key]=b.dataset.k;sfx('click');opts()})};
+      onAll($(id),'button',b=>{if(key==='gender'){draft=Object.assign(defaultChar(b.dataset.k),{name:draft.name,skin:draft.skin,hairColor:draft.hairColor,beard:draft.beard||'none',beardColor:draft.beardColor||null})}else draft[key]=b.dataset.k;sfx('click');opts()})};
     chip('#g',GENDERS,'gender',o=>o.label);chip('#bd',BODIES,'body',o=>o.label);chip('#hs',HAIRS,'hair');
     const sw=(id,list,key)=>{$(id).innerHTML=list.map(c=>'<button class="sw '+(draft[key]===c?'on':'')+'" style="background:'+c+'" data-c="'+c+'"></button>').join('');onAll($(id),'button',b=>{draft[key]=b.dataset.c;sfx('click');opts()})};
-    sw('#sk',SKINS,'skin');sw('#hc',HAIR_COLORS.map(h=>h[1]),'hairColor');
+    sw('#sk',SKINS,'skin');sw('#hc',HAIR_COLORS.map(h=>h[1]),'hairColor');if(!draft.beard)draft.beard='none';chip('#fh',BEARDS,'beard');sw('#fc',HAIR_COLORS.map(h=>h[1]),'beardColor');$('#fc').insertAdjacentHTML('afterbegin','<button class="chip '+(draft.beardColor?'':'on')+'" id="fcm">Match hair</button>');$('#fcm').onclick=()=>{draft.beardColor=null;sfx('click');opts()};
     const pv=$('#pv');pv.innerHTML='';pv.appendChild(avatarCanvas(190,240,draft,S.equipped));
   }
   opts();
