@@ -33,8 +33,8 @@
    let ev=0;for(let i=0;i<1000;i++)ev+=tonkRoll(i/1000)[0];tonkSheet();const has=!!document.querySelector('#tkav canvas');closeSheet();return{ok1,ok2,spent:S.spent-s0,early:c1-c0,paid:c2-c1,ev:ev/1000,has}});
  ok(j5.ok1&&!j5.ok2&&j5.spent===25&&j5.early===0&&j5.paid===150&&j5.ev>.9&&j5.ev<1.02&&j5.has,'Shark Tonk: one deal/day, pays out after 3 days, EV<1 '+JSON.stringify(j5));
  // J6 map fast travel
- const j6=await G(async()=>{__game.go('mall');window.scrollTo(0,0);mapSheet();const T=window.__mapT;const q=T[2];const y0=q.e.getBoundingClientRect().top;mapGo(q);await new Promise(r=>setTimeout(r,100));const y=q.e.getBoundingClientRect().top;return{n:T.length,y,y0,sc:window.scrollY,h:innerHeight}});
- ok(j6.n>=5&&j6.y0>j6.y+100&&j6.y>0&&j6.y<300,'mall map lists wings and fast-travels '+JSON.stringify(j6));
+ const j6=await G(async()=>{__game.go('mall');window.scrollTo(0,0);mapSheet();const T=window.__mapT;const q=T[2];const y0=q.e.getBoundingClientRect().top;mapGo(q);await new Promise(r=>setTimeout(r,100));const y=q.e.getBoundingClientRect().top;const mx=document.documentElement.scrollHeight-innerHeight;return{n:T.length,y,y0,sc:window.scrollY,h:innerHeight,atEnd:window.scrollY>=mx-2}});
+ ok(j6.n>=5&&j6.y0>j6.y+100&&j6.y>0&&(j6.y<300||j6.atEnd),'mall map lists wings and fast-travels '+JSON.stringify(j6));
  if(SHOTS&&mode==='file'&&W===412){
    await G(()=>{const S=__game.S;S.fit.lvl=90;S.char.ftat='none';__game.go('me');window.scrollTo(0,0)});await sleep(300);await shot('swole');
    await G(()=>{careerSheet()});await sleep(200);await shot('career');
