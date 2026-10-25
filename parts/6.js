@@ -42,7 +42,7 @@ function runShift(v){
     pay:base=>{if(!shift)return;shift.combo=(shift.combo||0)+1;burst(shift.combo>=5?14:8);if(shift.combo>=3&&shift.combo%1===0)comboText(shift.combo+'× COMBO!');if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*PAY_K*setPayMult()*jobMult(j.id)*(typeof fitMult==='function'?fitMult():1)*(1+Math.min(.5,Math.max(0,shift.combo-2)*.05))));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
     miss:msg=>{if(shift)shift.combo=0;toast(msg);sfx('bad');const a=$('#jarea');if(a){a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash');shake(a)}}
   };
-  function upd(){if(!shift)return;const now=gnow(),dt=Math.min(.1,(now-shift.last)/1000);shift.last=now;
+  function upd(){if(!shift)return;const now=gnow(),dt=Math.min(.1,(now-shift.last)/1000);if(shift.paused){shift.end+=now-shift.last;shift.last=now;return}if(shift.game&&shift.game.paused&&shift.game.paused())shift.end+=now-shift.last;shift.last=now;
     if(now>=shift.end){endShift();render();return}
     if(shift.game&&shift.game.tick)shift.game.tick(dt);
     const t=$('#stime');if(t){t.textContent=Math.ceil((shift.end-now)/1000)+'s';$('#searn').textContent=money(shift.earned)}}
@@ -103,7 +103,7 @@ function makeShelf(el,api){
   el.innerHTML='<div class="bar"><div id="pat"></div></div><canvas id="cv"></canvas><div class="pad" id="pad" style="grid-template-columns:1fr 1fr"></div>';
   const W=Math.min(window.innerWidth-24,420),H=170,x=setupCanvas(el.querySelector('#cv'),W,H);
   let bins,target,t0,limit,n=0,streak=0;
-  function next(){bins=shuffle(C).slice(0,4);target=pick(bins);const prod=pick(P);n++;limit=Math.max(1400,3600-n*90);t0=gnow();
+  function next(){bins=shuffle(C).slice(0,4);target=pick(bins);const prod=pick(P);n++;limit=Math.max(2200,4600-n*80);t0=gnow();
     jobBg('aisle',x,W,H);
     rr(x,W/2-50,22,100,124,10);x.fillStyle=target[1];x.fill();x.strokeStyle='rgba(0,0,0,.4)';x.lineWidth=2;x.stroke();
     rr(x,W/2-40,62,80,36,6);x.fillStyle='#fff';x.fill();x.fillStyle='#222';x.font='bold 18px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(prod,W/2,80);
@@ -120,7 +120,7 @@ function makeBarista(el,api){
   el.innerHTML='<div class="card row"><span class="cust" id="cust"></span><div class="ticket" id="tk"></div></div><div class="bar"><div id="pat"></div></div><canvas id="cv"></canvas><div class="pad" id="pad"></div>';
   const W=Math.min(window.innerWidth-24,420),H=150,x=setupCanvas(el.querySelector('#cv'),W,H);
   let recipe,made,phase,t0,showUntil,limit,n=0;
-  function next(){n++;const len=Math.min(3+Math.floor(n/3),6);recipe=[];for(let i=0;i<len;i++)recipe.push(pick(ING)[0]);made=[];phase='show';showUntil=gnow()+1500+len*450;limit=5000+len*1500;
+  function next(){n++;const len=Math.min(3+Math.floor(n/3),6);recipe=[];for(let i=0;i<len;i++)recipe.push(pick(ING)[0]);made=[];phase='show';showUntil=gnow()+2600+len*700;limit=5000+len*1500;
     $('#cust').textContent=pick(CUSTOMERS);draw()}
   function draw(){$('#tk').innerHTML=phase==='show'?'<b>Memorize!</b> 👀<br>'+recipe.map(r=>'<span style="font-size:22px">'+E(r)[1]+'</span>').join(' '):'<b>Make it!</b> (in order)<br>'+recipe.map((r,i)=>'<span style="font-size:22px">'+(i<made.length?E(r)[1]:'❓')+'</span>').join(' ');
     jobBg('cafe',x,W,H);const cx=W/2,top=20,bot=H-12,hw=50,per=(bot-top-6)/recipe.length;
