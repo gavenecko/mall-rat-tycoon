@@ -1,0 +1,33 @@
+(async()=>{
+ await G(()=>{closeSheet();if(__game.shift)__game.endShift()});
+ const l1=await G(async()=>{const S=__game.S;S.cash=5000;__game.go('mall');mmSheet('scratch');const c0=S.cash;document.querySelector('[data-mbuy="duck"]').click();const txt=document.querySelector('#sheet').textContent;const gated=!!document.querySelector('#mmack')&&document.querySelector('#mmack').disabled&&S.cash===c0;
+   document.querySelector('#mmok').click();document.querySelector('#mmok').dispatchEvent(new Event('change'));const en=!document.querySelector('#mmack').disabled;document.querySelector('#mmack').click();await new Promise(r=>setTimeout(r,100));
+   return{gated:gated,en:en,ack:S.mm.ack,gam:/1-800-GAMBLER/.test(txt)&&/play money/i.test(txt)&&/house wins/.test(txt),paid:S.mm.spent,scr:!!document.querySelector('#scc')}});
+ ok(l1.gated&&l1.en&&l1.ack&&l1.gam&&l1.paid===1&&l1.scr,'gambling disclaimer must be acknowledged before first ticket '+JSON.stringify(l1));
+ const l2=await G(async()=>{const S=__game.S,cv=document.querySelector('#scc'),b=cv.getBoundingClientRect();const c0=S.cash,pr=S.mm.open.prize;
+   for(let yy=0;yy<14;yy++)for(let xx=0;xx<20;xx++){const o={bubbles:true,pointerId:1,clientX:b.left+b.width*(xx+.5)/20,clientY:b.top+b.height*(yy+.5)/14};cv.dispatchEvent(new PointerEvent(xx===0&&yy===0?'pointerdown':'pointermove',o))}
+   cv.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1}));await new Promise(r=>setTimeout(r,50));return{open:!!S.mm.open,gain:S.cash-c0,pr:pr,res:document.querySelector('#scres').textContent,again:!document.querySelector('#scagain').disabled}});
+ ok(!l2.open&&l2.gain===l2.pr&&l2.res.length>3&&l2.again,'scratching by touch reveals and pays exactly the prize '+JSON.stringify(l2));
+ await G(()=>{const S=__game.S;mmBuyCard('bad');const cv=document.querySelector('#scc'),b=cv.getBoundingClientRect();cv.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,clientX:b.left+60,clientY:b.top+40}));cv.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:1,clientX:b.left+140,clientY:b.top+70}))});await sleep(150);await shot('scratch');
+ const l2b=await G(()=>{const S=__game.S,c0=S.cash,p=S.mm.open.prize;closeSheet();return{open:!!S.mm.open,ok:S.cash-c0===p}});ok(!l2b.open&&l2b.ok,'closing an unscratched card still settles it '+JSON.stringify(l2b));
+ const l3=await G(()=>{const st=MM_CARDS.map(c=>({id:c.id,p:c.price,pay:+mmStats(c).pay.toFixed(3),odds:+mmStats(c).odds.toFixed(2)}));const sim=mmSim(300000);return{st:st,sim:sim,lmax:lottoPay(LOTTO.cap),lbase:lottoPay(LOTTO.base)}});
+ console.log('    odds',JSON.stringify(l3));
+ ok(l3.st.length===4&&l3.st.map(s=>s.p).join()==='1,5,20,50'&&l3.st.every(s=>s.pay>=.6&&s.pay<=.72)&&l3.lmax<.9&&l3.lbase<.6&&Object.keys(l3.sim).every(k=>l3.sim[k]<1),'all tickets negative EV, sim confirms');
+ const l4=await G(async()=>{const S=__game.S;S.cash=5000;mmLPick=[];mmSheet('lotto');[3,7,11,19].forEach(n=>document.querySelector('[data-ln="'+n+'"]').click());const can=!document.querySelector('#lbuy').disabled;document.querySelector('#lbuy').click();
+   document.querySelector('#lqp').click();const qp=mmLPick.length;document.querySelector('#lbuy').click();const tix=S.mm.tix.length,jp0=S.mm.jp,c0=S.mm.lwon;
+   S.day++;v10NewDay();await new Promise(r=>setTimeout(r,50));const L=S.mm.last;return{can:can,qp:qp,tix:tix,left:S.mm.tix.length,drawn:!!L&&L.n.length===4,roll:L.jack?S.mm.jp===LOTTO.base:S.mm.jp===Math.min(LOTTO.cap,jp0+LOTTO.step),paid:S.mm.lwon-c0===L.win}});
+ ok(l4.can&&l4.qp===4&&l4.tix===2&&l4.left===0&&l4.drawn&&l4.roll&&l4.paid,'lotto pick/quick pick, daily draw, jackpot rollover '+JSON.stringify(l4));
+ await G(()=>{mmSheet('lotto');document.querySelector('#lwatch').click()});await sleep(4300);const l4b=await G(()=>document.querySelector('#lres').textContent);ok(!/Drawing/.test(l4b),'animated draw finishes '+l4b);await shot('lotto_draw');
+ const l5=await G(()=>{const S=__game.S;S.mm.limit=10;mmToday();S.mm.daySpent=0;let n=0;for(let i=0;i<20;i++){if(mmBuyCard('duck'))n++;mmSettle()}const blocked=!mmBuyCard('grab');mmSheet('limits');const h=document.querySelector('#mmhonest').textContent;S.mm.limit=0;
+   return{n:n,blocked:blocked,h:/spent \/ won/.test(h)&&/Net/.test(h)}});
+ ok(l5.n===10&&l5.blocked&&l5.h,'daily spend limit enforced + lifetime spent vs won shown '+JSON.stringify(l5));await shot('limits');
+ const l6=await G(async()=>{const g=__game,S=g.S;const its=g.ITEMS.filter(i=>i.gas);const bad=[];its.forEach(it=>{if(it.slot)return;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');HOME_DRAW[it.shape](x,it,0,0,64,64);const d=x.getImageData(0,0,64,64).data;let o=0,s=0;for(let i=3;i<d.length;i+=4)if(d[i]){s++;if(d[i]>240)o++}if(s<150||o/s<.8)bad.push(it.id+':'+s+':'+(o/s).toFixed(2))});
+   closeSheet();const open=openStores().some(s=>s.id==='circlej');const rot=its.filter(i=>i.rot),avail=rot.filter(i=>stockLeft(i)>0).length;
+   g.go('mall');sub='circlej';rerender();await new Promise(r=>setTimeout(r,100));const card=!!document.querySelector('#mmcard');const wear=its.filter(i=>i.slot);S.cash=9999;g.buy(wear[0].id);
+   const coll=collStores().some(s=>s.id==='circlej')&&!!S.coll[wear[0].id];return{n:its.length,wear:wear.length,bad:bad,open:open,rot:rot.length,avail:avail,card:card,coll:coll}});
+ ok(l6.n>=12&&l6.wear>=5&&!l6.bad.length&&l6.open&&l6.rot===3&&l6.avail===1&&l6.card&&l6.coll,'Circle J store, exclusive opaque merch, weekly rotation, collection log '+JSON.stringify(l6));await shot('circlej');
+ const l7=await G(()=>{const S=__game.S;S.mm.snack=0;S.mm.dayK=0;mmSnack('mang');const b=S.mm.buff;const g=__game;g.startShift(g.JOBS[0]);g.shift.earned=100;const c0=S.cash;g.endShift();return{b:b,gain:S.cash-c0,after:S.mm.buff,twice:!mmSnack('taq')}});
+ ok(l7.b===.08&&l7.gain===108&&l7.after===0&&l7.twice,'snack buffs next shift, once per day '+JSON.stringify(l7));
+ const l8=await G(()=>{const S=__game.S;S.mm.cards=10;S.mm.spent+=400;checkAch();return{sf:!!S.ach.scratchfever,d:!!S.ach.donor}});ok(l8.sf&&l8.d,'Scratch Fever + sarcastic donor achievements');
+ await G(()=>{closeSheet();__game.go('mall')});
+})();
