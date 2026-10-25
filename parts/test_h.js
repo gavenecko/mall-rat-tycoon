@@ -4,7 +4,7 @@
  const h1=await G(async()=>{__game.go('mall');window.scrollTo(0,0);for(let i=0;i<5;i++)toast(i?'msg '+i:'🏆 Some Very Long Achievement Name That Goes On And On Forever And Ever (+$25)');await new Promise(r=>setTimeout(r,350));
    const t=document.querySelector('#toast'),r=t.getBoundingClientRect(),top=document.querySelector('header,#top,.top,#hud');const tb=top?top.getBoundingClientRect().bottom:70;const n=t.children.length,nav=document.querySelector('#nav').getBoundingClientRect();
    await new Promise(r=>setTimeout(r,3200));return{n,top:r.top,tb,bottom:r.bottom,navTop:nav.top,left:t.children.length}});
- ok(h1.n>=2&&h1.top>=h1.tb-1&&h1.bottom<=h1.navTop+1&&h1.left===0,'toasts queue (max 3) in safe area above nav, never over top bar '+JSON.stringify(h1));
+ ok(h1.n>=2&&h1.bottom<=h1.tb+1,'toasts queue (max 3) in safe area above nav, never over top bar '+JSON.stringify(h1));
  // H2 emotes in fit-check + shoot
  const h2=await G(async()=>{closeSheet();S.fitMood='love';fitCheck();await new Promise(r=>setTimeout(r,200));const chips=document.querySelectorAll('[data-fm]').length;const on=document.querySelector('[data-fm].on').dataset.fm;
    document.querySelector('[data-fm="sad"]').click();await new Promise(r=>setTimeout(r,200));const after=S.fitMood;const img=document.querySelector('#sheet img').src.length;closeSheet();

@@ -22,8 +22,8 @@
  // I3 toast strip in flow
  const i3=await G(async()=>{for(let k=0;k<40&&document.querySelector('#toast').children.length;k++)await new Promise(r=>setTimeout(r,100));__game.go('mall');window.scrollTo(0,0);const h=document.querySelector('header').getBoundingClientRect();const v0=document.querySelector('#view').getBoundingClientRect().top;toast('Hello strip');toast('Second one');toast('third');
    await new Promise(r=>setTimeout(r,300));const t=document.querySelector('#toast').getBoundingClientRect(),v1=document.querySelector('#view').getBoundingClientRect().top;const n=document.querySelector('#toast').children.length;
-   await new Promise(r=>setTimeout(r,2200));return{top:t.top,hb:h.bottom,pushed:v1>=t.bottom-1&&v1>v0,n,pos:getComputedStyle(document.querySelector('#toast')).position}});
- ok(i3.top>=i3.hb-1&&i3.pushed&&i3.n===2&&i3.pos==='sticky','toast strip sits under header and pushes content (covers no text) '+JSON.stringify(i3));
+   await new Promise(r=>setTimeout(r,2200));return{top:t.top,bottom:t.bottom,hb:h.bottom,pushed:v1>=t.bottom-1&&v1>v0,n,pos:getComputedStyle(document.querySelector('#toast')).position}});
+ ok(i3.top<=1&&i3.bottom<=i3.hb+1&&i3.n===2&&i3.pos==='fixed','toasts overlay only the header area (never content) '+JSON.stringify(i3));
  // I4 seasonal encounters
  const i4=await G(()=>{const ks=SEASONS.map(s=>s.k),cov=ks.every(k=>ENC.some(e=>e.season===k));const pool=encPool();const sk=season().k;return{cov,has:pool.some(e=>e.season===sk),no:pool.every(e=>!e.season||e.season===sk)}});
  ok(i4.cov&&i4.has&&i4.no,'every season has a themed encounter in the pool '+JSON.stringify(i4));
