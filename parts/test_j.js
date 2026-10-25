@@ -17,7 +17,7 @@
  // J2 fitness tiers change avatar
  const j2=await G(()=>{const mk=(t,hat)=>{const c=document.createElement('canvas');c.width=300;c.height=400;const x=c.getContext('2d');x.translate(150,5);x.scale(2,2);drawAvatar(x,Object.assign({},defaultChar('male'),{hair:'buzz',fitT:t}),hat?{hats:Object.keys(ITEM).filter(k=>ITEM[k].slot==='hats')[0]}:{});return x};
    const px=(x,X,Y)=>[].slice.call(x.getImageData(150+X*2,5+Y*2,1,1).data);const sig=x=>{const d=x.getImageData(0,0,300,400).data;let s=0;for(let i=0;i<d.length;i+=16)s=(s*31+d[i])%1e9;return s};
-   const a=[0,1,2,3].map(t=>sig(mk(t)));const band=px(mk(3),0,29),wr=px(mk(3),BODIES.male?0:0,0),t0band=px(mk(0),0,29);const sh=BODIES[defaultChar('male').body].sh;const wrist=px(mk(3),sh+2.7+6,113);
+   const a=[0,1,2,3].map(t=>sig(mk(t)));const band=px(mk(3),0,29),wr=px(mk(3),BODIES.male?0:0,0),t0band=px(mk(0),0,29);const sh=BODIES[defaultChar('male').body].sh;const wrist=(()=>{const c=mk(3);for(let yy=96;yy<122;yy++)for(let xx=Math.floor(sh);xx<sh+22;xx++){const q=px(c,xx,yy);if(q[0]>200&&q[1]<80&&q[3]===255)return q}return px(c,sh+8.7,113)})();
    const keys=Object.keys(BODIES).length;const S=__game.S;S.fit.lvl=85;const me=fitTier();S.fit.lvl=0;return{distinct:new Set(a).size,band,t0band,wrist,me,keys}});
  ok(j2.distinct===4&&j2.band[0]>200&&j2.band[1]<80&&j2.band[3]===255&&!(j2.t0band[0]>200&&j2.t0band[1]<80)&&j2.wrist[3]===255&&j2.wrist[0]>200&&j2.me===3&&j2.keys===5,'fitness tiers visibly change avatar (4 distinct looks, opaque sweatband/wristbands at top tier) '+JSON.stringify(j2));
  // J3 promotions + uniforms
