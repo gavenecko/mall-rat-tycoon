@@ -52,7 +52,7 @@ function drawDoorstep(x,c){const n=packagesReady().length;x.fillStyle='#795548';
 function toggleWish(it){if(S.wish[it.id])delete S.wish[it.id];else{S.wish[it.id]=1;toast('💖 Added to wishlist. We\'ll ping you when it\'s on sale.')}sfx('click');save()}
 
 /* ---------- money: Mall Rat Card + Pay in 4 ---------- */
-const cardLimit=()=>Math.min(10000,500+100*S.shifts);
+const cardLimit=()=>Math.round(Math.min(10000,500+100*S.shifts)*(typeof creditMult==='function'?creditMult():1));
 function payWith(m,amt,label){
   if(m==='cash'){if(S.cash<amt)return false;S.cash-=amt}
   else if(m==='card'){if(S.card.bal+amt>cardLimit())return false;S.card.bal+=amt}
@@ -70,13 +70,13 @@ function openPay(title,amt,done,extra){
 /* ---------- daily processing ---------- */
 function onNewDay(){
   if(S.card.bal>0){const i=Math.ceil(S.card.bal*CARD_RATE);S.card.bal+=i;if(S.card.bal>cardLimit()*.6)notify('💳 Card balance is '+money(S.card.bal)+' (+'+money(i)+' interest). No pressure. (Some pressure.)')}
-  S.bnpl.forEach(b=>{if(S.cash>=b.amt)S.cash-=b.amt;else{S.card.bal+=b.amt+LATE_FEE;notify('🐢 Pay-in-4 for '+b.label+' bounced: moved to your card + '+money(LATE_FEE)+' late fee')}b.left--});S.bnpl=S.bnpl.filter(b=>b.left>0);
+  S.bnpl.forEach(b=>{if(S.cash>=b.amt){S.cash-=b.amt;if(S.credit)S.credit.bnplPaid++}else{if(S.credit)credit(-25,'Pay-in-4 bounced');S.card.bal+=b.amt+LATE_FEE;notify('🐢 Pay-in-4 for '+b.label+' bounced: moved to your card + '+money(LATE_FEE)+' late fee')}b.left--});S.bnpl=S.bnpl.filter(b=>b.left>0);
   if(S.crime.active&&S.day>=S.crime.next){if(S.cash>=CRIME_FEE){S.cash-=CRIME_FEE;S.crime.next=S.day+7;notify('📦 Clamazon Crime renewed ('+money(CRIME_FEE)+')')}
     else if(S.card.bal+CRIME_FEE<=cardLimit()){S.card.bal+=CRIME_FEE;S.crime.next=S.day+7;notify('📦 Crime renewed on your card')}else{S.crime.active=false;notify('📦 Crime membership lapsed (couldn\'t pay)')}}
   S.orders.forEach(o=>{if(o.status==='shipping'&&S.day>=o.arrive){o.status='delivered';notify('📦 Delivered: '+ITEM[o.id].name+' is on your doorstep!')}});
   fbRefresh();
-  Object.keys(S.wish).forEach(id=>{const it=ITEM[id];if(it&&offOf(it))notify('💖 Wishlist alert: '+it.name+' is '+offOf(it)+'% off today!')});
-  crimeNewDay();v8NewDay();v9NewDay();const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
+  wishAlerts();
+  crimeNewDay();v8NewDay();v9NewDay();v10NewDay();const e=eventToday();if(e){notify(e.emoji+' '+e.name+' starts today! '+e.desc);if(e.gift&&!S.gifted[S.day]){S.gifted[S.day]=1;S.cash+=e.gift}}
 }
 
 /* ---------- Fleabay ---------- */
@@ -211,13 +211,13 @@ function renderOrders(v){
       '<div class="small">'+(o.status==='collected'?'✅ Unboxed':o.status==='delivered'?'📦 Delivered to your doorstep':'🚚 Shipped · arrives Day '+o.arrive)+'</div><div class="steps">'+[1,2,3,4].map(i=>'<i class="'+(i<=st?'on':'')+'"></i>').join('')+'</div></div></div>')});
   if($('#ocol'))$('#ocol').onclick=collect}
 function renderWish(v){
-  v.insertAdjacentHTML('beforeend',''+brandHead('wish')+'<div class="small" style="margin:0 4px 8px">Tap 🤍 on any item to save it. We\'ll mail you when it goes on sale.</div><div class="grid" id="wg"></div>');
+  v.insertAdjacentHTML('beforeend',''+brandHead('wish')+'<div class="small" style="margin:0 4px 8px">Tap 🤍 on any item to save it. Set a 🔔 target and we\'ll mail you when it hits.</div><div class="grid" id="wg"></div>');
   const ids=Object.keys(S.wish).filter(id=>ITEM[id]);if(!ids.length){$('#wg').innerHTML='<div class="card">Nothing yet. Go heart something pretty.</div>';return}
   const open=openStores().map(s=>s.id);
   ids.forEach(id=>{const it=ITEM[id],off=offOf(it),d=document.createElement('div');d.className='item';
     const where=it.store==='clamazon'?'Clamazon':(STORES.filter(s=>s.id===it.store)[0]||{name:'?'}).name,avail=it.store==='clamazon'||open.indexOf(it.store)>=0;
-    d.innerHTML='<img alt="" src="'+thumb(it)+'">'+(off?'<span class="badge">-'+off+'%</span>':'')+'<button class="heart" data-a="wish">❤️</button><div class="nm">'+esc(it.name)+'</div><div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(priceOf(it))+'</span></div><div class="small">'+esc(where)+(avail?' · open now':' · closed today')+'</div><button class="btn" data-a="buy" '+(avail&&stockLeft(it)>0?'':'disabled')+'>Buy</button>';
-    onAll(d,'[data-a]',b=>{if(b.dataset.a==='wish'){toggleWish(it);rerender()}else if(it.store==='clamazon')buyClam(it);else buy(it)});$('#wg').appendChild(d)})}
+    d.innerHTML='<img alt="" src="'+thumb(it)+'">'+(off?'<span class="badge">-'+off+'%</span>':'')+'<button class="heart" data-a="wish">❤️</button><div class="nm">'+esc(it.name)+'</div><div>'+(off?'<span class="was">'+money(it.price)+'</span>':'')+'<span class="pr">'+money(priceOf(it))+'</span></div><div class="small">'+esc(where)+(avail?' · open now':' · closed today')+'</div><button class="btn" data-a="buy" '+(avail&&stockLeft(it)>0?'':'disabled')+'>Buy</button>'+wishAlertBtn(it);
+    onAll(d,'[data-a]',b=>{if(b.dataset.a==='alert'){S.wishT[it.id]=WT[(WT.indexOf(S.wishT[it.id]||0)+1)%WT.length];sfx('click');save();rerender()}else if(b.dataset.a==='wish'){toggleWish(it);rerender()}else if(it.store==='clamazon')buyClam(it);else buy(it)});$('#wg').appendChild(d)})}
 function renderWallet(v){
   const lim=cardLimit(),bal=S.card.bal,pct=Math.min(1,bal/lim);
   v.insertAdjacentHTML('beforeend',''+brandHead('wallet')+''+
@@ -227,7 +227,7 @@ function renderWallet(v){
    '<div class="row" style="margin-top:8px"><button class="btn green" id="payall" '+(bal&&S.cash?'':'disabled')+'>Pay '+money(Math.min(bal,S.cash))+'</button><button class="btn alt" id="pay50" '+(bal&&S.cash>=1?'':'disabled')+'>Pay half</button></div></div>'+
    '<div class="card"><div class="lbl" style="margin-top:0">🐢 Pay-in-4 plans</div>'+(S.bnpl.length?S.bnpl.map(b=>'<div class="slot"><span>'+esc(b.label)+'</span><b>'+money(b.amt)+' × '+b.left+' more days</b></div>').join(''):'<div class="small">None. Your future self thanks you.</div>')+'<div class="small">Missed payments go on your card + '+money(LATE_FEE)+' late fee.</div></div>');
   const pay=a=>{a=Math.min(a,S.cash,S.card.bal);if(a<=0)return;S.cash-=a;S.card.bal-=a;sfx('coin');toast('Paid '+money(a)+' toward your card ✨');save();rerender()};
-  $('#payall').onclick=()=>pay(bal);$('#pay50').onclick=()=>pay(Math.ceil(bal/2))}
+  $('#payall').onclick=()=>pay(bal);$('#pay50').onclick=()=>pay(Math.ceil(bal/2));creditBlock(v)}
 const OTABS=[['clam','📦 Clamazon'],['flea','🔨 Fleabay'],['fb','🏷️ Facenook'],['hustle','💼 Hustle'],['stonks','📈 Stonks'],['orders','🚚 Orders'],['wish','💖 Wishlist'],['wallet','💳 Wallet']];
 function renderOnline(v){
   const t=document.createElement('div');t.className='tabs';

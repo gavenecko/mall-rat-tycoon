@@ -11,8 +11,8 @@
  document.head.appendChild(st)})();
 function v9Fix(s){if(!s.pet)s.pet=null;if(!s.login)s.login={last:'',streak:0,best:0};if(!s.quests)s.quests={day:0,list:[],done:0,chest:0};
   if(!s.stats9)s.stats9={shoots:0,petFed:0,seasonal:0};if(s.pet&&!s.pet.acc)s.pet.acc={}}
-function profileSnapshot(){return{v:9,name:S.char?S.char.name:'',day:S.day,cash:S.cash,earned:S.earned,home:typeof homeScore==='function'?homeScore():0,drip:dripScore(),
-  ach:Object.keys(S.ach).length,coll:Object.keys(S.coll||{}).length,pet:S.pet?{k:S.pet.k,name:S.pet.name,acc:Object.keys(S.pet.acc)}:null,streak:S.login.best}}
+function profileSnapshot(){return{v:10,name:S.char?S.char.name:'',day:S.day,cash:S.cash,earned:S.earned,home:typeof homeScore==='function'?homeScore():0,drip:dripScore(),
+  ach:Object.keys(S.ach).length,coll:Object.keys(S.coll||{}).length,apt:S.apt?S.apt.k:'',credit:S.credit?S.credit.score:0,pet:S.pet?{k:S.pet.k,name:S.pet.name,acc:Object.keys(S.pet.acc)}:null,streak:S.login.best}}
 
 /* ---------- seasons ---------- */
 const POPUP_STORE={id:'popup',name:'Seasonal Pop-Up',tag:'Here for a good time, not a long time',color:'#ff7043',emoji:'🎪',cats:['tops','hats','decor'],tier:[20,900],drop:true};
@@ -45,20 +45,20 @@ const PET_NAMES=['Sir Barksalot','Princess Nugget','Chairman Meow','Gucci Mane-C
 const petDef=()=>S.pet&&PETS.filter(p=>p.k===S.pet.k)[0];
 function petMood(){const p=S.pet;if(!p)return'';if(p.away)return'🏚️ staying at the neighbor\'s';if(p.full<25)return'😿 hungry';if(p.joy<35)return'😐 bored';return p.joy>75&&p.full>60?'🥰 thriving':'🙂 fine'}
 function payCash(p,why){if(S.cash<p){toast('Need '+money(p)+' cash for '+why);sfx('bad');return false}S.cash-=p;S.spent+=p;bumpCash&&bumpCash();return true}
-function petCard(){const p=S.pet,d=petDef();return'<div class="card row" id="petcard" style="background:linear-gradient(120deg,#26a69a,#80cbc4);color:#fff"><span style="font-size:40px">'+(d?d.e:'🐾')+'</span><div style="flex:1"><b>🐾 Petcough</b><div class="small" style="color:#fff">'+
+function petCard(){const p=S.pet,d=petDef();return'<div class="card row" id="petcard" style="background:linear-gradient(120deg,#26a69a,#80cbc4);color:#fff">'+(d?'<img alt="" src="'+petThumb(d.k,S.pet.wear)+'" style="width:52px;height:52px;background:#fff;border-radius:12px">':'<span style="font-size:40px">🐾</span>')+'<div style="flex:1"><b>🐾 Petcough</b><div class="small" style="color:#fff">'+
   (p?esc(p.name)+' · '+petMood():'Pets, food & tiny luxury accessories. Adopt a sidekick.')+'</div></div><button class="btn" id="petgo">'+(p?'Care':'Adopt')+'</button></div>'}
 function petSheet(){const p=S.pet;if(!p){sheet('<h3>🐾 Petcough — Adopt</h3><div class="small">Adoption fee includes one (1) participation-trophy collar. Your pet lives in your room, needs food daily, and earns "pet influencer" tips when happy.</div>'+
-    PETS.map(d=>'<div class="slot"><span><span style="font-size:28px">'+d.e+'</span> <b>'+d.name+'</b><br><span class="small">'+money(d.price)+' · tips ~'+money(d.tip)+'/day when happy</span></span><button class="btn" data-adopt="'+d.k+'">Adopt</button></div>').join(''));
+    PETS.map(d=>'<div class="slot"><span><img alt="" src="'+petThumb(d.k)+'" style="width:44px;height:44px;vertical-align:middle"> <b>'+d.name+'</b><br><span class="small">'+money(d.price)+' · tips ~'+money(d.tip)+'/day when happy</span></span><button class="btn" data-adopt="'+d.k+'">Adopt</button></div>').join(''));
     onAll($('#sheet'),'[data-adopt]',b=>{const d=PETS.filter(q=>q.k===b.dataset.adopt)[0];if(!payCash(d.price,'adoption'))return;S.pet={k:d.k,name:pick(PET_NAMES),full:80,joy:80,acc:{},wear:null,day:S.day,fedDay:0,away:0,starve:0,x:2,y:WALL+1};
       sfx('level');notify('🐾 You adopted '+S.pet.name+' the '+d.name+'! Feed them daily from Petcough.');save();petSheet();rerender()});return}
   const d=petDef(),bar=(v,c)=>'<div class="petbar"><div style="width:'+Math.max(0,Math.min(100,v))+'%;background:'+c+'"></div></div>';
   if(p.away){sheet('<h3>🏚️ '+esc(p.name)+' moved out</h3><div>'+esc(p.name)+' got hungry and moved in with the neighbors "until you get your life together".</div><button class="btn big" id="petback">Bribe them back ($100)</button>');
     $('#petback').onclick=()=>{if(!payCash(100,'the bribe'))return;p.away=0;p.full=60;p.joy=50;p.starve=0;sfx('level');save();petSheet();rerender()};return}
-  sheet('<h3>'+d.e+' '+esc(p.name)+'</h3><div class="small">'+d.name+' · '+petMood()+' · adopted day '+p.day+'</div><div class="small">Fullness</div>'+bar(p.full,'#ff9800')+'<div class="small">Happiness</div>'+bar(p.joy,'#e91e63')+
+  sheet('<h3><img alt="" src="'+petThumb(d.k,p.wear)+'" style="width:56px;height:56px;vertical-align:middle"> '+esc(p.name)+'</h3><div class="small">'+d.name+' · '+petMood()+' · adopted day '+p.day+'</div><div class="small">Fullness</div>'+bar(p.full,'#ff9800')+'<div class="small">Happiness</div>'+bar(p.joy,'#e91e63')+
    '<div class="lbl">Food & toys</div>'+PET_FOOD.map(f=>'<div class="slot"><span>'+f.e+' <b>'+f.name+'</b><br><span class="small">'+money(f.price)+(f.full?' · +'+f.full+' full':'')+(f.joy?' · +'+f.joy+' joy':'')+'</span></span><button class="btn green" data-feed="'+f.k+'">Give</button></div>').join('')+
    '<div class="lbl">Accessories (tap to wear)</div>'+PET_ACC.map(a=>{const own=p.acc[a.k];return'<div class="slot"><span>'+a.e+' <b>'+a.name+'</b><br><span class="small">'+(own?(p.wear===a.k?'Wearing':'Owned'):money(a.price))+'</span></span><button class="btn'+(own?' alt':'')+'" data-acc="'+a.k+'">'+(own?(p.wear===a.k?'Take off':'Wear'):'Buy')+'</button></div>'}).join('')+
    '<button class="btn alt" id="petname">✏️ Rename</button>');
-  onAll($('#sheet'),'[data-feed]',b=>{const f=PET_FOOD.filter(q=>q.k===b.dataset.feed)[0];if(!payCash(f.price,f.name))return;p.full=Math.min(100,p.full+f.full);p.joy=Math.min(100,p.joy+f.joy);if(f.full){p.fedDay=S.day;S.stats9.petFed++}sfx('coin');toast(d.e+' '+(f.full?'Nom nom!':'Squeak squeak!'));save();petSheet()});
+  onAll($('#sheet'),'[data-feed]',b=>{const f=PET_FOOD.filter(q=>q.k===b.dataset.feed)[0];if(!payCash(f.price,f.name))return;p.full=Math.min(100,p.full+f.full);p.joy=Math.min(100,p.joy+f.joy);if(f.full){p.fedDay=S.day;S.stats9.petFed++}sfx('coin');toast((f.full?'Nom nom!':'Squeak squeak!'));save();petSheet()});
   onAll($('#sheet'),'[data-acc]',b=>{const a=PET_ACC.filter(q=>q.k===b.dataset.acc)[0];if(!p.acc[a.k]){if(!payCash(a.price,a.name))return;p.acc[a.k]=1;p.wear=a.k;p.joy=Math.min(100,p.joy+15);sfx('level')}else p.wear=p.wear===a.k?null:a.k;save();petSheet()});
   $('#petname').onclick=()=>{const n=prompt('New name?',p.name);if(n&&n.trim()){p.name=n.trim().slice(0,20);save();petSheet()}}}
 function petObj(x,c){const p=S.pet;if(!p||p.away)return null;const d=petDef();const px=Math.max(0,Math.min(COLS-1,S.avatar.x+(S.avatar.x<COLS-1?1:-1))),py=Math.max(WALL,S.avatar.y);

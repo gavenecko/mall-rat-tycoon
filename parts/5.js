@@ -145,7 +145,7 @@ function renderRoom(v){
     else if(gy>=WALL){S.avatar={x:gx,y:gy};room.sel=-1;save()}
     draw();list();
   });
-  draw();list();
+  draw();list();petLoop(draw,cv,c);
 }
 
 /* ---------- ME: stats, achievements, saves ---------- */

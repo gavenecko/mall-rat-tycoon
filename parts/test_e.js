@@ -31,5 +31,5 @@
    await new Promise(r=>setTimeout(r,200));return{earned:g.shift.earned,n:g.S.stats9.shoots-s0,pads:document.querySelectorAll('#pf button,#pp button').length}});
  ok(e5.earned>0&&e5.n===4&&e5.pads===8,'influencer photoshoot job '+JSON.stringify(e5));
  await shot('shoot');await G(()=>{__game.endShift();render()});
- const e6=await G(()=>{const p=profileSnapshot();return p.v===9&&!!p.pet&&typeof p.home==='number'});ok(e6,'profileSnapshot for future leaderboards');
+ const e6=await G(()=>{const p=profileSnapshot();return p.v>=9&&!!p.pet&&typeof p.home==='number'});ok(e6,'profileSnapshot for future leaderboards');
 })()

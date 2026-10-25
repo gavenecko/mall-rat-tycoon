@@ -177,7 +177,7 @@ const NEIGHBORS=[{k:'karen',name:'Karen Kardashi-ish',face:'💅',base:38,grow:4
  {k:'gretchen',name:'Grandma Gretchen',face:'👵',base:45,grow:2,line:'I knitted my roof. Want a cookie?',likes:'plants'},
  {k:'mike',name:'Minimalist Mike',face:'🧘',base:25,grow:4,line:'I own one chair. It is enough. It is everything.',likes:'few'},
  {k:'gary',name:'Gnome Guy Gary',face:'🧙',base:35,grow:3,line:'347 garden gnomes. They watch. They judge.',likes:'outdoor'}];
-function homeScore(){return Math.round(decorScore()*.6+curbAppeal()*.4)}
+function homeScore(){return Math.min(100,Math.round(decorScore()*.6+curbAppeal()*.4)+(typeof petBonus==='function'?petBonus():0)+(typeof apt==='function'&&S.apt?apt().home:0))}
 function nbScore(n,w){const r=rng(hash(n.k)+w*7919)();return Math.min(97,Math.round(n.base+n.grow*Math.min(w,12)+r*18))}
 function rateLine(n,sc){const hi=sc>=70,mid=sc>=40;return n.k==='karen'?(hi?'Okay fine. It\'s giving penthouse. I hate you.':mid?'Cute! In a "rental" way.':'Do you… live here? Like on purpose?'):
   n.k==='chad'?(hi?'BRO. This place has GAINS.':mid?'Solid. Needs a squat rack in the living room.':'Where is the TV, bro. Where is it.'):
