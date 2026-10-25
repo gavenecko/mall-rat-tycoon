@@ -1,2 +1,2 @@
 #!/bin/sh
-cd "$(dirname "$0")" && cat parts/1.html parts/2a.js parts/2b.js parts/2c.js parts/3.js parts/4.js parts/5.js parts/7.js parts/8.js parts/9.js parts/10.js parts/11.js parts/12.js parts/14.js parts/15.js parts/16.js parts/17.js parts/18.js parts/19.js parts/20.js parts/21.js parts/22.js parts/13.js parts/6.js > index.html && printf '</script></body></html>\n' >> index.html
+cd "$(dirname "$0")" && cat parts/1.html parts/2a.js parts/2b.js parts/2c.js parts/3.js parts/4.js parts/5.js parts/7.js parts/8.js parts/9.js parts/10.js parts/11.js parts/12.js parts/14.js parts/15.js parts/16.js parts/17.js parts/18.js parts/19.js parts/20.js parts/21.js parts/22.js parts/23.js parts/13.js parts/6.js > index.html && printf '</script></body></html>\n' >> index.html
