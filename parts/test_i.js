@@ -20,7 +20,7 @@
    return{h,paused,gone,again,all:JOBS.every(j=>JOB_HINTS[j.id])}});
  ok(i2.h&&i2.paused&&i2.gone&&!i2.again&&i2.all,'first-time job hint, clock paused, shown once, all jobs covered '+JSON.stringify(i2));
  // I3 toast strip in flow
- const i3=await G(async()=>{__game.go('mall');window.scrollTo(0,0);const h=document.querySelector('header').getBoundingClientRect();const v0=document.querySelector('#view').getBoundingClientRect().top;toast('Hello strip');toast('Second one');toast('third');
+ const i3=await G(async()=>{for(let k=0;k<40&&document.querySelector('#toast').children.length;k++)await new Promise(r=>setTimeout(r,100));__game.go('mall');window.scrollTo(0,0);const h=document.querySelector('header').getBoundingClientRect();const v0=document.querySelector('#view').getBoundingClientRect().top;toast('Hello strip');toast('Second one');toast('third');
    await new Promise(r=>setTimeout(r,300));const t=document.querySelector('#toast').getBoundingClientRect(),v1=document.querySelector('#view').getBoundingClientRect().top;const n=document.querySelector('#toast').children.length;
    await new Promise(r=>setTimeout(r,2200));return{top:t.top,hb:h.bottom,pushed:v1>=t.bottom-1&&v1>v0,n,pos:getComputedStyle(document.querySelector('#toast')).position}});
  ok(i3.top>=i3.hb-1&&i3.pushed&&i3.n===2&&i3.pos==='sticky','toast strip sits under header and pushes content (covers no text) '+JSON.stringify(i3));
