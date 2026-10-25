@@ -71,7 +71,7 @@ function renderMall(v){
   v.innerHTML='<div class="card row sp"><div><b>📅 Day '+S.day+'</b> · new day in <b class="cd" style="font-size:18px">'+timeLeft()+'</b></div><span class="small">'+STORES.length+' stores · '+ITEMS.length+' items</span></div>'+
     '<div class="lbl">'+svgI('flame')+' Daily Deals</div><div class="hs" id="deals"></div><div class="concourse"><div class="ctitle"><span>'+svgI('mall',18)+' Main Concourse</span><span class="small">'+open.length+' open</span></div><div class="fronts" id="stores"></div></div>';
   deals().forEach(d=>v.querySelector('#deals').appendChild(itemCard(ITEM[d.id],'shop')));
-  v.insertAdjacentHTML('afterbegin',eventBanner());v.querySelector('#deals').insertAdjacentHTML('beforebegin',dailyCard()+weekBanner()+seasonCard()+petCard()+trendCard()+barberCard()+dropCard());bindDrop();bindV9();bindV11();bindWeek();
+  v.insertAdjacentHTML('afterbegin',eventBanner());v.querySelector('#deals').insertAdjacentHTML('beforebegin',dailyCard()+weekBanner()+seasonCard()+petCard()+trendCard()+v12Cards()+barberCard()+dropCard());bindDrop();bindV9();bindV11();bindV12();bindWeek();
   open.forEach(s=>{const rare=ITEMS.filter(i=>i.store===s.id&&i.rare&&stockLeft(i)>0).length,bn=isBanned(s.id);
     v.querySelector('#stores').insertAdjacentHTML('beforeend',storefront(s,{banned:bn,flag:bn?'🚫 BANNED':rare?'✨ LIMITED':''}));const d=v.querySelector('#stores').lastChild;
     d.onclick=()=>{if(isBanned(s.id)){sfx('bad');toast('🚫 Security remembers your face. Banned until Day '+S.rap.bans[s.id]);return}sfx('click');go('mall',s.id)}});

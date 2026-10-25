@@ -11,7 +11,7 @@
  document.head.appendChild(st)})();
 function v9Fix(s){if(!s.pet)s.pet=null;if(!s.login)s.login={last:'',streak:0,best:0};if(!s.quests)s.quests={day:0,list:[],done:0,chest:0};
   if(!s.stats9)s.stats9={shoots:0,petFed:0,seasonal:0};if(s.pet&&!s.pet.acc)s.pet.acc={}}
-function profileSnapshot(){return{v:11,beard:S.char?S.char.beard||'none':'none',friends:S.friends?Object.keys(S.friends).length:0,name:S.char?S.char.name:'',day:S.day,cash:S.cash,earned:S.earned,home:typeof homeScore==='function'?homeScore():0,drip:dripScore(),
+function profileSnapshot(){return{v:12,car:S.car?S.car.k:'',fit:S.fit?S.fit.lvl:0,beard:S.char?S.char.beard||'none':'none',friends:S.friends?Object.keys(S.friends).length:0,name:S.char?S.char.name:'',day:S.day,cash:S.cash,earned:S.earned,home:typeof homeScore==='function'?homeScore():0,drip:dripScore(),
   ach:Object.keys(S.ach).length,coll:Object.keys(S.coll||{}).length,apt:S.apt?S.apt.k:'',credit:S.credit?S.credit.score:0,pet:S.pet?{k:S.pet.k,name:S.pet.name,acc:Object.keys(S.pet.acc)}:null,streak:S.login.best}}
 
 /* ---------- seasons ---------- */
@@ -115,7 +115,7 @@ function makeShoot(el,api){el.innerHTML='<div class="card"><b>📋 Client brief<
     x.font='28px serif';x.textAlign='center';if(p)x.fillText(SHOOT_P.filter(q=>q[0]===p)[0][1],W/2+48,60);
     if(flash>0){x.fillStyle='rgba(255,255,255,'+flash+')';x.fillRect(0,0,W,H)}
     x.fillStyle='#222';x.font='bold 14px sans-serif';x.textAlign='left';x.fillText('❤️ '+likes.toLocaleString()+' likes',8,18);x.textAlign='right';x.fillText('Drip '+dripScore(),W-8,18)}
-  function check(){if(!f||!p)return;if(f===want.f[0]&&p===want.p[0]){const sp=Math.max(0,1-(gnow()-t0)/limit);api.pay(4+dripScore()/25+sp*4);S.stats9.shoots++;likes+=Math.round(50+dripScore()*20*(1+sp));flash=1;sfx('click')}
+  el._draw=draw;function check(){if(!f||!p)return;if(f===want.f[0]&&p===want.p[0]){const sp=Math.max(0,1-(gnow()-t0)/limit);api.pay(4+dripScore()/25+sp*4);S.stats9.shoots++;likes+=Math.round(50+dripScore()*20*(1+sp));flash=1;sfx('click')}
     else api.miss('📉 Off-brand! Client wanted '+want.f[2]+' + '+want.p[2]);next()}
   SHOOT_F.forEach(q=>padBtn($('#pf'),q[1]+'<br><span class="small">'+q[2]+'</span>',()=>{f=q[0];draw();check()}));
   SHOOT_P.forEach(q=>padBtn($('#pp'),q[1]+'<br><span class="small">'+q[2]+'</span>',()=>{p=q[0];draw();check()}));

@@ -39,7 +39,7 @@ function runShift(v){
   const j=shift.job;
   v.innerHTML='<div class="card row sp jhead" style="padding:10px 14px;background:linear-gradient(120deg,'+(JOB_HEAD[j.id]||'#ff6f61,#ff3d81')+')"><b>'+j.emoji+' '+j.name+'</b><b>⏱ <span id="stime"></span></b><b>💰 <span id="searn"></span></b></div><div id="jarea"></div><button class="btn alt" id="quit" style="margin-top:10px;width:100%">Clock out early</button>';
   const api={
-    pay:base=>{if(!shift)return;shift.combo=(shift.combo||0)+1;burst(shift.combo>=5?14:8);if(shift.combo>=3&&shift.combo%1===0)comboText(shift.combo+'× COMBO!');if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*PAY_K*setPayMult()*jobMult(j.id)*(1+Math.min(.5,Math.max(0,shift.combo-2)*.05))));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
+    pay:base=>{if(!shift)return;shift.combo=(shift.combo||0)+1;burst(shift.combo>=5?14:8);if(shift.combo>=3&&shift.combo%1===0)comboText(shift.combo+'× COMBO!');if(j.cs){shift.count++;floatText('+1 🗑️');sfx('coin');upd();return}const amt=Math.max(1,Math.round(base*PAY_K*setPayMult()*jobMult(j.id)*(typeof fitMult==='function'?fitMult():1)*(1+Math.min(.5,Math.max(0,shift.combo-2)*.05))));shift.earned+=amt;shift.count++;floatText('+'+money(amt));sfx('coin');upd()},
     miss:msg=>{if(shift)shift.combo=0;toast(msg);sfx('bad');const a=$('#jarea');if(a){a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash');shake(a)}}
   };
   function upd(){if(!shift)return;const now=gnow(),dt=Math.min(.1,(now-shift.last)/1000);shift.last=now;

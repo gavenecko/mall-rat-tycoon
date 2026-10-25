@@ -26,7 +26,7 @@
  const g4=await G(async()=>{const S=__game.S;S.char.beard='wizard';S.char.beardColor='#ff6fb5';const hasPink=(c)=>{const x=c.getContext('2d'),d=x.getImageData(0,0,c.width,c.height).data;let n=0;for(let i=0;i<d.length;i+=4)if(d[i]>200&&d[i+1]>70&&d[i+1]<140&&d[i+2]>140&&d[i+2]<210&&d[i]-d[i+1]>100)n++;return n};
    __game.go('room');await new Promise(r=>setTimeout(r,200));const room=Math.max.apply(null,[].map.call(document.querySelectorAll('#view canvas'),hasPink));
    const fc=avatarCanvas(150,190,S.char,S.equipped);const fit=hasPink(fc);
-   const sc=document.createElement('canvas');sc.width=300;sc.height=400;const sx=sc.getContext('2d');sx.translate(150,10);drawAvatar(sx,S.char,S.equipped);const shoot=hasPink(sc)&&String(makeShoot).indexOf('drawAvatar')>=0;
+   const sc=document.createElement('canvas');sc.width=300;sc.height=400;const sx=sc.getContext('2d');sx.translate(150,10);drawAvatar(sx,S.char,S.equipped);const shoot=hasPink(sc)&&(String(makeShoot)+(typeof _makeShoot==='function'?String(_makeShoot):'')).indexOf('drawAvatar')>=0;
    return{room,fit,shoot}});
  ok(g4.room>20&&g4.fit>50&&g4.shoot,'beard drawn in room / fit-check / shoot '+JSON.stringify(g4));
  // G5 emotes
