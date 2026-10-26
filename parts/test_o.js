@@ -1,5 +1,5 @@
 (async()=>{ await G(()=>{closeSheet();if(__game.shift)__game.endShift();__game.go('mall')});
- const shot19=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v19_'+n+'.png'})};
+ const shot19=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v19x_'+n+'.png'})};
  // O1 quests fold
  const o1=await G(()=>{const S=__game.S;questsFresh();S.quests.list.forEach(q=>q.claimed=true);S.quests.chest=1;S.login.last=todayKey();__game.go('mall');const d=document.querySelector('#dailycard');return{fold:!!d.querySelector('details'),h:d.offsetHeight,closed:!d.querySelector('details').open}});
  ok(o1.fold&&o1.closed&&o1.h<90,'daily quests fold into one row once claimed '+JSON.stringify(o1));

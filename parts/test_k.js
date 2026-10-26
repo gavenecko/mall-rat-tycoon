@@ -7,7 +7,7 @@
  const k2=await G(()=>{__game.go('mall');mapSheet();const T=window.__mapT;const r={n:T.length,bad:T.filter(q=>!q.fit).map(q=>q.t),labels:T.map(q=>q.t)};closeSheet();return r});
  ok(k2.n>=5&&!k2.bad.length&&k2.labels.every(l=>l.length<=26&&!/…/.test(l)),'mall map short labels all fit, none truncated '+JSON.stringify(k2));
  // K3 drag / rotate / flip
- const k3=await G(async()=>{const g=__game,S=g.S;const it=g.ITEMS.filter(i=>i.shape==='sofa'&&!i.fake)[0];S.owned[it.id]=(S.owned[it.id]||0)+1;S.room=[{id:it.id,x:1,y:WALL+1}];S.avatar={x:COLS-1,y:ROWS-1};g.go('room');await new Promise(r=>setTimeout(r,120));
+ const k3=await G(async()=>{const g=__game,S=g.S;const it=g.ITEMS.filter(i=>i.shape==='sofa'&&!i.fake)[0];S.owned[it.id]=(S.owned[it.id]||0)+1;S.room=[{id:it.id,x:1,y:WALL+1}];S.avatar={x:COLS-1,y:ROWS-1};room.placing=null;room.sel=-1;g.go('room');S.room=[{id:it.id,x:1,y:WALL+1}];g.go('room');await new Promise(r=>setTimeout(r,120));
    const cv=document.querySelector('#roomcv'),b=cv.getBoundingClientRect(),c=b.width/COLS;const ev=(t,gx,gy)=>cv.dispatchEvent(new PointerEvent(t,{bubbles:true,pointerId:1,clientX:b.left+(gx+.5)*c,clientY:b.top+(gy+.5)*c}));
    ev('pointerdown',1,WALL+1);ev('pointermove',2,WALL+2);ev('pointermove',3,WALL+3);const ghost=document.querySelector('#hint').textContent;ev('pointerup',3,WALL+3);const p=S.room[0],moved=p.x===3&&p.y===WALL+3;
    ev('pointerdown',3,WALL+3);ev('pointermove',3,0);ev('pointerup',3,0);const back=p.x===3&&p.y===WALL+3;
