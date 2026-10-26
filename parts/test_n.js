@@ -1,5 +1,5 @@
 (async()=>{ await G(()=>{closeSheet();if(__game.shift)__game.endShift()});
- const shot18=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v18_'+n+'.png'})};
+ const shot18=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v18x_'+n+'.png'})};
  // N1 sleeves follow arms in power stance
  const n1=await G(()=>{const S=__game.S,top=__game.ITEMS.filter(i=>i.shape==='sweater'&&!i.fake)[0];const ch=S.char;const px=(eq)=>{const c=document.createElement('canvas');c.width=150;c.height=200;const x=c.getContext('2d');x.translate(75,4);drawAvatar(x,Object.assign({},ch,{fitT:3}),eq);return x};
    const a=px({tops:top.id});const b=BODIES[ch.body]||BODIES.average;const pt=(X,Y)=>a.getImageData(75+X,4+Y,1,1).data;const elbow=pt(Math.round(b.sh+11),100),low=pt(Math.round(b.sh+3),112);const tc=parseInt(top.color.slice(1),16);const near=d=>Math.abs(d[0]-(tc>>16&255))+Math.abs(d[1]-(tc>>8&255))+Math.abs(d[2]-(tc&255))<90;return{elbow:near(elbow),oldSleeveGone:!near(low),a:elbow[3]}});

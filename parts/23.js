@@ -2,12 +2,11 @@
 /* ---- 1) power stance: sleeves follow the bent arms ---- */
 const _dA18=drawAvatar;drawAvatar=function(x,ch,eq){const t=ch?(ch.fitT!=null?ch.fitT:(typeof S!=='undefined'&&S&&ch===S.char?fitTier():0)):0;if(!ch||t<3)return _dA18(x,ch,eq);
  const top=eq&&eq.tops&&ITEM[eq.tops]?ITEM[eq.tops]:null,sv=sleeves;sleeves=function(){};let r;try{r=_dA18(x,ch,eq)}finally{sleeves=sv}
- if(top&&top.shape!=='tank'){const b=BODIES[ch.body]||BODIES.average,hip=b.hip+3.2,long=top.shape!=='tee',w=top.shape==='puffer'?12:9.5;
-  [-1,1].forEach(f=>{const P=[[f*(b.sh+1),86],[f*(b.sh+11),100]];if(long)P.push([f*(hip-1),112]);x.save();x.lineCap='round';x.lineJoin='round';
-   const path=()=>{x.beginPath();x.moveTo(P[0][0],P[0][1]);for(let i=1;i<P.length;i++)x.lineTo(P[i][0],P[i][1])};
-   path();x.strokeStyle=OUT;x.lineWidth=w+3;x.stroke();path();x.strokeStyle=fillOf(x,top);x.lineWidth=w;x.stroke();
-   const e=P[P.length-1];oCirc(x,e[0],e[1],w*.45,tint(top.color,.85));x.restore()});
-  // re-draw hands on hips over the cuffs
+ if(top&&top.shape!=='tank'){const b=BODIES[ch.body]||BODIES.average,hip=b.hip+3.2,long=top.shape!=='tee',pf=top.shape==='puffer'?1.6:0;
+  [-1,1].forEach(f=>{const P=[[b.sh+1,86],[b.sh+15+pf,101],[hip+1,116],[hip-3,113],[b.sh+10,101],[b.sh-3,90]];x.save();if(!long){x.beginPath();x.rect(-200,0,400,96);x.clip()}
+   const path=()=>{x.beginPath();P.forEach((q,i)=>i?x.lineTo(f*q[0],q[1]):x.moveTo(f*q[0],q[1]));x.closePath()};x.lineJoin='round';
+   path();x.strokeStyle=OUT;x.lineWidth=4.6+pf*2;x.stroke();path();x.strokeStyle=fillOf(x,top);x.lineWidth=3+pf*2;x.stroke();x.fillStyle=fillOf(x,top);x.fill();x.restore();
+   if(long){x.save();x.translate(f*(hip-1),114);x.rotate(f*.9);oRect(x,-4.5,-2.5,9,5,2,tint(top.color,.8));x.restore()}else{x.strokeStyle=OUT;x.lineWidth=1.4;line(x,f*(b.sh+5.5),96,f*(b.sh+13.5),96)}});
   [-1,1].forEach(f=>oCirc(x,f*hip,115,3.6,ch.skin||'#f1c27d'))}
  return r};
 /* ---- 2) MRTH v2 tour codes: every room + wallpaper/floor ---- */
@@ -22,9 +21,9 @@ tourDraw=function(cv,o,k){const L=tourRooms(o),R=L.filter(r=>r.k===k)[0]||L.filt
  if(fi)drawSurface(x,fi,0,WALL*c,W,H-WALL*c,c);else{x.fillStyle=PL[2];x.fillRect(0,WALL*c,W,H-WALL*c);x.strokeStyle=PL[3];x.lineWidth=1;for(let y=WALL*c;y<H;y+=c/2)line(x,0,y,W,y)}
  x.strokeStyle=OUT;x.lineWidth=2;line(x,0,WALL*c,W,WALL*c);
  const its=(R.room||[]).filter(p=>ITEM[p.id]).map(p=>({p:p,it:ITEM[p.id]}));const LY={rug:0,wall:1,floor:2};its.sort((a,b)=>(LY[a.it.layer]||2)-(LY[b.it.layer]||2)||(a.p.y-b.p.y));its.forEach(q=>{try{drawPlaced(x,q.it,q.p,c)}catch(e){}});
- if(R.k===(o.cur||R.k)){const sc=c*2.2/170,ax=COLS-1.5,ay=rows-1;x.save();x.translate(ax*c,ay*c-150*sc);x.scale(sc,sc);try{drawAvatar(x,Object.assign({},o.ch,{fitT:o.ft||0}),o.eq||{})}catch(e){}x.restore()}return its.length};
+ {const sc=c*2.2/170,ax=COLS-1.5,ay=rows-1;x.save();x.translate(ax*c,ay*c-150*sc);x.scale(sc,sc);try{drawAvatar(x,Object.assign({},o.ch,{fitT:o.ft||0}),o.eq||{})}catch(e){}x.restore()}return its.length};
 tourView=function(code){const out=$('#tout');try{const o=tourParse(code),L=tourRooms(o);let cur=(L.filter(r=>r.k===o.cur)[0]||L[0]).k;const total=L.reduce((a,r)=>a+(r.room||[]).filter(p=>ITEM[p.id]).length,0);
- out.innerHTML='<div class="card"><b>🏠 '+esc(o.n||'Someone')+'\'s place</b> <span class="small">(read-only tour · '+L.length+' room'+(L.length>1?'s':'')+')</span>'+(L.length>1?'<div class="tabs" id="ttabs" style="margin:6px 0;flex-wrap:wrap">'+L.map(r=>{const d=roomDef(r.k);return'<button data-tr="'+esc(r.k)+'">'+d.emoji+' '+esc(d.name.split(' ').pop())+'</button>'}).join('')+'</div>':'')+'<div class="center"><canvas id="tcv" style="border-radius:10px;max-width:100%"></canvas></div><div class="small" id="tcount"></div></div>';
+ out.innerHTML='<div class="card"><b>🏠 '+esc(o.n||'Someone')+'\'s place</b> <span class="small">(read-only tour · '+L.length+' room'+(L.length>1?'s':'')+')</span>'+(L.length>1?'<div class="tabs" id="ttabs" style="margin:6px 0;flex-wrap:wrap">'+L.map(r=>{const d=roomDef(r.k);return'<button data-tr="'+esc(r.k)+'">'+d.emoji+' '+esc(d.name.split(' ').pop())+(r.k===o.cur?' 🏡':'')+'</button>'}).join('')+'</div>':'')+'<div class="center"><canvas id="tcv" style="border-radius:10px;max-width:100%"></canvas></div><div class="small" id="tcount"></div></div>';
  const show=k=>{cur=k;const n=tourDraw($('#tcv'),o,k);Array.prototype.forEach.call(out.querySelectorAll('[data-tr]'),b=>b.classList.toggle('on',b.dataset.tr===k));$('#tcount').textContent=roomDef(k).name+': '+n+' items · '+total+' in the whole house. Rate it 10/10 to stay friends.'};
  onAll(out,'[data-tr]',b=>show(b.dataset.tr));show(cur);return total}catch(e){out.innerHTML='<div class="card small" style="color:#c62828">'+esc(e.message||'Bad code')+'</div>';return -1}};
 /* ---- 3) weather affects outdoor plants ---- */
