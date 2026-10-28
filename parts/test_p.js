@@ -1,5 +1,5 @@
 (async()=>{ await G(()=>{closeSheet();__game.go('mall')});
- const shot20=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v20_'+n+'.png'})};
+ const shot20=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v20x_'+n+'.png'})};
  // P1 wristband hidden under long sleeves, visible with tee
  const p1=await G(()=>{const S=__game.S;const red=s=>{const c=document.createElement('canvas');c.width=200;c.height=260;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,200,260);x.translate(100,0);x.scale(1.5,1.5);const t=__game.ITEMS.filter(q=>q.shape===s&&!q.fake)[0];drawAvatar(x,Object.assign({},S.char,{fitT:3}),{tops:t.id});const d=x.getImageData(0,0,200,260).data;let n=0;for(let i=0;i<d.length;i+=4)if(d[i]===229&&d[i+1]===57&&d[i+2]===53)n++;return n};return{tee:red('tee'),hoodie:red('hoodie'),sweater:red('sweater'),puffer:red('puffer')}});
  ok(['hoodie','sweater','puffer'].every(k=>p1[k]<p1.tee-60),'wristband hidden under long sleeves '+JSON.stringify(p1));

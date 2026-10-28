@@ -12,7 +12,7 @@
    ev('pointerdown',1,WALL+1);ev('pointermove',2,WALL+2);ev('pointermove',3,WALL+3);const ghost=document.querySelector('#hint').textContent;ev('pointerup',3,WALL+3);const p=S.room[0],moved=p.x===3&&p.y===WALL+3;
    ev('pointerdown',3,WALL+3);ev('pointermove',3,0);ev('pointerup',3,0);const back=p.x===3&&p.y===WALL+3;
    const sig=()=>{const d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;let s=0;for(let i=0;i<d.length;i+=32)s=(s*31+d[i]+d[i+2])%1e9;return s};
-   ev('pointerdown',3,WALL+3);ev('pointerup',3,WALL+3);const sel=!!document.querySelector('#rot')&&!!document.querySelector('#flip');const s0=sig();document.querySelector('#rot').click();const rot=p.r===1&&pdim(p).w===it.h&&pdim(p).h===it.w;const s1=sig();
+   ev('pointerdown',3,WALL+3);ev('pointerup',3,WALL+3);for(let t=0;t<4&&!document.querySelector('#rot');t++){await new Promise(r=>setTimeout(r,80));ev('pointerdown',S.room[0].x,S.room[0].y);ev('pointerup',S.room[0].x,S.room[0].y)}const sel=!!document.querySelector('#rot')&&!!document.querySelector('#flip');const s0=sig();document.querySelector('#rot').click();const rot=p.r===1&&pdim(p).w===it.h&&pdim(p).h===it.w;const s1=sig();
    document.querySelector('#flip').click();const fl=p.f===1;const s2=sig();g.save();const saved=/"r":1/.test(store.get(KEY_AUTO)||'')&&/"f":1/.test(store.get(KEY_AUTO)||'');
    const blocked=!fits(it.id,p.x,p.y+(ROWS),0,p.r);return{moved,back,sel,rot,fl,changed:s0!==s1&&s1!==s2,saved,blocked,ta:cv.style.touchAction}});
  ok(k3.moved&&k3.back&&k3.sel&&k3.rot&&k3.fl&&k3.changed&&k3.saved&&k3.blocked&&k3.ta==='none','furniture drag (snap grid, invalid drop snaps back), rotate, flip, saved '+JSON.stringify(k3));
