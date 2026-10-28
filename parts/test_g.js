@@ -41,7 +41,7 @@
  ok(g7.hot===1.6&&g7.out===.6&&g7.diff,'weekly trend report changes resale demand '+JSON.stringify(g7));
  // G8 claw machine
  const g8=await G(async()=>{const S=__game.S;S.cash=50;arcadeSheet();await new Promise(r=>setTimeout(r,150));const cv=document.querySelector('#clawcv');const ok1=cv&&cv.width>0;const own=Object.keys(S.owned).length;const a0=Object.keys(S.ach).length;
-   for(let t=0;t<15&&S.cash>=50;t++){document.querySelector('#clawgo').click();if(S.cash>=50)await new Promise(r=>setTimeout(r,100))}const paid=S.cash-47===(Object.keys(S.ach).length-a0)*ACH_REWARD;clawDone(true);const won=S.stats11.claw===1;closeSheet();return{ok1,paid,won,r:[clawResult(5,.1),clawResult(30,.1),clawResult(5,.9)],pool:clawPrizePool().length}});
+   for(let t=0;t<15&&S.cash>=50;t++){document.querySelector('#clawgo').click();if(S.cash>=50)await new Promise(r=>setTimeout(r,100))}const pd=S.cash-47-(Object.keys(S.ach).length-a0)*ACH_REWARD;const paid=pd===0;clawDone(true);const won=S.stats11.claw===1;closeSheet();return{ok1,paid,pd,cash:S.cash,won,r:[clawResult(5,.1),clawResult(30,.1),clawResult(5,.9)],pool:clawPrizePool().length}});
  ok(g8.ok1&&g8.paid&&g8.won&&g8.r.join()==='true,false,false'&&g8.pool>5,'claw machine pays, wins decor '+JSON.stringify(g8));
  // screenshots: facial hair lineup
  if(SHOTS&&mode==='file'&&W===412){await G(()=>{AV.mood='smile';const o=document.createElement('div');o.id='phov';o.style.cssText='position:fixed;inset:0;z-index:9999;background:#fff;display:flex;flex-wrap:wrap;align-content:flex-start;gap:4px;padding:6px;overflow:auto';

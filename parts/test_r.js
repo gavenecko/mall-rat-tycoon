@@ -1,5 +1,5 @@
 (async()=>{ await G(()=>{closeSheet();__game.go('mall')});
- const shot22=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v22_'+n+'.png'})};
+ const shot22=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v22x_'+n+'.png'})};
  // R1 frequency + pay sim
  const r1=await G(()=>({smart:callSim(520,'smart'),dec:callSim(520,'decline'),gul:callSim(520,'gullible')}));console.log('    calls',JSON.stringify(r1));
  ok(r1.smart.perWeek>0.7&&r1.smart.perWeek<=1.0&&r1.smart.maxIn7<=1&&r1.smart.netPerWeek>0&&r1.smart.netPerWeek<30&&r1.dec.netPerWeek===0&&r1.gul.netPerWeek<0,'calls ~1/week max, smart EV small+, decline safe, gullible loses '+JSON.stringify(r1));
