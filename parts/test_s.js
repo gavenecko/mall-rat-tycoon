@@ -1,5 +1,5 @@
 (async()=>{ await G(()=>{closeSheet();__game.go('mall')});
- const shot23=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v23_'+n+'.png'})};
+ const shot23=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v23x_'+n+'.png'})};
  // S1 pet performs trick in room
  const s1=await G(async()=>{const S=__game.S;S.pet={k:PETS[0].k,name:'Nugget',full:90,joy:90,acc:{},wear:null,day:1,fedDay:S.day,away:0,starve:0,x:2,y:WALL+1,tricks:{sit:2,dead:2},trickN:0};S.home.cur!=='bed'&&switchRoom('bed');__game.go('room');await new Promise(r=>setTimeout(r,200));
    petReact();const a=!!(PW.trick&&PW.trick.until>gnow());petReact();const b=PW.trick&&PW.trick.until>gnow()?PW.trick.k:null;await new Promise(r=>setTimeout(r,250));
