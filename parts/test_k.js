@@ -8,11 +8,11 @@
  ok(k2.n>=5&&!k2.bad.length&&k2.labels.every(l=>l.length<=26&&!/…/.test(l)),'mall map short labels all fit, none truncated '+JSON.stringify(k2));
  // K3 drag / rotate / flip
  const k3=await G(async()=>{const g=__game,S=g.S;const it=g.ITEMS.filter(i=>i.shape==='sofa'&&!i.fake)[0];S.owned[it.id]=(S.owned[it.id]||0)+1;S.room=[{id:it.id,x:1,y:WALL+1}];S.avatar={x:COLS-1,y:ROWS-1};room.placing=null;room.sel=-1;g.go('room');S.room=[{id:it.id,x:1,y:WALL+1}];g.go('room');await new Promise(r=>setTimeout(r,120));
-   const cv=document.querySelector('#roomcv'),b=cv.getBoundingClientRect(),c=b.width/COLS;const ev=(t,gx,gy)=>cv.dispatchEvent(new PointerEvent(t,{bubbles:true,pointerId:1,clientX:b.left+(gx+.5)*c,clientY:b.top+(gy+.5)*c}));
+   window.scrollTo({top:0,behavior:'instant'});const cv=document.querySelector('#roomcv');const ev=(t,gx,gy)=>{const b=cv.getBoundingClientRect(),c=b.width/COLS;return cv.dispatchEvent(new PointerEvent(t,{bubbles:true,pointerId:1,clientX:b.left+(gx+.5)*c,clientY:b.top+(gy+.5)*c}))};
    ev('pointerdown',1,WALL+1);ev('pointermove',2,WALL+2);ev('pointermove',3,WALL+3);const ghost=document.querySelector('#hint').textContent;ev('pointerup',3,WALL+3);const p=S.room[0],moved=p.x===3&&p.y===WALL+3;
    ev('pointerdown',3,WALL+3);ev('pointermove',3,0);ev('pointerup',3,0);const back=p.x===3&&p.y===WALL+3;
    const sig=()=>{const d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;let s=0;for(let i=0;i<d.length;i+=32)s=(s*31+d[i]+d[i+2])%1e9;return s};
-   ev('pointerdown',3,WALL+3);ev('pointerup',3,WALL+3);for(let t=0;t<4&&!document.querySelector('#rot');t++){await new Promise(r=>setTimeout(r,80));ev('pointerdown',S.room[0].x,S.room[0].y);ev('pointerup',S.room[0].x,S.room[0].y)}const sel=!!document.querySelector('#rot')&&!!document.querySelector('#flip');const s0=sig();document.querySelector('#rot').click();const rot=p.r===1&&pdim(p).w===it.h&&pdim(p).h===it.w;const s1=sig();
+   ev('pointerdown',3,WALL+3);ev('pointerup',3,WALL+3);const sel=!!document.querySelector('#rot')&&!!document.querySelector('#flip');const s0=sig();document.querySelector('#rot').click();const rot=p.r===1&&pdim(p).w===it.h&&pdim(p).h===it.w;const s1=sig();
    document.querySelector('#flip').click();const fl=p.f===1;const s2=sig();g.save();const saved=/"r":1/.test(store.get(KEY_AUTO)||'')&&/"f":1/.test(store.get(KEY_AUTO)||'');
    const blocked=!fits(it.id,p.x,p.y+(ROWS),0,p.r);return{moved,back,sel,rot,fl,changed:s0!==s1&&s1!==s2,saved,blocked,ta:cv.style.touchAction}});
  ok(k3.moved&&k3.back&&k3.sel&&k3.rot&&k3.fl&&k3.changed&&k3.saved&&k3.blocked&&k3.ta==='none','furniture drag (snap grid, invalid drop snaps back), rotate, flip, saved '+JSON.stringify(k3));

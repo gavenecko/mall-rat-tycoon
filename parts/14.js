@@ -11,7 +11,7 @@
  document.head.appendChild(st)})();
 function v9Fix(s){if(!s.pet)s.pet=null;if(!s.login)s.login={last:'',streak:0,best:0};if(!s.quests)s.quests={day:0,list:[],done:0,chest:0};
   if(!s.stats9)s.stats9={shoots:0,petFed:0,seasonal:0};if(s.pet&&!s.pet.acc)s.pet.acc={}}
-function profileSnapshot(){return{v:21,story:S.miles?Object.keys(S.miles).length:0,car:S.car?S.car.k:'',fit:S.fit?S.fit.lvl:0,beard:S.char?S.char.beard||'none':'none',friends:S.friends?Object.keys(S.friends).length:0,name:S.char?S.char.name:'',day:S.day,cash:S.cash,earned:S.earned,home:typeof homeScore==='function'?homeScore():0,drip:dripScore(),
+function profileSnapshot(){return{v:22,story:S.miles?Object.keys(S.miles).length:0,car:S.car?S.car.k:'',fit:S.fit?S.fit.lvl:0,beard:S.char?S.char.beard||'none':'none',friends:S.friends?Object.keys(S.friends).length:0,name:S.char?S.char.name:'',day:S.day,cash:S.cash,earned:S.earned,home:typeof homeScore==='function'?homeScore():0,drip:dripScore(),
   ach:Object.keys(S.ach).length,coll:Object.keys(S.coll||{}).length,apt:S.apt?S.apt.k:'',credit:S.credit?S.credit.score:0,pet:S.pet?{k:S.pet.k,name:S.pet.name,acc:Object.keys(S.pet.acc)}:null,streak:S.login.best}}
 
 /* ---------- seasons ---------- */

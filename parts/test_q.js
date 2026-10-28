@@ -1,5 +1,5 @@
 (async()=>{ await G(()=>{closeSheet();__game.go('mall')});
- const shot21=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v21_'+n+'.png'})};
+ const shot21=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v21x_'+n+'.png'})};
  // Q1 pet tricks
  const q1=await G(()=>{const S=__game.S;S.pet={k:PETS[0].k,name:'Nugget',full:90,joy:90,acc:{},wear:null,day:1,fedDay:S.day,away:0,starve:0,x:2,y:WALL+1,tricks:{}};const c0=S.cash,a0=Object.keys(S.ach).length;const d0=S.day;
    petSheet();const box=!!document.querySelector('#trickbox');const a=petTrain(),b=petTrain();S.day++;petTrain();S.day=d0;const learned=petTricks().length;petSheet();const show=!document.querySelector('#showbtn').disabled;const sh=petShow();closeSheet();checkAch();
