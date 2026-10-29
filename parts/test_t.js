@@ -1,5 +1,5 @@
 (async()=>{ await G(()=>{closeSheet();__game.go('mall')});
- const shotV=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v24_'+n+'.png'})};
+ const shotV=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v24x_'+n+'.png'})};
  // T1 progress + unlock at 20 (calls + encounter cons)
  const t1=await G(()=>{const S=__game.S;S.vill=null;villT();S.conned=0;const c=callT();c.st.fooled=17;__game.go('mall');hubShow('social');const card=document.querySelector('#phonecard').textContent;
    S.enc={day:S.day,k:'kioskq',done:0};const e=ENC.filter(q=>q.k==='kioskq')[0];const sv=e.r[1];e.r[1]=()=>({msg:'buffer',cash:-20});encChoose(1);e.r[1]=sv;const after1=fooledTotal();S.cash=5000;c.pend={k:'irs',d:S.day};callAnswer(0);const pre=S.vill.on;c.pend={k:'pkg',d:S.day};callAnswer(0);
