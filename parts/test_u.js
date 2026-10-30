@@ -1,5 +1,5 @@
 (async()=>{ await G(()=>{closeSheet();__game.go('mall')});
- const shotU=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v25_'+n+'.png'})};
+ const shotU=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v25x_'+n+'.png'})};
  // U1 banners never cover sheet tops
  const u1=await G(async()=>{closeSheet();__game.go('mall');for(let i=0;i<3;i++)toast('🏆 Banner test '+i);walkSheet();const b=document.querySelector('#sheet .sheetbox');for(let i=0;i<20;i++)b.insertAdjacentHTML('beforeend','<p>filler</p>');await new Promise(r=>setTimeout(r,450));const t=document.querySelector('#toast').getBoundingClientRect(),s=b.getBoundingClientRect();closeSheet();return{tb:t.bottom,st:s.top,clear:s.top>=t.bottom-1}});
  ok(u1.clear,'achievement banners never cover the top of a tall sheet '+JSON.stringify(u1));
