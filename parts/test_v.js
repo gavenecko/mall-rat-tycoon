@@ -1,5 +1,5 @@
 (async()=>{ await G(()=>{closeSheet();__game.go('mall')});
- const shotV6=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v26_'+n+'.png'})};
+ const shotV6=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v26x_'+n+'.png'})};
  // V1 mystery bag
  const v1=await G(()=>{const S=__game.S;S.cash=100;const b=bagT();b.day=0;const sum=BAG.tiers.reduce((a,t)=>a+t.p,0);const c0=S.cash,a0=Object.keys(S.ach).length;const r=bagOpen(.999,0);const net=S.cash-c0-(Object.keys(S.ach).length-a0)*ACH_REWARD;const again=bagOpen(.1,0);b.day=0;const c1=S.cash;const j=bagOpen(.1,0);const jn=S.cash-c1;b.day=0;bagSheet();const odds=document.querySelector('#bagodds').textContent;
    return{sum:Math.round(sum*1000),leg:r&&r.t==='legend'&&r.it==='Signed Pretzel',net,again,jn,ach:!!S.ach.legend,odds:/62%/.test(odds)&&/2%/.test(odds),ev:bagEV(),sim:bagSim(200000)}});

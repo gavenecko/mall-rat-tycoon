@@ -1,0 +1,23 @@
+(async()=>{ await G(()=>{closeSheet();__game.go('mall')});
+ const shot7=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v27_'+n+'.png'})};
+ // W1 garage sale
+ const w1=await G(()=>{const S=__game.S;const ids=Object.keys(ITEM).filter(k=>ITEM[k].price>=20&&!ITEM[k].slot).slice(0,3);ids.forEach(k=>S.owned[k]=(S.owned[k]||0)+2);S.room.push({id:ids[0],x:1,y:WALL+1});const g=gsaleT();g.day=-99;const L=gsaleSpares();const exp=L.slice(0,GSALE.max).reduce((a,q)=>a+q.price,0);const noProfit=L.every(q=>q.price<ITEM[q.id].price);const keep=ids.map(k=>S.owned[k]);
+   const c0=S.cash,a0=Object.keys(S.ach).length;hoardSheet();const box=!!document.querySelector('#gsalebox #gsalego');const r=gsaleRun();const gain=S.cash-c0-(Object.keys(S.ach).length-a0)*ACH_REWARD;const again=gsaleRun();const kept=ids.every(k=>S.owned[k]>=1)&&S.owned[ids[0]]>=S.room.filter(q=>q.id===ids[0]).length;return{box,n:r.n,gain,exp,noProfit,again,kept,ach:!!S.ach.gsale}});
+ ok(w1.box&&w1.n>0&&w1.gain===w1.exp&&w1.noProfit&&w1.again===null&&w1.kept&&w1.ach,'garage sale: weekly, 40% of cost, keeps placed/last copies '+JSON.stringify(w1));
+ await G(()=>{const S=__game.S;gsaleT().day=-99;const k=Object.keys(ITEM).filter(k=>ITEM[k].price>=20&&!ITEM[k].slot)[5];S.owned[k]=(S.owned[k]||0)+3;closeSheet();hoardSheet();document.querySelector('#gsalebox').scrollIntoView()});await sleep(250);await shot7('garage');await G(()=>closeSheet());
+ // W2 gregory
+ const w2=await G(()=>{const S=__game.S;const g=pigT();g.on=false;g.caught=2;const no=gregDay(0);g.caught=3;const st=pigSteal(false);g.gregDay=0;checkAch();const c0=S.cash,a0=Object.keys(S.ach).length;const c=gregDay(0);checkAch();const got=S.cash-c0-(Object.keys(S.ach).length-a0)*ACH_REWARD;const again=gregDay(.99);g.gregDay=S.day-7;const hi=gregDay(.99);pigSheet();const t=document.querySelector('#gregbox').textContent;closeSheet();checkAch();return{no,st,c,got,again,hi,box:/works for you/.test(t),ach:!!S.ach.greg}});
+ ok(w2.no===null&&w2.st===false&&w2.c===1&&w2.got===1&&w2.again===null&&w2.hi===4&&w2.box&&w2.ach,'Gregory: 3 catches, no more thefts, $1-4 weekly '+JSON.stringify(w2));
+ // W3 race
+ const w3=await G(()=>{const S=__game.S;const f=feudT();f.score=2;f.race=null;const locked=raceOpen()===null;f.score=3;feudDay(true);const r=raceOpen();const t=r.target;const inR=t>=RACE.lo&&t<=RACE.hi;S.raceArmed=true;const e=escT();const c0=S.cash,a0=Object.keys(S.ach).length;e.day=S.day;const res=escFinish(Math.ceil((t+10)/10),0);const gain=S.cash-c0-(Object.keys(S.ach).length-a0)*ACH_REWARD;const again=raceSettle(9999);S.day++;feudDay(true);const r2=raceOpen();const lose=raceSettle(0);S.day--;return{locked,inR,win:res.race&&res.race.win,gain,again,lose:lose&&!lose.win,rec:r2.won+'-'+r2.lost,ach:!!S.ach.race}});
+ ok(w3.locked&&w3.inR&&w3.win&&w3.gain===15&&w3.again===null&&w3.lose&&w3.rec==='1-1'&&w3.ach,'Brayden race: feud 3+, one per note, +$15 win, free loss '+JSON.stringify(w3));
+ await G(()=>{feudDay(true);feudSheet();document.querySelector('#racebox').scrollIntoView()});await sleep(250);await shot7('race');await G(()=>closeSheet());
+ // W4 bag sets
+ const w4=await G(()=>{const S=__game.S;S.cash=200;const b=bagT();b.got={};b.sets={};const J=BAG.tiers[0].items;J.slice(0,-1).forEach(i=>b.got[i]=1);b.day=0;const c0=S.cash,a0=Object.keys(S.ach).length;const r=bagOpen(0,.999);const net=S.cash-c0-(Object.keys(S.ach).length-a0)*ACH_REWARD;b.day=0;J.forEach(i=>b.got[i]=1);const r2=bagOpen(0,0);bagSheet();const t=document.querySelector('#bagsets').textContent;return{set:r.set,net,again:r2.set,shown:/Junk \$10 ✓/.test(t),ach:!!S.ach.bagset,ev:bagEV()}});
+ ok(w4.set===10&&w4.net===5&&w4.again===0&&w4.shown&&w4.ach&&w4.ev<0,'bag set bonus one-time, bag EV still negative '+JSON.stringify(w4));
+ await G(()=>document.querySelector('#bagsets').scrollIntoView());await sleep(250);await shot7('bagsets');await G(()=>closeSheet());
+ // W5 escalator keys
+ const w5=await G(async()=>{escSheet();document.querySelector('#escgo').click();await new Promise(r=>setTimeout(r,100));document.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft'}));await new Promise(r=>setTimeout(r,50));const cv=document.querySelector('#esccv');const d=cv.getContext('2d').getImageData(0,0,cv.width/3,cv.height).data;let pink=0;for(let i=0;i<d.length;i+=4)if(d[i]===255&&d[i+1]===79&&d[i+2]===154)pink++;closeSheet();return{pink}});
+ ok(w5.pink>50,'escalator run arrow keys switch lanes '+JSON.stringify(w5));
+ const w6=await G(()=>{__game.go('mall');hubShow('today');return document.querySelector('#view').scrollHeight});ok(w6<3200,'page length ok '+w6);
+})();
