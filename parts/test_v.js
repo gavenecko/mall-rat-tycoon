@@ -20,4 +20,17 @@
  await sleep(400);await shotV6('escalator');await G(()=>closeSheet());
  const v4=await G(()=>{__game.go('mall');const t=id=>{const e=document.getElementById(id);const h=e&&e.closest('.hubp');return h&&h.dataset.p};hubShow('today');return{bag:t('bagcard'),esc:t('esccard'),H:document.querySelector('#view').scrollHeight}});
  ok(v4.bag==='fun'&&v4.esc==='fun'&&v4.H<3200,'new cards in Fun tab, page short '+JSON.stringify(v4));
+
+ // V5 lock-in
+ const v5=await G(()=>{const S=__game.S;S.cash=100;const l=lockT();l.day=-1;const off=lockChoose('fc',0);lockStart(true);__game.go('mall');const card=document.querySelector('#lockcard');const tab=card&&card.closest('.hubp').dataset.p;const c0=S.cash,a0=Object.keys(S.ach).length;const w=lockChoose('fc',.1);const gain=S.cash-c0-(Object.keys(S.ach).length-a0)*ACH_REWARD;const again=lockChoose('esc');lockStart(true);const c1=S.cash;lockChoose('fc',.9);const loss=S.cash-c1;lockStart(true);lockSheet();const cv=document.querySelector('#lockcv');const d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;let op=0;for(let i=3;i<d.length;i+=4)if(d[i]===255)op++;const btns=document.querySelectorAll('[data-lock]').length;closeSheet();
+   let ev=0;for(let i=0;i<100000;i++)if(Math.random()<LOCKIN.chance)ev+=5;return{off,tab,gain,again,loss,ach:!!S.ach.lockin,op:op/(d.length/4),btns,evPerDay:ev/100000}});
+ ok(v5.off===null&&v5.tab==='fun'&&v5.gain===20&&v5.again===null&&v5.loss===-10&&v5.ach&&v5.op===1&&v5.btns===3&&v5.evPerDay<1,'lock-in: rare, one choice, small stakes, opaque art '+JSON.stringify(v5));
+ // V6 rival
+ const v6=await G(()=>{const S=__game.S;S.cash=100;const r=feudT();r.next=S.day;const ok1=feudDay();__game.go('mall');const card=document.querySelector('#feudcard');const tab=card&&card.closest('.hubp').dataset.p;const c0=S.cash;const g=feudPrank('glitter');const paid=c0-S.cash;const twice=feudPrank('peace');feudDay(true);const c1=S.cash;feudPrank('yelp',.9);const back=S.cash-c1;feudDay(true);feudPrank('peace');const nf=feudDay();return{ok1,tab,paid,twice,back,score:r.score,peace:r.peace,copy:!!r.copy,nf,next:r.next-S.day}});
+ ok(v6.ok1&&v6.tab==='social'&&v6.paid===8&&v6.twice===null&&v6.back===-5&&v6.score===1&&v6.peace===1&&v6.copy&&v6.nf===false&&v6.next===5,'rival feud: notes every 5 days, copycat, prank back '+JSON.stringify(v6));
+ await G(()=>{feudDay(true);feudSheet();window.scrollTo(0,0)});await sleep(250);await shotV6('rival');await G(()=>closeSheet());
+ // V7 hoarder
+ const v7=await G(()=>{const n=hoardScore();hoardSheet();const t=document.querySelector('#sheet').textContent;closeSheet();__game.go('mall');const card=document.querySelector('#hoardcard');return{n,shown:t.includes(String(n)),tier:hoardTier(0)[1]==='Minimalist'&&hoardTier(300)[1]==='Reality Show Material',tab:card&&card.closest('.hubp').dataset.p}});
+ ok(v7.n>0&&v7.shown&&v7.tier&&v7.tab==='fun','hoarder score + tiers in Fun tab '+JSON.stringify(v7));
+ const v8=await G(()=>{__game.go('mall');hubShow('today');return document.querySelector('#view').scrollHeight});ok(v8<3200,'today page short with all v26 cards '+v8);
 })();
