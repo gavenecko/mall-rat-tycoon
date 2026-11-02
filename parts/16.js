@@ -66,7 +66,7 @@ function barberSheet(){if(!S.char)return;if(!barbDraft)barbDraft=Object.assign({
 const CLAW_COST=3;
 function clawPrizePool(){return ITEMS.filter(i=>!i.slot&&(i.cat==='decor'||i.cat==='plants')&&i.price<=45&&!i.drop&&!i.rare)}
 function clawResult(dx,roll){return Math.abs(dx)<=16&&roll<.55}
-function arcadeSheet(){const W=Math.min(300,window.innerWidth-60),H=210;sheet('<h3>🕹️ Dave & Busted: Claw-some</h3><div class="small">Tap DROP when the claw is over a plushie. Grip strength: "emotionally unavailable". '+money(CLAW_COST)+' per try. Wins: '+S.stats11.claw+'</div><div class="center"><canvas id="clawcv" style="border-radius:14px;touch-action:none"></canvas></div><button class="btn big" id="clawgo">▼ DROP ('+money(CLAW_COST)+')</button>');
+function arcadeSheet(){arcadeSheet.tok=(arcadeSheet.tok||0)+1;const W=Math.min(300,window.innerWidth-60),H=210;sheet('<h3>🕹️ Dave & Busted: Claw-some</h3><div class="small">Tap DROP when the claw is over a plushie. Grip strength: "emotionally unavailable". '+money(CLAW_COST)+' per try. Wins: '+S.stats11.claw+'</div><div class="center"><canvas id="clawcv" style="border-radius:14px;touch-action:none"></canvas></div><button class="btn big" id="clawgo">▼ DROP ('+money(CLAW_COST)+')</button>');
   const cv=$('#clawcv'),x=setupCanvas(cv,W,H),cols=['#ff8a80','#ffd54f','#81d4fa','#a5d6a7','#ce93d8'],prizes=[0,1,2,3,4].map(i=>({x:30+i*(W-60)/4,c:cols[i]}));let st={cx:W/2,y:20,ph:'move',t0:Date.now(),hold:null,res:null};
   function plush(px,py,c){x.save();x.globalAlpha=1;x.fillStyle=c;x.strokeStyle=OUT;x.lineWidth=1.5;circ(x,px-9,py-14,6);x.fill();x.stroke();circ(x,px+9,py-14,6);x.fill();x.stroke();circ(x,px,py,15);x.fill();x.stroke();
     x.fillStyle='#2b2b2b';circ(x,px-5,py-3,2);x.fill();circ(x,px+5,py-3,2);x.fill();x.fillStyle='#fff';ell(x,px,py+5,4,3);x.fill();x.restore()}
@@ -79,7 +79,7 @@ function arcadeSheet(){const W=Math.min(300,window.innerWidth-60),H=210;sheet('<
     if(st.ph!=='done')requestAnimationFrame(frame)}
   frame();$('#clawgo').onclick=()=>{if(st.ph!=='move')return;if(!payCash(CLAW_COST,'the claw'))return;S.stats11.plays++;st.ph='drop';$('#clawgo').disabled=true;sfx('click')}}
 function clawDone(won){if(won){const pool=clawPrizePool(),it=pool[Math.floor(Math.random()*pool.length)];if(it){S.owned[it.id]=(S.owned[it.id]||0)+1;S.stats11.claw++;sfx('level');burst&&burst(14);toast('🧸 WON: '+it.name+'! Check your room')}}else{sfx('bad');toast(pick(['The claw said no.','So close. The claw is a liar.','Rigged? Never. (Yes.)']))}
-  save();setTimeout(()=>{if(!$('#sheet').hidden&&$('#clawcv'))arcadeSheet()},900)}
+  save();const tk=arcadeSheet.tok;setTimeout(()=>{if(tk===arcadeSheet.tok&&!$('#sheet').hidden&&$('#clawcv'))arcadeSheet()},900)}
 /* ---------- trend report ---------- */
 const TREND_SHAPES=['blazer','hoodie','tank','puffer','joggers','shorts','skirt','jeans','boots','heels','loafers','slides','chain','sunglasses','handbag','scarf','cowboy','cap','beanie','tee','sweater','sneakers','watch','bucket','tophat'];
 const TREND_LINES=['TikTak says it\'s giving main character.','Seen on 3 influencers and 1 confused dad.','A celebrity wore it to a gas station.','Fashion week but make it the food court.'];
