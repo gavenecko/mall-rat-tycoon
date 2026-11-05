@@ -1,5 +1,5 @@
 (async()=>{ await G(()=>{closeSheet();__game.go('mall')});
- const shot8=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v28_'+n+'.png'})};
+ const shot8=async n=>{if(SHOTS&&mode==='file'&&W===412)await p.screenshot({path:'shots/v28x_'+n+'.png'})};
  // X1 garage chooser
  const x1=await G(()=>{const S=__game.S;const ids=Object.keys(ITEM).filter(k=>ITEM[k].price>=20&&!ITEM[k].slot).slice(10,17);ids.forEach(k=>S.owned[k]=(S.owned[k]||0)+2);gsaleT().day=-99;hoardSheet();const cs=[...document.querySelectorAll('[data-gs]')];const def=cs.filter(c=>c.checked).length;cs.forEach(c=>{if(c.checked){c.checked=false;c.onchange()}});const pickId=cs[cs.length-1].dataset.gs;cs[cs.length-1].checked=true;cs[cs.length-1].onchange();const lbl=document.querySelector('#gsalego').textContent;const price=gsaleSpares().filter(q=>q.id===pickId)[0].price;const n0=S.owned[pickId],c0=S.cash;document.querySelector('#gsalego').click();const sold=n0-(S.owned[pickId]||0);const gain=S.cash-c0;
    gsaleT().day=-99;hoardSheet();const cs2=[...document.querySelectorAll('[data-gs]')];const capped=cs2.filter(c=>c.disabled).length===Math.max(0,cs2.length-GSALE.max);const au=!!document.querySelector('#gsaleauto');closeSheet();return{n:cs.length,def,lbl:lbl.includes(money(price)),sold,gain:gain>=price,capped,au}});
