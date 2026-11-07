@@ -357,9 +357,9 @@ const store={
   get(k){if(storageOK){try{return window.localStorage.getItem(k)}catch(e){}}return Object.prototype.hasOwnProperty.call(MEM,k)?MEM[k]:null},
   set(k,v){MEM[k]=v;if(storageOK){try{window.localStorage.setItem(k,v)}catch(e){}}}
 };
-function fresh(){return v8Init({v:30,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},dark:false,home:{wall:null,floor:null,ext:{},yard:[],water:{},size:0,waters:0,remodels:0},rap:{optin:false,lastSteal:{},hot:{},arrests:0,heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
+function fresh(){return v8Init({v:31,crime:{active:false,next:0},orders:[],inbox:[],wish:{},card:{bal:0},bnpl:[],flea:[],fb:{day:0,list:[]},oid:1,stats3:{won:0,flipped:0,scammed:0,haggled:0},gifted:{},dark:false,home:{wall:null,floor:null,ext:{},yard:[],water:{},size:0,waters:0,remodels:0},rap:{optin:false,lastSteal:{},hot:{},arrests:0,heat:0,record:[],offenses:0,caught:0,storeOff:{},bans:{},cs:0,csDone:0,stolen:0,fakesSold:0,busted:0,raids:0,alley:false,alleyBought:0,finesPaid:0},char:null,cash:START_CASH,owned:{},equipped:{},room:[],avatar:{x:4,y:7},day:1,dayAt:Date.now(),stock:{},jobs:{},
   shifts:0,earned:0,spent:0,dealsBought:0,ach:{},tutDone:false,muted:false,savedAt:0})}
-function v8Init(o){if(typeof v8Fix==='function')v8Fix(o);if(typeof v9Fix==='function')v9Fix(o);if(typeof v10Fix==='function')v10Fix(o);if(typeof v11Fix==='function')v11Fix(o);if(typeof v12Fix==='function')v12Fix(o);if(typeof v13Fix==='function')v13Fix(o);if(typeof v14Fix==='function')v14Fix(o);if(typeof v15Fix==='function')v15Fix(o);if(typeof v16Fix==="function")v16Fix(o);if(typeof v17Fix==="function")v17Fix(o);if(typeof v18Fix==="function")v18Fix(o);if(typeof v19Fix==="function")v19Fix(o);if(typeof v20Fix==="function")v20Fix(o);if(typeof v21Fix==="function")v21Fix(o);if(typeof v22Fix==="function")v22Fix(o);if(typeof v23Fix==="function")v23Fix(o);if(typeof v24Fix==="function")v24Fix(o);if(typeof v25Fix==="function")v25Fix(o);if(typeof v26Fix==="function")v26Fix(o);if(typeof v27Fix==="function")v27Fix(o);if(typeof v28Fix==="function")v28Fix(o);if(typeof v29Fix==="function")v29Fix(o);if(typeof v30Fix==="function")v30Fix(o);return o}
+function v8Init(o){if(typeof v8Fix==='function')v8Fix(o);if(typeof v9Fix==='function')v9Fix(o);if(typeof v10Fix==='function')v10Fix(o);if(typeof v11Fix==='function')v11Fix(o);if(typeof v12Fix==='function')v12Fix(o);if(typeof v13Fix==='function')v13Fix(o);if(typeof v14Fix==='function')v14Fix(o);if(typeof v15Fix==='function')v15Fix(o);if(typeof v16Fix==="function")v16Fix(o);if(typeof v17Fix==="function")v17Fix(o);if(typeof v18Fix==="function")v18Fix(o);if(typeof v19Fix==="function")v19Fix(o);if(typeof v20Fix==="function")v20Fix(o);if(typeof v21Fix==="function")v21Fix(o);if(typeof v22Fix==="function")v22Fix(o);if(typeof v23Fix==="function")v23Fix(o);if(typeof v24Fix==="function")v24Fix(o);if(typeof v25Fix==="function")v25Fix(o);if(typeof v26Fix==="function")v26Fix(o);if(typeof v27Fix==="function")v27Fix(o);if(typeof v28Fix==="function")v28Fix(o);if(typeof v29Fix==="function")v29Fix(o);if(typeof v30Fix==="function")v30Fix(o);if(typeof v31Fix==="function")v31Fix(o);return o}
 function normalize(o){
   if(!o||typeof o!=='object'||typeof o.cash!=='number'||isNaN(o.cash))throw new Error('Not a valid save');
   const s=Object.assign(fresh(),o);
@@ -368,7 +368,7 @@ function normalize(o){
   s.room=(s.room||[]).filter(p=>ITEM[p.id]&&s.owned[p.id]);
   const f=fresh();['crime','card','fb','stats3','rap'].forEach(k=>{s[k]=Object.assign({},f[k],s[k]||{})});
   s.orders=(s.orders||[]).filter(o=>ITEM[o.id]);s.flea=(s.flea||[]).filter(a=>ITEM[a.id]);s.fb.list=(s.fb.list||[]).filter(l=>ITEM[l.id]);
-  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});homeFix(s);s.awayFrom=s.savedAt||0;if(!s.gt){s.gt=Date.now();if(s.char&&s.day>=40&&!s.ttFixed)s.ttOffer=true;if(s.gt-(s.dayAt||0)>DAY_MS)s.dayAt=s.gt-Math.min(DAY_MS*.5,Math.max(0,DAY_MS-1))}if(typeof v8Fix==="function")v8Fix(s);if(typeof v9Fix==='function')v9Fix(s);if(typeof v10Fix==='function')v10Fix(s);if(typeof v11Fix==="function")v11Fix(s);if(typeof v12Fix==="function")v12Fix(s);if(typeof v13Fix==="function")v13Fix(s);if(typeof v14Fix==="function")v14Fix(s);if(typeof v15Fix==="function")v15Fix(s);if(typeof v16Fix==="function")v16Fix(s);if(typeof v17Fix==="function")v17Fix(s);if(typeof v18Fix==="function")v18Fix(s);if(typeof v19Fix==="function")v19Fix(s);if(typeof v20Fix==="function")v20Fix(s);if(typeof v21Fix==="function")v21Fix(s);if(typeof v22Fix==="function")v22Fix(s);if(typeof v23Fix==="function")v23Fix(s);if(typeof v24Fix==="function")v24Fix(s);if(typeof v25Fix==="function")v25Fix(s);if(typeof v26Fix==="function")v26Fix(s);if(typeof v27Fix==="function")v27Fix(s);if(typeof v28Fix==="function")v28Fix(s);if(typeof v29Fix==="function")v29Fix(s);if(typeof v30Fix==="function")v30Fix(s);s.v=30;
+  Object.keys(s.wish).forEach(id=>{if(!ITEM[id])delete s.wish[id]});homeFix(s);s.awayFrom=s.savedAt||0;if(!s.gt){s.gt=Date.now();if(s.char&&s.day>=40&&!s.ttFixed)s.ttOffer=true;if(s.gt-(s.dayAt||0)>DAY_MS)s.dayAt=s.gt-Math.min(DAY_MS*.5,Math.max(0,DAY_MS-1))}if(typeof v8Fix==="function")v8Fix(s);if(typeof v9Fix==='function')v9Fix(s);if(typeof v10Fix==='function')v10Fix(s);if(typeof v11Fix==="function")v11Fix(s);if(typeof v12Fix==="function")v12Fix(s);if(typeof v13Fix==="function")v13Fix(s);if(typeof v14Fix==="function")v14Fix(s);if(typeof v15Fix==="function")v15Fix(s);if(typeof v16Fix==="function")v16Fix(s);if(typeof v17Fix==="function")v17Fix(s);if(typeof v18Fix==="function")v18Fix(s);if(typeof v19Fix==="function")v19Fix(s);if(typeof v20Fix==="function")v20Fix(s);if(typeof v21Fix==="function")v21Fix(s);if(typeof v22Fix==="function")v22Fix(s);if(typeof v23Fix==="function")v23Fix(s);if(typeof v24Fix==="function")v24Fix(s);if(typeof v25Fix==="function")v25Fix(s);if(typeof v26Fix==="function")v26Fix(s);if(typeof v27Fix==="function")v27Fix(s);if(typeof v28Fix==="function")v28Fix(s);if(typeof v29Fix==="function")v29Fix(s);if(typeof v30Fix==="function")v30Fix(s);if(typeof v31Fix==="function")v31Fix(s);s.v=31;
   return s;
 }
 function load(){try{const raw=store.get(KEY_AUTO);return raw?normalize(JSON.parse(raw)):fresh()}catch(e){return fresh()}}
@@ -2040,7 +2040,7 @@ const ROOM_STYLE={
  document.head.appendChild(st)})();
 function v9Fix(s){if(!s.pet)s.pet=null;if(!s.login)s.login={last:'',streak:0,best:0};if(!s.quests)s.quests={day:0,list:[],done:0,chest:0};
   if(!s.stats9)s.stats9={shoots:0,petFed:0,seasonal:0};if(s.pet&&!s.pet.acc)s.pet.acc={}}
-function profileSnapshot(){return{v:30,story:S.miles?Object.keys(S.miles).length:0,car:S.car?S.car.k:'',fit:S.fit?S.fit.lvl:0,beard:S.char?S.char.beard||'none':'none',friends:S.friends?Object.keys(S.friends).length:0,name:S.char?S.char.name:'',day:S.day,cash:S.cash,earned:S.earned,home:typeof homeScore==='function'?homeScore():0,drip:dripScore(),
+function profileSnapshot(){return{v:31,story:S.miles?Object.keys(S.miles).length:0,car:S.car?S.car.k:'',fit:S.fit?S.fit.lvl:0,beard:S.char?S.char.beard||'none':'none',friends:S.friends?Object.keys(S.friends).length:0,name:S.char?S.char.name:'',day:S.day,cash:S.cash,earned:S.earned,home:typeof homeScore==='function'?homeScore():0,drip:dripScore(),
   ach:Object.keys(S.ach).length,coll:Object.keys(S.coll||{}).length,apt:S.apt?S.apt.k:'',credit:S.credit?S.credit.score:0,pet:S.pet?{k:S.pet.k,name:S.pet.name,acc:Object.keys(S.pet.acc)}:null,streak:S.login.best}}
 
 /* ---------- seasons ---------- */
@@ -3800,7 +3800,7 @@ function lmDrawShop(x,sp,baseY,t){
   for(let i=0;i<5;i++){x.fillStyle=i%2?L.trim:L.awn;x.fillRect(X+8+i*((W-16)/5),Y+28,(W-16)/5,3)}
   /* sign band */
   x.fillStyle=L.signBg;rr(x,X+8,Y+10,W-16,16,3);x.fill();x.stroke();
-  x.fillStyle=L.signInk;x.font='800 11px system-ui';x.textAlign='center';x.fillText((sp.s.emoji||'')+' '+(sp.s.name||'').slice(0,12),X+W/2,Y+22,W-22);
+  x.fillStyle=L.signInk;x.font='800 11px system-ui';x.textAlign='center';x.fillText(sp.s.name,X+W/2,Y+22,W-22);
   /* window */
   const wx=X+10,wy=Y+48,ww=W-20,wh=70;
   if(sp.open){
@@ -3810,7 +3810,7 @@ function lmDrawShop(x,sp,baseY,t){
     lmMotif(x,wx,wy,ww/2,wh/2,L.motif,L.signInk==='#fff'?L.wall:L.signInk);
     /* second display item */
     x.fillStyle=L.trim;rr(x,wx+ww/2+8,wy+wh/2+8,ww/2-16,wh/2-16,3);x.fill();x.stroke();
-    x.fillStyle=L.signInk==='#fff'?L.wall:L.signInk;x.font='800 10px system-ui';x.textAlign='center';x.fillText(sp.s.emoji||'•',wx+ww*3/4,wy+wh/2+28);
+    x.fillStyle=L.signInk==='#fff'?L.wall:L.signInk;x.font='800 10px system-ui';x.textAlign='center';lmMotif(x,wx+ww/2,wy+wh/2,ww/2,wh/2,L.motif,L.wall);
     /* door */
     x.fillStyle='#5d4037';rr(x,X+W/2-12,Y+H-32,24,30,3);x.fill();x.stroke();
     x.fillStyle='#ffd54f';circ(x,X+W/2+6,Y+H-16,2);x.fill();
@@ -3822,7 +3822,7 @@ function lmDrawShop(x,sp,baseY,t){
     x.fillStyle='#455a64';rr(x,wx,wy,ww,wh+18,3);x.fill();x.stroke();
     x.strokeStyle='#263238';x.lineWidth=1.2;for(let yy=wy+4;yy<wy+wh+14;yy+=6){line(x,wx+2,yy,wx+ww-2,yy)}
     x.fillStyle='#ffcc80';x.font='800 10px system-ui';x.textAlign='center';x.fillText('CLOSED',X+W/2,wy+wh/2);
-    x.font='700 9px system-ui';x.fillStyle='#fffde7';x.fillText('Opens Day '+sp.next,X+W/2,wy+wh/2+14,ww-8);
+    x.font='700 11px system-ui';x.fillStyle='#fffde7';x.fillText('In-game day '+sp.next,X+W/2,wy+wh/2+14,ww-8);
   }
   /* planter under window */
   x.fillStyle='#6d4c41';rr(x,X+6,Y+H-8,22,8,2);x.fill();x.stroke();
@@ -3869,13 +3869,13 @@ function lmDrawWorld(x,W,H,st){
   /* ---- FOREGROUND actors (parallax 1.2) ---- */
   const fg=cam*1.2;
   st.npcs.forEach(n=>{
-    n.wx+=n.vx;if(n.wx<-40)n.wx=st.worldW+40;if(n.wx>st.worldW+40)n.wx=-40;
+    n.wx+=n.vx*(st.dt||0)*60;if(n.wx<-40)n.wx=st.worldW+40;if(n.wx>st.worldW+40)n.wx=-40;
     const sx=n.wx-fg,bob=Math.sin(t*6+n.ph)*2;if(sx<-20||sx>W+20)return;
     x.fillStyle=n.c;x.strokeStyle=OUT;x.lineWidth=1.5;rr(x,sx-7,floorY+28+bob,14,18,4);x.fill();x.stroke();
     x.fillStyle=n.skin;circ(x,sx,floorY+22+bob,6);x.fill();x.stroke();
   });
   st.birds.forEach(b=>{
-    b.wx+=b.vx;if(b.wx>st.worldW+40)b.wx=-20;
+    b.wx+=b.vx*(st.dt||0)*60;if(b.wx>st.worldW+40)b.wx=-20;
     const sx=b.wx-cam*0.9,sy=50+Math.sin(t*3+b.ph)*8;if(sx<-20||sx>W+20)return;
     x.fillStyle='#90a4ae';x.strokeStyle=OUT;x.lineWidth=1.5;ell(x,sx,sy,9,5);x.fill();x.stroke();
     x.fillStyle='#7e57c2';circ(x,sx+6,sy-2,4);x.fill();x.stroke();
@@ -3883,49 +3883,106 @@ function lmDrawWorld(x,W,H,st){
   });
 
   /* HUD chrome */
-  x.fillStyle='rgba(29,26,43,.88)';rr(x,8,H-30,W-16,24,8);x.fill();
+  x.fillStyle='#1d1a2b';rr(x,8,H-30,W-16,24,8);x.fill();
   x.fillStyle='#fff';x.font='700 11px system-ui';x.textAlign='center';
   x.fillText('⟷ Drag / swipe to walk the mall · '+st.openN+' open · tap a shop',W/2,H-14,W-24);
   /* edge fade hints */
-  if(cam>4){x.fillStyle='#1a237e';x.globalAlpha=.35;x.fillRect(0,0,18,H);x.globalAlpha=1}
-  if(cam<st.worldW-W-4){x.fillStyle='#1a237e';x.globalAlpha=.35;x.fillRect(W-18,0,18,H);x.globalAlpha=1}
+  if(cam>4){x.fillStyle='#1a237e';x.globalAlpha=1;x.fillRect(0,0,18,H);x.globalAlpha=1}
+  if(cam<st.worldW-W-4){x.fillStyle='#1a237e';x.globalAlpha=1;x.fillRect(W-18,0,18,H);x.globalAlpha=1}
   x.restore();
 }
 
 function liveMallSheet(){
   lmStop();
-  const W=Math.min(380,window.innerWidth-28),H=Math.min(460,Math.floor(window.innerHeight*.68));
+  const W=Math.min(370,window.innerWidth-48),H=Math.min(400,Math.floor(window.innerHeight*.52));
   const world=lmBuildWorld();
-  sheet('<h3>🏬 Live Mall View</h3><div class="small">Walk the concourse — drag to scroll. Parallax layers + real storefronts. Closed shops show shutters &amp; the next day they open.</div><div id="livemallwrap" class="center"><canvas id="livemall"></canvas></div><div id="lmsbar"><button class="btn alt" id="lmleft">◀</button><button class="btn alt big" id="lmclassic">🗺️ Classic map</button><button class="btn alt" id="lmright">▶</button></div>');
-  const cv=$('#livemall'),x=setupCanvas(cv,W,H);
-  const skins=['#f5c6a5','#c68642','#8d5524','#ffe0bd'],cols=['#ff8a80','#81d4fa','#a5d6a7','#ce93d8','#ffd54f','#ff4f9a','#80cbc4'];
-  LM.st={t:0,cam:0,maxCam:Math.max(0,world.worldW-W),worldW:world.worldW,shops:world.shops,openN:world.openN,drag:null,vel:0,
-    npcs:Array.from({length:7},(_,i)=>({wx:40+i*90+Math.random()*40,vx:(Math.random()<.5?-1:1)*(.35+Math.random()*.6),c:cols[i%cols.length],skin:skins[i%skins.length],ph:Math.random()*6})),
-    birds:Array.from({length:4},(_,i)=>({wx:60+i*120,vx:.7+Math.random()*.5,ph:Math.random()*6}))};
-  function frame(){if(!document.body.contains(cv)){lmStop();return}
-    LM.st.t+=1/60;if(!LM.st.drag&&LM.st.vel){LM.st.cam=Math.max(0,Math.min(LM.st.maxCam,LM.st.cam+LM.st.vel));LM.st.vel*=.92;if(Math.abs(LM.st.vel)<.05)LM.st.vel=0}
-    lmDrawWorld(x,W,H,LM.st);LM.iv=requestAnimationFrame(frame)}
-  frame();
-  const clamp=()=>{LM.st.cam=Math.max(0,Math.min(LM.st.maxCam,LM.st.cam))};
-  cv.addEventListener('pointerdown',ev=>{cv.setPointerCapture(ev.pointerId);LM.st.drag={x:ev.clientX,cam:LM.st.cam,moved:0};LM.st.vel=0;cv.classList.add('drag')});
-  cv.addEventListener('pointermove',ev=>{if(!LM.st.drag)return;const dx=ev.clientX-LM.st.drag.x;LM.st.drag.moved+=Math.abs(dx);LM.st.cam=LM.st.drag.cam-dx;clamp();LM.st.drag.x=ev.clientX;LM.st.drag.cam=LM.st.cam;LM.st.vel=-dx});
-  const up=ev=>{if(!LM.st.drag)return;const moved=LM.st.drag.moved;cv.classList.remove('drag');LM.st.drag=null;if(moved>8){LM.st._skipClick=1;return}
-    const b=cv.getBoundingClientRect(),sx=(ev.clientX-b.left)*(W/b.width),sy=(ev.clientY-b.top)*(H/b.height);
-    const hit=LM.st.shops.filter(sp=>{const r=sp.r;return r&&sx>=r[0]-LM.st.cam&&sx<=r[0]-LM.st.cam+r[2]&&sy>=r[1]&&sy<=r[1]+r[3]})[0];
-    if(!hit)return;sfx('click');
-    if(!hit.open){toast('🔒 '+hit.s.name+' shutters are down. Opens Day '+hit.next+(hit.next===S.day?' (today!)':hit.next===S.day+1?' (tomorrow)':' ('+(hit.next-S.day)+' days)'));return}
-    if(typeof isBanned==='function'&&isBanned(hit.s.id)){sfx('bad');toast('🚫 Banned from '+hit.s.name);return}
-    closeSheet();go('mall',hit.s.id)};
-  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',()=>{LM.st.drag=null;cv.classList.remove('drag')});cv.addEventListener('click',ev=>{if(LM.st&&LM.st._skipClick){LM.st._skipClick=0;return}up(ev)});
-  const key=ev=>{if(!document.body.contains(cv)){document.removeEventListener('keydown',key);return}
-    if(ev.key==='ArrowLeft'||ev.key==='a'){LM.st.cam-=40;clamp();ev.preventDefault()}
-    if(ev.key==='ArrowRight'||ev.key==='d'){LM.st.cam+=40;clamp();ev.preventDefault()}};
+  sheet('<h3>Live Mall View</h3><p class="small">Swipe to explore; tap to enter. Closed shops show their next in-game opening day.</p><canvas id="livemall" aria-label="Mall panorama; use the labelled shop directory below for accessible navigation"></canvas><div id="lmsbar"><button class="btn alt" id="lmleft" aria-label="Walk left">◀</button><button class="btn alt" id="lmpause">Pause ambience</button><button class="btn alt" id="lmright" aria-label="Walk right">▶</button></div><p class="small" id="lmselected" aria-live="polite">Choose a shop below for its full name and opening information.</p><details id="lmdirectory"><summary>Shop directory (all storefronts)</summary><div id="lmshops"></div></details><button class="btn alt big" id="lmclassic">Classic wing map</button>');
+  const cv=$('#livemall'),x=setupCanvas(cv,W,H),skins=['#f5c6a5','#c68642','#8d5524','#ffe0bd'],cols=['#ff8a80','#81d4fa','#a5d6a7','#ce93d8','#ffd54f','#ff4f9a','#80cbc4'];
+  const st=LM.st={t:0,cam:0,maxCam:Math.max(0,world.worldW-W),worldW:world.worldW,shops:world.shops,openN:world.openN,drag:null,vel:0,dt:0,
+    npcs:Array.from({length:7},(_,i)=>({wx:40+i*90,vx:(i%2?-1:1)*.6,c:cols[i],skin:skins[i%4],ph:i})),
+    birds:Array.from({length:4},(_,i)=>({wx:60+i*120,vx:1,ph:i}))};
+  let last=0,paused=motionReduced(),alive=true;
+  const clamp=()=>{st.cam=Math.max(0,Math.min(st.maxCam,st.cam))};
+  const paint=()=>{if(alive)lmDrawWorld(x,W,H,st)};
+  function frame(now){LM.iv=null;if(!alive||document.hidden||paused)return;const dt=last?Math.min(.05,(now-last)/1000):0;last=now;st.dt=dt;st.t+=dt;
+    if(!st.drag&&st.vel){st.cam+=st.vel*dt*60;clamp();st.vel*=Math.pow(.92,dt*60);if(Math.abs(st.vel)<.05)st.vel=0}
+    paint();LM.iv=requestAnimationFrame(frame)}
+  const wake=()=>{if(LM.iv){cancelAnimationFrame(LM.iv);LM.iv=null}last=0;if(!document.hidden&&!paused&&alive)LM.iv=requestAnimationFrame(frame)};
+  const vis=()=>wake();document.addEventListener('visibilitychange',vis);
+  const pauseBtn=$('#lmpause');const pauseLabel=()=>{pauseBtn.textContent=paused?'Play ambience':'Pause ambience';pauseBtn.setAttribute('aria-pressed',String(paused))};pauseLabel();
+  pauseBtn.onclick=()=>{paused=!paused;st.vel=0;pauseLabel();wake()};
+  const motion=()=>{if(motionReduced()){paused=true;st.vel=0;pauseLabel();wake()}};
+  const media=window.matchMedia('(prefers-reduced-motion: reduce)');media.addEventListener('change',motion);
+  const open=sp=>{const info=sp.s.name+' — '+(sp.open?(sp.park?'Open 24/7':'Open this in-game day'):'Opens in-game day '+sp.next);$('#lmselected').textContent=info;
+    if(!sp.open){toast('Closed: '+sp.s.name+'. Opens Day '+sp.next+' (in-game day).');return}
+    if(typeof isBanned==='function'&&isBanned(sp.s.id)){toast('Banned from '+sp.s.name);return}
+    closeSheet();go('mall',sp.s.id)};
+  $('#lmshops').innerHTML=st.shops.map((sp,i)=>'<button class="btn alt big" data-lmshop="'+i+'">'+esc(sp.s.name)+' — '+(sp.open?(sp.park?'Open 24/7':'Open today'):'Closed; opens in-game day '+sp.next)+'</button>').join('');
+  onAll($('#lmshops'),'[data-lmshop]',b=>open(st.shops[+b.dataset.lmshop]));
+  cv.addEventListener('pointerdown',ev=>{if(ev.button!==0||st.drag)return;try{cv.setPointerCapture(ev.pointerId)}catch(e){}st.drag={id:ev.pointerId,x:ev.clientX,y:ev.clientY,moved:0};st.vel=0;cv.classList.add('drag')});
+  cv.addEventListener('pointermove',ev=>{const d=st.drag;if(!d||d.id!==ev.pointerId)return;const dx=ev.clientX-d.x,dy=ev.clientY-d.y;d.moved+=Math.abs(dx)+Math.abs(dy);st.cam-=dx;clamp();d.x=ev.clientX;d.y=ev.clientY;st.vel=paused?0:-dx;st.dt=0;paint()});
+  const cancel=()=>{st.drag=null;st.vel=0;cv.classList.remove('drag')};
+  cv.addEventListener('pointercancel',cancel);cv.addEventListener('lostpointercapture',cancel);
+  cv.addEventListener('pointerup',ev=>{const d=st.drag;if(!d||d.id!==ev.pointerId)return;const moved=d.moved+Math.abs(ev.clientX-d.x)+Math.abs(ev.clientY-d.y);st.drag=null;cv.classList.remove('drag');
+    const b=cv.getBoundingClientRect();if(moved>8||ev.clientX<b.left||ev.clientX>b.right||ev.clientY<b.top||ev.clientY>b.bottom)return;
+    st.vel=0;const sx=(ev.clientX-b.left)*(W/b.width)+st.cam,sy=(ev.clientY-b.top)*(H/b.height);
+    const hit=st.shops.filter(sp=>{const r=sp.r;return r&&sx>=r[0]&&sx<=r[0]+r[2]&&sy>=r[1]&&sy<=r[1]+r[3]})[0];if(hit)open(hit)});
+  const step=n=>{st.vel=0;st.cam+=n;clamp();st.dt=0;paint()};
+  const key=ev=>{if(!alive||(ev.target.closest&&ev.target.closest('input,textarea,select')))return;if(ev.key==='ArrowLeft'){step(-40);ev.preventDefault()}if(ev.key==='ArrowRight'){step(40);ev.preventDefault()}};
   document.addEventListener('keydown',key);
-  $('#lmleft').onclick=()=>{LM.st.cam-=80;clamp();sfx('click')};
-  $('#lmright').onclick=()=>{LM.st.cam+=80;clamp();sfx('click')};
-  $('#lmclassic').onclick=()=>{sfx('click');mapSheet()};
+  $('#lmleft').onclick=()=>step(-80);$('#lmright').onclick=()=>step(80);$('#lmclassic').onclick=mapSheet;
+  LM.cleanup=()=>{alive=false;document.removeEventListener('keydown',key);document.removeEventListener('visibilitychange',vis);media.removeEventListener('change',motion);cancel()};
+  st.dt=0;paint();wake();
 }
 function v30Fix(s){}
+/* v31 launch polish: transactional imports, dialog lifecycle, menu contrast. No economy changes. */
+function motionReduced(){return !!((S.ui&&S.ui.rm)||(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches))}
+const _lmStop31=lmStop;lmStop=function(){if(LM.cleanup){const fn=LM.cleanup;LM.cleanup=null;fn()}_lmStop31()};
+let sheetReturn31=null;
+const _sheet31=sheet,_closeSheet31=closeSheet;
+sheet=function(html){const host=$('#sheet');if(host.hidden||!host.contains(document.activeElement)){if(host.hidden)sheetReturn31=document.activeElement}lmStop();_sheet31(html);
+ const box=host.querySelector('.sheetbox');box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.tabIndex=-1;
+ const h=box.querySelector('h3');if(h){h.id='dialog-title';box.setAttribute('aria-labelledby',h.id)}else box.setAttribute('aria-label','Game dialog');
+ const btn=box.querySelector('#shx');btn.setAttribute('aria-label','Close dialog');btn.focus({preventScroll:true});
+};
+closeSheet=function(){lmStop();_closeSheet31();const ret=sheetReturn31;sheetReturn31=null;if(ret&&ret.isConnected)ret.focus({preventScroll:true})};
+document.addEventListener('keydown',ev=>{const host=$('#sheet');if(!host||host.hidden||document.querySelector('#vdisc'))return;
+ const box=host.querySelector('.sheetbox');if(!box)return;
+ if(ev.key==='Escape'){ev.preventDefault();closeSheet();return}
+ if(ev.key!=='Tab')return;
+ const els=[...box.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea,select,summary,[tabindex="0"]')].filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden');
+ if(!els.length){ev.preventDefault();box.focus();return}const first=els[0],last=els[els.length-1];
+ if(ev.shiftKey&&(document.activeElement===first||!box.contains(document.activeElement))){ev.preventDefault();last.focus()}
+ else if(!ev.shiftKey&&(document.activeElement===last||!box.contains(document.activeElement))){ev.preventDefault();first.focus()}
+});
+
+const SAVE_BACKUP31='mrt31_before_import';
+function saveCandidate31(code){
+ code=String(code||'').trim().replace(/\s+/g,'');if(code.length>4000000)throw Error('Save code is too large');
+ if(/^MRTH:/.test(code))throw Error('House tours are read-only. Use Menu → House tour code.');
+ if(!/^MRT[23]:/.test(code))throw Error('Supported save formats: MRT2: and MRT3:');
+ let o;try{o=JSON.parse(b64d(code.slice(5)))}catch(e){throw Error('Invalid or damaged save code')}
+ const obj=q=>q&&typeof q==='object'&&!Array.isArray(q);
+ if(!obj(o)||!Number.isFinite(o.cash)||o.cash<0||!obj(o.char)||typeof o.char.name!=='string'||!o.char.name.trim()||!obj(o.owned)||!obj(o.equipped)||!Array.isArray(o.room)||!Number.isFinite(o.day)||o.day<1)throw Error('Save is missing required player data');
+ if(o.v!=null&&(!Number.isFinite(o.v)||o.v<2||o.v>31))throw Error('Unsupported save version; this game supports v2–v31');
+ function scan(q,depth){if(depth>60)throw Error('Save nesting is too deep');if(typeof q==='number'&&!Number.isFinite(q))throw Error('Invalid number');if(q&&typeof q==='object')Object.keys(q).forEach(k=>{if(k==='__proto__'||k==='constructor'||k==='prototype')throw Error('Invalid save field');scan(q[k],depth+1)})}scan(o,0);
+ Object.keys(o.owned).forEach(k=>{if(!Number.isSafeInteger(o.owned[k])||o.owned[k]<0)throw Error('Invalid inventory count')});
+ ['orders','flea','bnpl','inbox'].forEach(k=>{if(o[k]!=null&&!Array.isArray(o[k]))throw Error('Invalid '+k)});
+ // All normalization/migration occurs on a detached candidate, never the current save.
+ return normalize(JSON.parse(JSON.stringify(o)));
+}
+function importCode(code){const next=saveCandidate31(code),prev=S,raw=JSON.stringify(S);store.set(SAVE_BACKUP31,raw);if(store.get(SAVE_BACKUP31)!==raw)throw Error('Could not preserve backup; current game has not changed. Export your save first.');try{S=next;save();if(store.get(KEY_AUTO)!==JSON.stringify(S))throw Error('Could not persist imported save')}catch(e){S=prev;store.set(KEY_AUTO,raw);throw Error('Import cancelled; previous save restored: '+e.message)}return true}
+function importConfirm31(code){let next;try{next=saveCandidate31(code)}catch(e){toast(e.message);return false}
+ const before=exportCode();sheet('<h3>Replace current progress?</h3><p>Import <b>'+esc(next.char.name)+'</b>, in-game day '+next.day+'. Your current progress will be backed up before replacement.</p><p class="small">'+(storageOK?'Backup survives reload in this browser.':'Storage is unavailable: this backup lasts only while this tab stays open. Copy your current export first.')+'</p><details><summary>Current save — copy as an extra backup</summary><textarea id="previous-export" readonly aria-label="Current save backup">'+esc(before)+'</textarea></details><button class="btn" id="import-confirm">Replace progress and keep backup</button><button class="btn alt" id="import-cancel">Cancel — keep current game</button>');
+ $('#import-cancel').onclick=closeSheet;$('#import-confirm').onclick=()=>{try{importCode(code);closeSheet();applyTheme();go('me');toast('Imported. Previous save is available under Recover previous save.')}catch(e){toast(e.message)}};return true}
+const _renderMe31=renderMe;renderMe=function(v){_renderMe31(v);const imp=$('#imp');if(imp)imp.onclick=()=>importConfirm31($('#code').value);
+ v.querySelectorAll('[data-load]').forEach(old=>{const b=old.cloneNode(true);old.parentNode.replaceChild(b,old);b.onclick=()=>{const raw=store.get(slotKey(b.dataset.load));if(raw)importConfirm31('MRT3:'+b64e(raw))}});
+ const area=$('#saves');if(area&&store.get(SAVE_BACKUP31)){const b=document.createElement('button');b.className='btn alt big';b.id='recover-save';b.textContent='Recover previous save (before last import)';area.appendChild(b);b.onclick=()=>importConfirm31('MRT3:'+b64e(store.get(SAVE_BACKUP31)))}
+};
+(function(){const style=document.createElement('style');style.textContent=
+ 'body.ts1 #sheet .sheetbox{max-height:calc(89dvh - 72px)!important}body.ts2 #sheet .sheetbox{max-height:calc(80dvh - 64px)!important}#sheet .sheetbox{box-sizing:border-box;overflow-x:hidden}#livemall{max-width:100%;height:auto;box-sizing:border-box}#lmsbar{flex-wrap:wrap}#lmsbar .btn{min-height:44px;font-size:13px}#lmshops .btn{white-space:normal;text-align:left;width:100%}#lmdirectory summary{padding:12px;cursor:pointer;min-height:44px;box-sizing:border-box}#lmselected{overflow-wrap:anywhere}#previous-export{width:100%;box-sizing:border-box;min-height:80px}button:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px solid #ff9800;outline-offset:2px}'+
+ '[data-theme=dark] .sheetbox .card:not(#feudnote):not(#rivalnote){background:var(--card)!important;color:var(--ink)!important}[data-theme=dark] .sheetbox .small{color:var(--muted)}[data-theme=dark] .sheetbox .slot{border-color:var(--line)}';document.head.appendChild(style)})();
+function v31Fix(s){}
 /* v8: final load (every catalog now exists, so owned v6 home items / v8 drops survive reload) */
 S=load();if(typeof syncRows==='function')syncRows();if(typeof applyUI==='function')applyUI();
 /* ============================== JOBS ==============================

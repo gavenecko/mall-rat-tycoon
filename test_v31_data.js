@@ -1,0 +1,12 @@
+const {chromium}=require('playwright');
+(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome'});const p=await browser.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
+ await p.goto('file://'+process.cwd()+'/index.html');await p.fill('#nm','BeforeImport');await p.click('#done');await p.evaluate(()=>{$('#overlay').hidden=true;S.cash=987;save()});
+ const before=await p.evaluate(()=>JSON.stringify(S));
+ const code=await p.evaluate(()=>{const next=JSON.parse(JSON.stringify(S));next.char.name='AfterImport';next.cash=456;return'MRT3:'+b64e(JSON.stringify(next))});
+ await p.evaluate(c=>importConfirm31(c),code);await p.click('#import-confirm');await p.reload();
+ const round=await p.evaluate(()=>({name:S.char.name,cash:S.cash,backup:JSON.parse(store.get(SAVE_BACKUP31)).char.name}));if(round.name!=='AfterImport'||round.cash!==456||round.backup!=='BeforeImport')throw Error('Reload import/backup failed '+JSON.stringify(round));console.log('PASS reload persists imported save and previous-save backup');
+ await p.evaluate(()=>{go('me');$('#recover-save').click()});await p.click('#import-confirm');await p.reload();if(await p.evaluate(()=>S.char.name)!=='BeforeImport')throw Error('Recovery failed');console.log('PASS confirmed backup recovery survives reload');
+ const tours=await p.evaluate(()=>{const cash=S.cash,name=S.char.name;const tour=tourParse(tourCode());return !!tour.ch&&S.cash===cash&&S.char.name===name});if(!tours)throw Error('MRTH compatibility');console.log('PASS MRTH read-only tour compatibility');
+ const quota=await p.evaluate(c=>{const original=Storage.prototype.setItem,old=S,raw=JSON.stringify(S);let rejected=false;try{Storage.prototype.setItem=function(){throw Error('quota simulated in test')};try{importCode(c)}catch(e){rejected=true}}finally{Storage.prototype.setItem=original}return rejected&&S===old&&JSON.stringify(S)===raw},code);if(!quota)throw Error('Backup write failure replaced save');console.log('PASS simulated backup-storage failure refuses import without replacing state');
+ const reset=await p.evaluate(()=>{go('me');const old=S;$('#reset').click();return S===old&&/WIPE/.test($('#reset').textContent)});if(!reset)throw Error('Reset armed incorrectly');console.log('PASS reset first click arms only; no save wiped');
+ if(errors.length)throw Error(errors.join('|'));console.log('ALL PASS');await browser.close()})().catch(e=>{console.error(e);process.exit(1)});

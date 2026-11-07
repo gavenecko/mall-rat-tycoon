@@ -79,7 +79,7 @@ function lmDrawShop(x,sp,baseY,t){
   for(let i=0;i<5;i++){x.fillStyle=i%2?L.trim:L.awn;x.fillRect(X+8+i*((W-16)/5),Y+28,(W-16)/5,3)}
   /* sign band */
   x.fillStyle=L.signBg;rr(x,X+8,Y+10,W-16,16,3);x.fill();x.stroke();
-  x.fillStyle=L.signInk;x.font='800 11px system-ui';x.textAlign='center';x.fillText((sp.s.emoji||'')+' '+(sp.s.name||'').slice(0,12),X+W/2,Y+22,W-22);
+  x.fillStyle=L.signInk;x.font='800 11px system-ui';x.textAlign='center';x.fillText(sp.s.name,X+W/2,Y+22,W-22);
   /* window */
   const wx=X+10,wy=Y+48,ww=W-20,wh=70;
   if(sp.open){
@@ -89,7 +89,7 @@ function lmDrawShop(x,sp,baseY,t){
     lmMotif(x,wx,wy,ww/2,wh/2,L.motif,L.signInk==='#fff'?L.wall:L.signInk);
     /* second display item */
     x.fillStyle=L.trim;rr(x,wx+ww/2+8,wy+wh/2+8,ww/2-16,wh/2-16,3);x.fill();x.stroke();
-    x.fillStyle=L.signInk==='#fff'?L.wall:L.signInk;x.font='800 10px system-ui';x.textAlign='center';x.fillText(sp.s.emoji||'•',wx+ww*3/4,wy+wh/2+28);
+    x.fillStyle=L.signInk==='#fff'?L.wall:L.signInk;x.font='800 10px system-ui';x.textAlign='center';lmMotif(x,wx+ww/2,wy+wh/2,ww/2,wh/2,L.motif,L.wall);
     /* door */
     x.fillStyle='#5d4037';rr(x,X+W/2-12,Y+H-32,24,30,3);x.fill();x.stroke();
     x.fillStyle='#ffd54f';circ(x,X+W/2+6,Y+H-16,2);x.fill();
@@ -101,7 +101,7 @@ function lmDrawShop(x,sp,baseY,t){
     x.fillStyle='#455a64';rr(x,wx,wy,ww,wh+18,3);x.fill();x.stroke();
     x.strokeStyle='#263238';x.lineWidth=1.2;for(let yy=wy+4;yy<wy+wh+14;yy+=6){line(x,wx+2,yy,wx+ww-2,yy)}
     x.fillStyle='#ffcc80';x.font='800 10px system-ui';x.textAlign='center';x.fillText('CLOSED',X+W/2,wy+wh/2);
-    x.font='700 9px system-ui';x.fillStyle='#fffde7';x.fillText('Opens Day '+sp.next,X+W/2,wy+wh/2+14,ww-8);
+    x.font='700 11px system-ui';x.fillStyle='#fffde7';x.fillText('In-game day '+sp.next,X+W/2,wy+wh/2+14,ww-8);
   }
   /* planter under window */
   x.fillStyle='#6d4c41';rr(x,X+6,Y+H-8,22,8,2);x.fill();x.stroke();
@@ -148,13 +148,13 @@ function lmDrawWorld(x,W,H,st){
   /* ---- FOREGROUND actors (parallax 1.2) ---- */
   const fg=cam*1.2;
   st.npcs.forEach(n=>{
-    n.wx+=n.vx;if(n.wx<-40)n.wx=st.worldW+40;if(n.wx>st.worldW+40)n.wx=-40;
+    n.wx+=n.vx*(st.dt||0)*60;if(n.wx<-40)n.wx=st.worldW+40;if(n.wx>st.worldW+40)n.wx=-40;
     const sx=n.wx-fg,bob=Math.sin(t*6+n.ph)*2;if(sx<-20||sx>W+20)return;
     x.fillStyle=n.c;x.strokeStyle=OUT;x.lineWidth=1.5;rr(x,sx-7,floorY+28+bob,14,18,4);x.fill();x.stroke();
     x.fillStyle=n.skin;circ(x,sx,floorY+22+bob,6);x.fill();x.stroke();
   });
   st.birds.forEach(b=>{
-    b.wx+=b.vx;if(b.wx>st.worldW+40)b.wx=-20;
+    b.wx+=b.vx*(st.dt||0)*60;if(b.wx>st.worldW+40)b.wx=-20;
     const sx=b.wx-cam*0.9,sy=50+Math.sin(t*3+b.ph)*8;if(sx<-20||sx>W+20)return;
     x.fillStyle='#90a4ae';x.strokeStyle=OUT;x.lineWidth=1.5;ell(x,sx,sy,9,5);x.fill();x.stroke();
     x.fillStyle='#7e57c2';circ(x,sx+6,sy-2,4);x.fill();x.stroke();
@@ -162,46 +162,55 @@ function lmDrawWorld(x,W,H,st){
   });
 
   /* HUD chrome */
-  x.fillStyle='rgba(29,26,43,.88)';rr(x,8,H-30,W-16,24,8);x.fill();
+  x.fillStyle='#1d1a2b';rr(x,8,H-30,W-16,24,8);x.fill();
   x.fillStyle='#fff';x.font='700 11px system-ui';x.textAlign='center';
   x.fillText('⟷ Drag / swipe to walk the mall · '+st.openN+' open · tap a shop',W/2,H-14,W-24);
   /* edge fade hints */
-  if(cam>4){x.fillStyle='#1a237e';x.globalAlpha=.35;x.fillRect(0,0,18,H);x.globalAlpha=1}
-  if(cam<st.worldW-W-4){x.fillStyle='#1a237e';x.globalAlpha=.35;x.fillRect(W-18,0,18,H);x.globalAlpha=1}
+  if(cam>4){x.fillStyle='#1a237e';x.globalAlpha=1;x.fillRect(0,0,18,H);x.globalAlpha=1}
+  if(cam<st.worldW-W-4){x.fillStyle='#1a237e';x.globalAlpha=1;x.fillRect(W-18,0,18,H);x.globalAlpha=1}
   x.restore();
 }
 
 function liveMallSheet(){
   lmStop();
-  const W=Math.min(380,window.innerWidth-28),H=Math.min(460,Math.floor(window.innerHeight*.68));
+  const W=Math.min(370,window.innerWidth-48),H=Math.min(400,Math.floor(window.innerHeight*.52));
   const world=lmBuildWorld();
-  sheet('<h3>🏬 Live Mall View</h3><div class="small">Walk the concourse — drag to scroll. Parallax layers + real storefronts. Closed shops show shutters &amp; the next day they open.</div><div id="livemallwrap" class="center"><canvas id="livemall"></canvas></div><div id="lmsbar"><button class="btn alt" id="lmleft">◀</button><button class="btn alt big" id="lmclassic">🗺️ Classic map</button><button class="btn alt" id="lmright">▶</button></div>');
-  const cv=$('#livemall'),x=setupCanvas(cv,W,H);
-  const skins=['#f5c6a5','#c68642','#8d5524','#ffe0bd'],cols=['#ff8a80','#81d4fa','#a5d6a7','#ce93d8','#ffd54f','#ff4f9a','#80cbc4'];
-  LM.st={t:0,cam:0,maxCam:Math.max(0,world.worldW-W),worldW:world.worldW,shops:world.shops,openN:world.openN,drag:null,vel:0,
-    npcs:Array.from({length:7},(_,i)=>({wx:40+i*90+Math.random()*40,vx:(Math.random()<.5?-1:1)*(.35+Math.random()*.6),c:cols[i%cols.length],skin:skins[i%skins.length],ph:Math.random()*6})),
-    birds:Array.from({length:4},(_,i)=>({wx:60+i*120,vx:.7+Math.random()*.5,ph:Math.random()*6}))};
-  function frame(){if(!document.body.contains(cv)){lmStop();return}
-    LM.st.t+=1/60;if(!LM.st.drag&&LM.st.vel){LM.st.cam=Math.max(0,Math.min(LM.st.maxCam,LM.st.cam+LM.st.vel));LM.st.vel*=.92;if(Math.abs(LM.st.vel)<.05)LM.st.vel=0}
-    lmDrawWorld(x,W,H,LM.st);LM.iv=requestAnimationFrame(frame)}
-  frame();
-  const clamp=()=>{LM.st.cam=Math.max(0,Math.min(LM.st.maxCam,LM.st.cam))};
-  cv.addEventListener('pointerdown',ev=>{cv.setPointerCapture(ev.pointerId);LM.st.drag={x:ev.clientX,cam:LM.st.cam,moved:0};LM.st.vel=0;cv.classList.add('drag')});
-  cv.addEventListener('pointermove',ev=>{if(!LM.st.drag)return;const dx=ev.clientX-LM.st.drag.x;LM.st.drag.moved+=Math.abs(dx);LM.st.cam=LM.st.drag.cam-dx;clamp();LM.st.drag.x=ev.clientX;LM.st.drag.cam=LM.st.cam;LM.st.vel=-dx});
-  const up=ev=>{if(!LM.st.drag)return;const moved=LM.st.drag.moved;cv.classList.remove('drag');LM.st.drag=null;if(moved>8){LM.st._skipClick=1;return}
-    const b=cv.getBoundingClientRect(),sx=(ev.clientX-b.left)*(W/b.width),sy=(ev.clientY-b.top)*(H/b.height);
-    const hit=LM.st.shops.filter(sp=>{const r=sp.r;return r&&sx>=r[0]-LM.st.cam&&sx<=r[0]-LM.st.cam+r[2]&&sy>=r[1]&&sy<=r[1]+r[3]})[0];
-    if(!hit)return;sfx('click');
-    if(!hit.open){toast('🔒 '+hit.s.name+' shutters are down. Opens Day '+hit.next+(hit.next===S.day?' (today!)':hit.next===S.day+1?' (tomorrow)':' ('+(hit.next-S.day)+' days)'));return}
-    if(typeof isBanned==='function'&&isBanned(hit.s.id)){sfx('bad');toast('🚫 Banned from '+hit.s.name);return}
-    closeSheet();go('mall',hit.s.id)};
-  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',()=>{LM.st.drag=null;cv.classList.remove('drag')});cv.addEventListener('click',ev=>{if(LM.st&&LM.st._skipClick){LM.st._skipClick=0;return}up(ev)});
-  const key=ev=>{if(!document.body.contains(cv)){document.removeEventListener('keydown',key);return}
-    if(ev.key==='ArrowLeft'||ev.key==='a'){LM.st.cam-=40;clamp();ev.preventDefault()}
-    if(ev.key==='ArrowRight'||ev.key==='d'){LM.st.cam+=40;clamp();ev.preventDefault()}};
+  sheet('<h3>Live Mall View</h3><p class="small">Swipe to explore; tap to enter. Closed shops show their next in-game opening day.</p><canvas id="livemall" aria-label="Mall panorama; use the labelled shop directory below for accessible navigation"></canvas><div id="lmsbar"><button class="btn alt" id="lmleft" aria-label="Walk left">◀</button><button class="btn alt" id="lmpause">Pause ambience</button><button class="btn alt" id="lmright" aria-label="Walk right">▶</button></div><p class="small" id="lmselected" aria-live="polite">Choose a shop below for its full name and opening information.</p><details id="lmdirectory"><summary>Shop directory (all storefronts)</summary><div id="lmshops"></div></details><button class="btn alt big" id="lmclassic">Classic wing map</button>');
+  const cv=$('#livemall'),x=setupCanvas(cv,W,H),skins=['#f5c6a5','#c68642','#8d5524','#ffe0bd'],cols=['#ff8a80','#81d4fa','#a5d6a7','#ce93d8','#ffd54f','#ff4f9a','#80cbc4'];
+  const st=LM.st={t:0,cam:0,maxCam:Math.max(0,world.worldW-W),worldW:world.worldW,shops:world.shops,openN:world.openN,drag:null,vel:0,dt:0,
+    npcs:Array.from({length:7},(_,i)=>({wx:40+i*90,vx:(i%2?-1:1)*.6,c:cols[i],skin:skins[i%4],ph:i})),
+    birds:Array.from({length:4},(_,i)=>({wx:60+i*120,vx:1,ph:i}))};
+  let last=0,paused=motionReduced(),alive=true;
+  const clamp=()=>{st.cam=Math.max(0,Math.min(st.maxCam,st.cam))};
+  const paint=()=>{if(alive)lmDrawWorld(x,W,H,st)};
+  function frame(now){LM.iv=null;if(!alive||document.hidden||paused)return;const dt=last?Math.min(.05,(now-last)/1000):0;last=now;st.dt=dt;st.t+=dt;
+    if(!st.drag&&st.vel){st.cam+=st.vel*dt*60;clamp();st.vel*=Math.pow(.92,dt*60);if(Math.abs(st.vel)<.05)st.vel=0}
+    paint();LM.iv=requestAnimationFrame(frame)}
+  const wake=()=>{if(LM.iv){cancelAnimationFrame(LM.iv);LM.iv=null}last=0;if(!document.hidden&&!paused&&alive)LM.iv=requestAnimationFrame(frame)};
+  const vis=()=>wake();document.addEventListener('visibilitychange',vis);
+  const pauseBtn=$('#lmpause');const pauseLabel=()=>{pauseBtn.textContent=paused?'Play ambience':'Pause ambience';pauseBtn.setAttribute('aria-pressed',String(paused))};pauseLabel();
+  pauseBtn.onclick=()=>{paused=!paused;st.vel=0;pauseLabel();wake()};
+  const motion=()=>{if(motionReduced()){paused=true;st.vel=0;pauseLabel();wake()}};
+  const media=window.matchMedia('(prefers-reduced-motion: reduce)');media.addEventListener('change',motion);
+  const open=sp=>{const info=sp.s.name+' — '+(sp.open?(sp.park?'Open 24/7':'Open this in-game day'):'Opens in-game day '+sp.next);$('#lmselected').textContent=info;
+    if(!sp.open){toast('Closed: '+sp.s.name+'. Opens Day '+sp.next+' (in-game day).');return}
+    if(typeof isBanned==='function'&&isBanned(sp.s.id)){toast('Banned from '+sp.s.name);return}
+    closeSheet();go('mall',sp.s.id)};
+  $('#lmshops').innerHTML=st.shops.map((sp,i)=>'<button class="btn alt big" data-lmshop="'+i+'">'+esc(sp.s.name)+' — '+(sp.open?(sp.park?'Open 24/7':'Open today'):'Closed; opens in-game day '+sp.next)+'</button>').join('');
+  onAll($('#lmshops'),'[data-lmshop]',b=>open(st.shops[+b.dataset.lmshop]));
+  cv.addEventListener('pointerdown',ev=>{if(ev.button!==0||st.drag)return;try{cv.setPointerCapture(ev.pointerId)}catch(e){}st.drag={id:ev.pointerId,x:ev.clientX,y:ev.clientY,moved:0};st.vel=0;cv.classList.add('drag')});
+  cv.addEventListener('pointermove',ev=>{const d=st.drag;if(!d||d.id!==ev.pointerId)return;const dx=ev.clientX-d.x,dy=ev.clientY-d.y;d.moved+=Math.abs(dx)+Math.abs(dy);st.cam-=dx;clamp();d.x=ev.clientX;d.y=ev.clientY;st.vel=paused?0:-dx;st.dt=0;paint()});
+  const cancel=()=>{st.drag=null;st.vel=0;cv.classList.remove('drag')};
+  cv.addEventListener('pointercancel',cancel);cv.addEventListener('lostpointercapture',cancel);
+  cv.addEventListener('pointerup',ev=>{const d=st.drag;if(!d||d.id!==ev.pointerId)return;const moved=d.moved+Math.abs(ev.clientX-d.x)+Math.abs(ev.clientY-d.y);st.drag=null;cv.classList.remove('drag');
+    const b=cv.getBoundingClientRect();if(moved>8||ev.clientX<b.left||ev.clientX>b.right||ev.clientY<b.top||ev.clientY>b.bottom)return;
+    st.vel=0;const sx=(ev.clientX-b.left)*(W/b.width)+st.cam,sy=(ev.clientY-b.top)*(H/b.height);
+    const hit=st.shops.filter(sp=>{const r=sp.r;return r&&sx>=r[0]&&sx<=r[0]+r[2]&&sy>=r[1]&&sy<=r[1]+r[3]})[0];if(hit)open(hit)});
+  const step=n=>{st.vel=0;st.cam+=n;clamp();st.dt=0;paint()};
+  const key=ev=>{if(!alive||(ev.target.closest&&ev.target.closest('input,textarea,select')))return;if(ev.key==='ArrowLeft'){step(-40);ev.preventDefault()}if(ev.key==='ArrowRight'){step(40);ev.preventDefault()}};
   document.addEventListener('keydown',key);
-  $('#lmleft').onclick=()=>{LM.st.cam-=80;clamp();sfx('click')};
-  $('#lmright').onclick=()=>{LM.st.cam+=80;clamp();sfx('click')};
-  $('#lmclassic').onclick=()=>{sfx('click');mapSheet()};
+  $('#lmleft').onclick=()=>step(-80);$('#lmright').onclick=()=>step(80);$('#lmclassic').onclick=mapSheet;
+  LM.cleanup=()=>{alive=false;document.removeEventListener('keydown',key);document.removeEventListener('visibilitychange',vis);media.removeEventListener('change',motion);cancel()};
+  st.dt=0;paint();wake();
 }
 function v30Fix(s){}
