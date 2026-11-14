@@ -31,7 +31,7 @@ const INDOOR=c=>c==='furniture'||c==='decor'||c==='electronics'||c==='plants';
       const name=s.name+(rare?' Limited':'')+' '+c[0]+(pat.key?' '+pat.name:'')+(st?' '+st:'')+' '+base.name;if(names[name])continue;names[name]=1;
       const lo=s.tier[0],hi=s.tier[1];let p=lo*Math.pow(hi/lo,Math.pow(r(),1.6))*base.mul*.4;p=Math.min(Math.max(p,1),hi*2.5);if(rare)p*=3;
       if(base.key==='pool')p=Math.max(p,s.id==='harrodz'?52000:6500);if(base.key==='car')p=Math.max(p,s.id==='harrodz'?85000:4500);if(base.key==='paint')p=Math.min(p,40);
-      it={id:'h6-'+s.id+'-'+cat+'-'+base.key+'-'+ITEMS.length,store:s.id,name:name,cat:cat,slot:null,shape:base.key,price:nicePrice(p),color:c[1],colorName:c[0],pattern:pat.key,rare:!!rare,stock:rare?3:0,
+      it={id:'h6-'+s.id+'-'+cat+'-'+base.key+'-'+ITEMS.length,store:s.id,name:name,cat:cat,slot:SLOTS.indexOf(cat)>=0?cat:null,shape:base.key,price:nicePrice(p),color:c[1],colorName:c[0],pattern:pat.key,rare:!!rare,stock:rare?3:0,
         w:base.w||1,h:base.h||1,layer:base.layer||(cat==='outdoor'?'yard':'floor'),surf:base.surf||null,ext:base.ext||null,style:st,plant:cat==='plants'||!!base.plant}}
     if(it){ITEMS.push(it);ITEM[it.id]=it}}
   NEW_STORES.forEach(s=>{s.cats.forEach(cat=>{const bs=HOME_BASES[cat]||BASES[cat];const n=cat==='surface'?bs.length:cat==='exterior'?bs.length:cat==='outdoor'?Math.min(bs.length,s.park?10:4):4;

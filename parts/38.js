@@ -46,3 +46,5 @@ const _renderMe31=renderMe;renderMe=function(v){_renderMe31(v);const imp=$('#imp
  'body.ts1 #sheet .sheetbox{max-height:calc(89dvh - 72px)!important}body.ts2 #sheet .sheetbox{max-height:calc(80dvh - 64px)!important}#sheet .sheetbox{box-sizing:border-box;overflow-x:hidden}#livemall{max-width:100%;height:auto;box-sizing:border-box}#lmsbar{flex-wrap:wrap}#lmsbar .btn{min-height:44px;font-size:13px}#lmshops .btn{white-space:normal;text-align:left;width:100%}#lmdirectory summary{padding:12px;cursor:pointer;min-height:44px;box-sizing:border-box}#lmselected{overflow-wrap:anywhere}#previous-export{width:100%;box-sizing:border-box;min-height:80px}button:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px solid #ff9800;outline-offset:2px}'+
  '[data-theme=dark] .sheetbox .card:not(#feudnote):not(#rivalnote){background:var(--card)!important;color:var(--ink)!important}[data-theme=dark] .sheetbox .small{color:var(--muted)}[data-theme=dark] .sheetbox .slot{border-color:var(--line)}';document.head.appendChild(style)})();
 function v31Fix(s){}
+(function(){ITEMS.forEach(it=>{if(!it.slot&&SLOTS.indexOf(it.cat)>=0)it.slot=it.cat})})();
+
